@@ -12,7 +12,7 @@ import { Suspense } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default async function DashboardHeader() {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user }, error } = await supabase.auth.getUser()
     // Get the user's plan from Stripe
     const stripePlan = getStripePlan(user!.email!)

@@ -20,7 +20,7 @@ export default async function DashboardLayout({
     children: React.ReactNode;
 }>) {
     // Check if user has plan selected. If not redirect to subscibe
-    const supabase = createClient()
+    const supabase = await createClient()
 
     const {
         data: { user },
