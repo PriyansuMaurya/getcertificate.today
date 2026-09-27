@@ -1,7 +1,10 @@
 import { defineConfig } from "drizzle-kit";
 import { config } from 'dotenv';
 
-process.env.NODE_ENV !== 'production' ? config({ path: '.env' }) : config({ path: '.env.local' })// or .env.local
+// Production also reads .env; both cases end with .env.local (dotenv never overrides set vars)
+if (process.env.NODE_ENV === 'production') {
+    config({ path: '.env' })
+}
 config({ path: '.env.local' })
 export default defineConfig({
     schema: "./utils/db/schema.ts",

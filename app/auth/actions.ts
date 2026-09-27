@@ -23,7 +23,7 @@ export async function resetPassword(currentState: { message: string }, formData:
 
     const { data } = await supabase.auth.exchangeCodeForSession(passwordData.code)
 
-    let { error } = await supabase.auth.updateUser({
+    const { error } = await supabase.auth.updateUser({
         password: passwordData.password
     })
     if (error) {
