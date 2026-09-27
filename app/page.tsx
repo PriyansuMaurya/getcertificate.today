@@ -81,7 +81,7 @@ export default async function LandingPage() {
               </div>
             </div>
             <div className="w-full md:w-1/2  flex justify-center">
-              <Image src="/hero.png" alt="Hero" width={500} height={500} priority />
+              <Image src="/hero.png" alt="Hero" width={1351} height={733} className="h-auto" priority />
             </div>
           </div>
         </section>
