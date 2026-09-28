@@ -20,6 +20,14 @@ const config = {
     },
     extend: {
       colors: {
+        // Design tokens imported from Figma file ifCw9JuE00PMiaOHgtBxRp (landing-page 6:9)
+        cream: "#F5F0EB", // page + light card background
+        paper: "#FAF8F5", // alternating section background
+        ink: "#1A1A1A", // primary text / dark card / dark buttons
+        clay: "#6B6059", // secondary text
+        sand: "#B5A08E", // eyebrow text, check icons, accents
+        linen: "#EAE3DC", // feature icon tile background
+        sandline: "#E3DCD5", // hairline borders
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -53,6 +61,15 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+      },
+      fontFamily: {
+        manrope: ["var(--font-manrope)", "ui-sans-serif", "system-ui", "sans-serif"],
+        fraunces: ["var(--font-fraunces)", "ui-serif", "Georgia", "serif"],
+      },
+      boxShadow: {
+        // Exact Figma effects from the landing-page frame
+        "figma-hero": "0 2px 8px 0 rgba(107, 96, 89, 0.05)",
+        "figma-pro": "0 8px 24px 0 rgba(107, 96, 89, 0.08)",
       },
       borderRadius: {
         lg: "var(--radius)",

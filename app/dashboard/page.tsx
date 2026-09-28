@@ -11,9 +11,11 @@ export default async function Dashboard() {
     }
 
     return (
-        <main className="flex-1">
-            <div className="container">
-                Hello {data.user.email}
+        <main className="min-h-dvh flex-1">
+            <div className="container px-4 py-10 md:py-16">
+                <h1 className="break-words text-lg md:text-2xl">
+                    Hello {data.user.email}
+                </h1>
             </div>
         </main>)
 

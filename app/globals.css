@@ -67,3 +67,17 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    overflow-x: clip;
+  }
+  img,
+  video {
+    max-width: 100%;
+    height: auto;
+  }
+}

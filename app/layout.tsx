@@ -1,12 +1,24 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Manrope, Fraunces } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+// Fonts imported from the Figma design (getcertificate.today, landing-page 6:9)
+const manrope = Manrope({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-manrope",
+});
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  weight: ["400", "600", "700", "900"],
+  variable: "--font-fraunces",
+});
 
 export const metadata: Metadata = {
-  title: "SAAS Starter Kit",
-  description: "SAAS Starter Kit with Stripe, Supabase, Postgres",
+  title: "getcertificate.today — Turn YouTube learning into verifiable credentials",
+  description:
+    "Describe a field of study. Watch educational videos on YouTube. Pass AI-generated assessments tailored to the content, and earn official shareable certificates. Learn Today. Go Further.",
 };
 
 export default function RootLayout({
@@ -18,7 +30,11 @@ export default function RootLayout({
     <html lang="en">
       {/* Required for pricing table */}
       <script async src="https://js.stripe.com/v3/pricing-table.js"></script>
-      <body className={inter.className}>{children}</body>
+      <body
+        className={`${manrope.variable} ${fraunces.variable} font-manrope antialiased`}
+      >
+        {children}
+        </body>
     </html>
   );
 }
