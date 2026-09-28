@@ -9,6 +9,11 @@ const PUBLIC_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || "http://localhost:3000
 
 export async function getStripePlan(email: string) {
     const user = await db.select().from(usersTable).where(eq(usersTable.email, email))
+    // 'none' means the user has not subscribed yet - return the sentinel instead of
+    // querying Stripe, which would throw "No such subscription: 'none'".
+    if (!user[0]?.plan || user[0].plan === 'none') {
+        return 'none'
+    }
     const subscription = await stripe.subscriptions.retrieve(user[0].plan);
     const productId = subscription.items.data[0].plan.product as string
     const product = await stripe.products.retrieve(productId)

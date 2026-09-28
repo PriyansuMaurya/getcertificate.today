@@ -5,10 +5,92 @@ import { revalidatePath } from 'next/cache'
 import { createStripeCustomer } from '@/utils/stripe/api'
 import { db } from '@/utils/db/db'
 import { usersTable } from '@/utils/db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, or } from 'drizzle-orm'
 
 
 const PUBLIC_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || "http://localhost:3000"
+
+// Profile is complete once onboarding has been filled in (username is required there).
+export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
+    const rows = await db.select({ username: usersTable.username }).from(usersTable).where(eq(usersTable.id, userId))
+    return rows.length > 0 && rows[0].username !== null
+}
+
+export async function completeOnboarding(currentState: { message: string }, formData: FormData) {
+    const supabase = await createClient()
+
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+        redirect('/login')
+    }
+
+    const username = (formData.get('username') as string | null)?.trim() ?? ''
+    const firstName = (formData.get('firstName') as string | null)?.trim() ?? ''
+    const lastName = (formData.get('lastName') as string | null)?.trim() ?? ''
+    const dob = (formData.get('dob') as string | null)?.trim() ?? ''
+
+    if (!username || !firstName || !lastName || !dob) {
+        return { message: 'All fields are required.' }
+    }
+
+    if (!/^[a-z0-9_]{3,20}$/.test(username)) {
+        return { message: 'Username must be 3-20 characters: lowercase letters, numbers, underscores only.' }
+    }
+
+    const age = calculateAge(dob)
+    if (age === null) {
+        return { message: 'Please enter a valid date of birth.' }
+    }
+    if (age < 13) {
+        return { message: 'You must be at least 13 years old to create an account.' }
+    }
+
+    // Friendly pre-check; the unique constraint in the DB is the source of truth.
+    const conflict = await db
+        .select({ id: usersTable.id })
+        .from(usersTable)
+        .where(or(eq(usersTable.username, username), eq(usersTable.email, user.email!)))
+
+    const usernameTaken = conflict.some((row) => row.id !== user.id)
+
+    if (usernameTaken) {
+        return { message: 'That username is already taken. Please choose another one.' }
+    }
+
+    try {
+        await db
+            .update(usersTable)
+            .set({
+                username,
+                first_name: firstName,
+                last_name: lastName,
+                dob,
+            })
+            .where(eq(usersTable.id, user.id))
+    } catch (err) {
+        console.error('Error saving profile:', err instanceof Error ? err.message : 'Unknown error')
+        return { message: 'Failed to save your profile. Please try again.' }
+    }
+
+    revalidatePath('/', 'layout')
+    redirect('/dashboard')
+}
+
+function calculateAge(dob: string): number | null {
+    const birth = new Date(`${dob}T00:00:00Z`)
+    if (Number.isNaN(birth.getTime())) return null
+
+    const now = new Date()
+    let age = now.getUTCFullYear() - birth.getUTCFullYear()
+    const monthDiff = now.getUTCMonth() - birth.getUTCMonth()
+    if (monthDiff < 0 || (monthDiff === 0 && now.getUTCDate() < birth.getUTCDate())) {
+        age--
+    }
+    return age
+}
 
 export async function resetPassword(currentState: { message: string }, formData: FormData) {
     const supabase = await createClient()
@@ -102,7 +184,7 @@ export async function signup(currentState: { message: string }, formData: FormDa
     }
 
     revalidatePath("/", "layout")
-    redirect("/subscribe")
+    redirect("/onboarding")
 }
 
 
@@ -114,14 +196,19 @@ export async function loginUser(currentState: { message: string }, formData: For
         password: formData.get('password') as string,
     }
 
-    const { error } = await supabase.auth.signInWithPassword(data)
+    const { data: signInData, error } = await supabase.auth.signInWithPassword(data)
 
     if (error) {
         return { message: error.message }
     }
 
     revalidatePath('/', 'layout')
-    redirect('/dashboard')
+
+    // New users (or anyone who never finished onboarding) set up their profile first.
+    if (await hasCompletedOnboarding(signInData.user.id)) {
+        redirect('/dashboard')
+    }
+    redirect('/onboarding')
 }
 
 

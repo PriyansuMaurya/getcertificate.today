@@ -17,7 +17,13 @@ import { generateStripeBillingPortalLink } from "@/utils/stripe/api"
 export default async function DashboardHeaderProfileDropdown() {
     const supabase = await createClient()
     const { data: { user }, error } = await supabase.auth.getUser()
-    const billingPortalURL = await generateStripeBillingPortalLink(user!.email!)
+    // Don't let a Stripe failure (or a missing/unsubscribed customer) break the whole dashboard.
+    let billingPortalURL = '#'
+    try {
+        billingPortalURL = await generateStripeBillingPortalLink(user!.email!)
+    } catch {
+        // Billing portal unavailable - the menu item will simply not navigate anywhere.
+    }
     return (
         <nav className="flex items-center">
             <Button variant="ghost" size="icon" className="mr-2">

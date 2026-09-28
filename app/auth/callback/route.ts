@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 // The client you created from the Server-Side Auth instructions
 import { createClient } from '@/utils/supabase/server'
 import { createStripeCustomer } from '@/utils/stripe/api'
+import { hasCompletedOnboarding } from '@/app/auth/actions'
 import { db } from '@/utils/db/db'
 import { usersTable } from '@/utils/db/schema'
 import { eq } from "drizzle-orm";
@@ -32,13 +33,19 @@ export async function GET(request: Request) {
 
             const forwardedHost = request.headers.get('x-forwarded-host') // original origin before load balancer
             const isLocalEnv = process.env.NODE_ENV === 'development'
+            let destination = next
+            if (next === '/') {
+                // New users (no username yet) land on onboarding; everyone else on the dashboard.
+                const completed = await hasCompletedOnboarding(user!.id)
+                destination = completed ? '/dashboard' : '/onboarding'
+            }
             if (isLocalEnv) {
                 // we can be sure that there is no load balancer in between, so no need to watch for X-Forwarded-Host
-                return NextResponse.redirect(`${origin}${next}`)
+                return NextResponse.redirect(`${origin}${destination}`)
             } else if (forwardedHost) {
-                return NextResponse.redirect(`https://${forwardedHost}${next}`)
+                return NextResponse.redirect(`https://${forwardedHost}${destination}`)
             } else {
-                return NextResponse.redirect(`${origin}${next}`)
+                return NextResponse.redirect(`${origin}${destination}`)
             }
         }
     }
