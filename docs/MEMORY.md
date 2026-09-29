@@ -59,18 +59,14 @@
 
 1. **Stripe webhook unverified (critical, top priority):** `app/webhook/stripe/route.ts` trusts `req.json()` with no signature check; anyone able to reach `/webhook/stripe` can set any user's `plan`. Also: missing `break` (fall-through), `subscription.deleted` unhandled (plan never resets), payload logged via `console.log`. Fix in `TASK.md` Phase 0.2.
 2. **Migration application on live DBs unverified (low risk):** migration `0001_add-profile-fields.sql` exists, is tracked in git (commit `a1bd15d`, dated 2026-09-28), and matches `schema.ts` exactly, with a valid journal entry. The repository cannot prove that each live database (local dev, production) actually has `0001` applied — e.g., a DB provisioned by `db:push` would have the columns but no migration history. One-time verification in `TASK.md` Phase 0.1.
-3. **404 redirect targets:** `app/auth/callback/route.ts` redirects to `/auth/auth-code-error` and `app/auth/auth/confirm/route.ts` to `/error` — neither route exists. No `not-found.tsx`/`error.tsx` anywhere.
-4. **Landing nav hole:** between `lg` and `xl` viewports neither the desktop links (`xl:flex`) nor the hamburger (`lg:hidden`) render — navigation disappears in that band.
-5. **Nested link:** `components/DashboardHeaderProfileDropdown.tsx` renders `<Link>` (Billing) inside `<DropdownMenuItem>` wrapped in another `<Link href="#">` — invalid nesting.
-6. **Tailwind typo:** `text-2x\l font-bold` in `app/signup/page.tsx` (broken class string).
-7. **Provisioning race:** user rows + Stripe customers are created in two code paths (`signup` action and OAuth callback); email-confirm users get no row until callback; concurrent paths can double-insert (unique constraint surfaces a raw error).
-8. **Duplicate font load:** `app/dashboard/layout.tsx` loads Inter although root layout already provides Manrope/Fraunces.
-9. **Billing portal UX:** Stripe failures degrade the dropdown item to `href="#"` silently.
+3. **Nested link:** `components/DashboardHeaderProfileDropdown.tsx` renders `<Link>` (Billing) inside `<DropdownMenuItem>` wrapped in another `<Link href="#">` — invalid nesting.
+4. **Provisioning race:** user rows + Stripe customers are created in two code paths (`signup` action and OAuth callback); email-confirm users get no row until callback; concurrent paths can double-insert (unique constraint surfaces a raw error).
+5. **Billing portal UX:** Stripe failures degrade the dropdown item to `href="#"` silently.
 
 ## 7. Technical debt register (non-bug)
 
 - `stripeSetup.ts` seeds generic starter plans (Basic $10 / Pro $20 / Enterprise $50) — not the product's Free/Pro tiers.
-- Starter residue: "SAAS Starter Kit" dashboard metadata, `Home/Projects/Tasks/Reports` nav → `#`, decorative search input, placeholder footer links, `"Acme Inc"` sr-only label on `/subscribe`, unused `public/next.svg`/`vercel.svg`, empty `compositions/components/landing-page/` and `figma-ui/`, empty `app/dashboard/actions.ts`, unused `utils/supabase/client.ts`.
+- Starter residue: placeholder landing footer links, `"Acme Inc"` sr-only label on `/subscribe`, unused `public/next.svg`/`vercel.svg`, empty `compositions/components/landing-page/`, empty `app/dashboard/actions.ts`, and unused `utils/supabase/client.ts`.
 - Stripe pricing-table script loads globally from root layout (every route pays the cost).
 - `users_table` has no timestamps; keep adding `created_at/updated_at` to new tables (`RULES.md` §17.6).
 - Forms use raw `text-red-500` for errors (off-token color).
@@ -133,3 +129,4 @@
   - Redesigned `/dashboard` and `DashboardHeader` with full Figma visual fidelity: sticky 80px cream navbar, live plan badge, quick metrics cards (Verified Credentials, Hours Studied, Account Plan), YouTube video course launcher, and the dark ink Professional upgrade card.
   - Redesigned `/subscribe` and error fallbacks (`/error`, `/not-found`, `/auth/auth-code-error`) using cohesive Figma tokens and layout standards.
   - Created test users and verified `typecheck`, `lint`, and `format:check` pass 100%.
+- **2026-09-29 — Figma screen parity and responsive QA.** Matched the landing page's 1440×4477 geometry (including the stretched 574×407 hero frame), corrected sign-in/sign-up Figma card bounds, and rebuilt the dashboard around its 280px sidebar with responsive native navigation. The dashboard uses unavailable/empty states for planned learning and credential features instead of sample data. Added `scripts/test-figma-layout.mjs` to verify landing/auth geometry and responsive overflow, plus authenticated dashboard layout. Created a unique isolated-development QA account for browser verification; credentials were provided in the session response, not stored here. The sign-up legal consent control and login "Remember me" control remain omitted because their policies/session semantics are not implemented; both OAuth providers remain functional even though the reference shows only Google.

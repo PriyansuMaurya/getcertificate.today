@@ -13,21 +13,21 @@ export default function LoginForm() {
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-clay">
-          Email address
+        <label htmlFor="email" className="text-sm font-semibold text-clay">
+          Email Address
         </label>
         <input
           id="email"
           type="email"
           name="email"
-          placeholder="alex@example.com"
+          placeholder="alex@creativetech.com"
           required
-          className="h-11 rounded-lg border border-sandline bg-cream px-3.5 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
+          className="h-[50px] rounded-lg border border-sandline bg-cream px-3.5 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
         />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="password" className="text-xs font-bold uppercase tracking-wider text-clay">
+        <label htmlFor="password" className="text-sm font-semibold text-clay">
           Password
         </label>
         <input
@@ -36,7 +36,7 @@ export default function LoginForm() {
           name="password"
           placeholder="••••••••"
           required
-          className="h-11 rounded-lg border border-sandline bg-cream px-3.5 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
+          className="h-[50px] rounded-lg border border-sandline bg-cream px-3.5 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
         />
       </div>
 

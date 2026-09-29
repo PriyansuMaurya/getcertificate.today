@@ -1,0 +1,23 @@
+{
+  "skill_name": "resume-improvement",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I have a LaTeX resume (main.tex) and I'm applying to Stripe as a Platform Engineer. Here's the job description: [Stripe Platform Engineer JD with requirements for Python, distributed systems, API design, AWS, and payment infrastructure]. Can you tailor my resume for this role? I want a tailored .tex file and a change report showing what you changed and why.",
+      "expected_output": "A tailored LaTeX file preserving the original template structure, with rewritten bullets emphasizing platform/API experience, Stripe-relevant keywords integrated, and a change report documenting all modifications with rationale.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "My resume is kind of weak — the bullets are mostly task descriptions like 'responsible for managing databases' and 'helped with deployment'. I'm a backend developer with 3 years of experience. Can you rewrite my bullets to be more impactful? I don't have a specific job in mind, just want to make it stronger overall.",
+      "expected_output": "Resume with rewritten bullets using the IMPACT framework — action verbs, quantified outcomes where defensible, consistent tense, and removal of weak filler bullets. A skill coverage matrix is not needed since there's no target JD, but a change report should document the before/after of each bullet.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "I'm a data scientist trying to switch to a machine learning engineer role at Google. Here's my current resume and the Google MLE job posting. I know my resume is heavy on analysis and reporting — can you help me reframe my experience to emphasize the engineering side? Also flag what skills I'm missing so I know what to upskill on.",
+      "expected_output": "A tailored resume that bridges data science experience toward ML engineering — emphasizing model deployment, production systems, coding proficiency, and infrastructure over pure analysis. A skill coverage matrix showing MLE-specific gaps (e.g., distributed systems, C++). A change report with recommended upskills for the missing areas.",
+      "files": []
+    }
+  ]
+}

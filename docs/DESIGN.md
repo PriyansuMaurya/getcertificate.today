@@ -7,7 +7,7 @@
 | Sources         | Figma file `ifCw9JuE00PMiaOHgtBxRp`, landing-page frame `6:9` (1440×4477) — audit trail in `.media/` (`figma-bindings.jsonl`, `manifest.jsonl`, `figma-cache/`); implementation in `tailwind.config.ts`, `app/globals.css`, `app/layout.tsx`, `app/page.tsx`, `components/icons.tsx` |
 | Related docs    | `RULES.md` (§13 generated files, §16.8), `ARCHITECTURE.md` §8.3, `PRD.md`                                                                                                                                                                                                            |
 
-**Two coexisting visual systems — read this first.** The repository carries (1) the **Figma brand system** (cream/ink/sand palette, Fraunces + Manrope) implemented on the **landing page** as custom Tailwind color tokens, and (2) the **shadcn/ui default system** (slate HSL variables; the dashboard shell additionally loads Inter) used by all **authenticated surfaces** (login, signup, onboarding, dashboard, subscribe). Both are real and documented below. Do not "unify" them without an explicit design decision; do use Figma tokens for any new marketing-facing surface and the shadcn system for authenticated app surfaces until that decision is made.
+**Figma is the visual system for the shipped product surfaces.** The cream/ink/sand palette and Fraunces + Manrope typography are used by the landing page, auth screens, dashboard, and other existing branded app pages. The shadcn HSL variables and primitives remain in the repository for shared components, but are not the visual source for those screens. Core learning, assessment, credential, and verification frames remain planned product surfaces; the dashboard marks those areas unavailable and does not display Figma sample data as real activity.
 
 ---
 
@@ -44,15 +44,15 @@ Contrast notes (verified values): `ink` on `cream` ≈ 15.9:1; `clay` on `cream`
 
 ### 2.2 shadcn/ui HSL variables (defined in `app/globals.css`, consumed via `tailwind.config.ts`)
 
-The default shadcn palette (slate-based) drives `bg-background`, `text-foreground`, `bg-primary`, `text-muted-foreground`, `border-input`, etc. used by auth pages, onboarding, and the dashboard. Values:
+The default shadcn palette (slate-based) remains available to shared primitives such as `components/ui/`. Existing branded auth and dashboard pages use the Figma tokens in §2.1 instead. Values:
 
 - Light: background `0 0% 100%`, foreground `222.2 84% 4.9%`, primary `222.2 47.4% 11.2%`, muted `210 40% 96.1%`, muted-foreground `215.4 16.3% 46.9%`, border/input `214.3 31.8% 91.4%`, ring `222.2 84% 4.9%`, destructive `0 84.2% 60.2%`, radius `0.5rem`, plus chart-1…5 tokens.
 - Dark (`.dark` class strategy): full slate-dark set defined but **no theme toggle exists**; `darkMode: ["class"]` in Tailwind config.
 
 ### 2.3 Rules for new surfaces
 
-- Marketing/public pages: use §2.1 tokens only. Never introduce new hex values; extend `tailwind.config.ts` with a commented Figma source if (and only if) the Figma frame provides one.
-- Authenticated app pages: use shadcn semantic classes (`bg-card`, `text-muted-foreground`…) so theming keeps working.
+- Existing Figma-framed pages: use §2.1 tokens and their exported frames. Never introduce new hex values; extend `tailwind.config.ts` only when a Figma source provides a token.
+- Planned app pages without frames: use the closest approved branded app pattern, keep unavailable functionality explicit, and do not render sample data as real user data.
 - Form error text currently uses raw `text-red-500` in client forms (inconsistent with tokens) — keep consistent with existing forms unless a design decision changes it.
 
 ## 3. Typography
@@ -76,19 +76,19 @@ Fonts load via `next/font/google` with CSS variables `--font-manrope` / `--font-
 
 - **Page container:** `mx-auto max-w-[1440px]` with horizontal padding `px-4 sm:px-6 xl:px-20` (Figma used 80px gutters at 1440). The design width is 1440px.
 - **Section padding:** `py-16` mobile scaling to `md:py-[120px]` (Figma's 120px); sections stack with internal gaps `gap-10 md:gap-16/20`.
-- **Navbar:** fixed 80px height (`h-20`) with 1px bottom border; dashboard header is the shadcn-style 56px (`h-14`) sticky bar — a deliberate difference between marketing and app shell.
+- **Headers:** public and dashboard top bars use an 80px height (`h-20`) with a 1px `sandline` border. The dashboard also uses a 280px desktop sidebar; its navigation becomes a native disclosure below `lg`.
 - **Cards:** HowItWorks `p-8 rounded-xl border border-sandline bg-cream`; Testimonials `p-10 rounded-2xl`; Pricing Free `p-6 sm:p-8 md:p-12 rounded-2xl` max-w 400px; Pro `p-6 sm:p-8 md:p-12 rounded-2xl bg-ink` max-w 420px.
 - **Grids:** steps/features `grid-cols-1 md:grid-cols-3`; testimonials `grid-cols-1 lg:grid-cols-2`; pricing cards flex column → row at `lg` with top alignment (`lg:items-start`).
-- Auth/app pages use shadcn layout idioms instead: centered `Card` with `w-full max-w-[350px]` (auth) / `max-w-[420px]` (onboarding), `container` for dashboard.
+- Sign-in and sign-up cards are 480px wide at the 1440px Figma frame; desktop heights are 698px and 787px respectively. They use responsive page gutters and grow naturally on narrow screens.
+- Dashboard content starts after the 280px sidebar, uses a constrained 1440px inner container, and stacks summary/activity regions on narrow screens.
 
 ## 5. Breakpoints & responsiveness
 
 Tailwind defaults (`sm 640 / md 768 / lg 1024 / xl 1280 / 2xl 1400`) plus container `2xl: 1400px`. Observed strategy:
 
-- **Mobile-first classes everywhere**; the landing hero, grids, and pricing switch at `sm/md/lg` (`MobileNav` appears below `lg`, desktop nav/CTA hidden below `xl`).
-- Navbar shows desktop links only at `xl:flex`; hamburger (`MobileNav`) renders `lg:hidden` — both conditions coexist, so between `lg` and `xl` neither desktop links nor… note carefully: the hamburger is inside the header and visible below `lg`; between `lg` and `xl` **no navigation is rendered** on the landing page. This is a real (minor) responsive gap observed in code; flagged in `TASK.md`.
-- Auth cards: `max-w-[350px]` with `px-4` page gutters; onboarding form collapses to single column below `sm`.
-- Dashboard: `md:flex` nav, `md:hidden` menu button, search input scales `sm:w-[300px] md:w-[200px] lg:w-[300px]`.
+- **Mobile-first classes everywhere**; the landing hero, grids, and pricing switch at `sm/md/lg`. The landing desktop navigation appears at `lg` and the disclosure is hidden at `lg`, so there is no `lg`-to-`xl` navigation gap.
+- Auth cards are capped at 480px, with 48px desktop interior spacing and smaller mobile gutters.
+- Dashboard sidebar appears at `lg`; below that, a keyboard-operable native disclosure contains the same navigation. The content grid collapses and is tested at 320, 375, 640, 768, 1024, 1280, 1440, and 1920px.
 - Global CSS enforces `overflow-x: clip` on body and fluid media (`img, video { max-width: 100%; height: auto; }`).
 
 ## 6. Component inventory
@@ -104,6 +104,8 @@ Tailwind defaults (`sm 640 / md 768 / lg 1024 / xl 1280 / 2xl 1400`) plus contai
 - **CTA band**: centered stack, top/bottom `sandline` borders.
 - **Footer**: brand blurb (max 300px) + three link columns (placeholders `href="#"`), divider, dual legal line.
 - **MobileNav**: hamburger/X toggle (`aria-expanded`), drop panel `absolute inset-x-0 top-full border-b border-sandline bg-cream shadow-figma-pro`.
+- **Auth screens**: sign-in and sign-up cards follow the supplied Figma frame geometry; OAuth providers remain available when configured. A "Remember me" control is omitted because no supported per-login persistence policy is defined.
+- **Dashboard shell**: 280px sidebar, 80px utility header, account menu, plan status, unavailable navigation states, and honest empty metrics/activity states. Learning and credential actions remain disabled until the planned product flows exist.
 
 ### 6.2 shadcn/ui primitives (`components/ui/`, style "default")
 
@@ -115,17 +117,17 @@ Six inline SVGs with Figma-exact paths: `ArrowRightIcon` (16), `SparklesIcon` (2
 
 ### 6.4 Lucide / react-icons usage
 
-Lucide: `Menu`, `X` (MobileNav); `Bell`, `Menu`, `Search`, `ReceiptText`, `User`, `Settings`, `HelpCircle`, `LogOut` (dashboard). react-icons: `FaGoogle`, `FaGithub` (OAuth buttons). Continue these sources before adding new icon sets.
+Lucide: `Menu`, `X` (MobileNav); `BadgeCheck`, `BookOpen`, `Clock3`, `LayoutDashboard`, `LockKeyhole`, `Menu`, `Play`, `Search`, `Settings` (dashboard); `ReceiptText`, `User`, `HelpCircle`, `LogOut` (account menu). react-icons: `FaGoogle`, `FaGithub` (OAuth buttons). Continue these sources before adding new icon sets.
 
 ## 7. Component states
 
 - **Buttons:** hover darkening (`hover:bg-primary/90`, `hover:bg-accent`), `disabled:opacity-50 disabled:pointer-events-none`, focus `focus-visible:ring-2 ring-ring ring-offset-2` (shadcn base).
 - **Async submit:** `SignupForm` shows `aria-disabled` + "Submitting..." label via `useFormStatus`; other forms don't yet (follow the better pattern for new forms).
 - **Form errors:** server action returns `{ message }`; rendered as `text-sm text-red-500 text-center py-2` below the submit button (all auth/onboarding forms).
-- **Loading placeholder:** `Skeleton` used in `DashboardHeader` for the plan badge inside `<Suspense>`.
+- **Plan lookup:** dashboard header shows `Plan unavailable` if the Stripe lookup fails; failure does not prevent the dashboard from rendering.
 - **Dropdown:** Radix open/close animations (`fade/zoom/slide` via `tailwindcss-animate`) with `data-[state=open]` styles.
 - **Nav disclosure:** boolean `open` state; icon swaps Menu↔X; panel rendered conditionally.
-- **Empty/zero states:** dashboard shows the voluntary upgrade card when `plan === 'none'`; no other empty states exist yet.
+- **Empty states:** dashboard shows `N/A` for unimplemented course, credential, and study-hour metrics, plus clear learning/activity empty states. The plans link remains available.
 - **[PLANNED]** states with no design yet: assessment in-progress/result, credential revoked/invalid, verification loading — when built, derive from the closest existing pattern (Card + helper text for app surfaces; Figma cards for marketing).
 
 ## 8. Motion
@@ -146,7 +148,7 @@ Lucide: `Menu`, `X` (MobileNav); `Bell`, `Menu`, `Search`, `ReceiptText`, `User`
 | Asset               | Path                                                      | Notes                                                                                                                             |
 | ------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | Logo wordmark       | `public/figma/logo.png` (bound to Figma nodes 6:11/6:163) | Landing navbar + footer; `width={180} height={40}` intrinsic                                                                      |
-| Hero preview        | `public/figma/hero.png` (node 6:35)                       | 574×407 display box, `rounded-lg shadow-figma-hero`, `priority`                                                                   |
+| Hero preview        | `public/figma/hero.png` (node 6:35)                       | 574×407 stretch frame, `rounded-lg shadow-figma-hero`, `priority`, `object-fill`                                                  |
 | Legacy starter logo | `public/logo.png`                                         | Still used by auth pages, dashboard header, subscribe page (square logo, "Acme Inc" sr-only label in subscribe — starter residue) |
 | Starter SVGs        | `public/next.svg`, `public/vercel.svg`                    | Unused leftovers                                                                                                                  |
 | Figma exports       | `.media/images/*`                                         | Source-of-truth vectors/rasters + provenance manifest; do not edit                                                                |
@@ -155,11 +157,11 @@ Image rules: `next/image` always; explicit width/height; `priority` only for her
 
 ## 11. Accessibility (design-side)
 
-- Semantic landmarks on landing: `header`/`nav`/`section` (each with `id` anchors)/`footer`; `main` wrappers on app pages (dashboard uses `main`; auth pages rely on divs — acceptable, don't regress new pages).
-- `aria-label`/`sr-only` on all icon-only controls; `aria-expanded` on MobileNav; `aria-hidden` decorative icons; labelled inputs everywhere; visible focus rings from shadcn.
+- Semantic landmarks on landing: `header`/`nav`/`section` (each with `id` anchors)/`footer`; dashboard uses a labeled `aside`/`nav` and `main`; auth screens retain labeled inputs.
+- `aria-label`/`sr-only` on all icon-only controls; native keyboard-operable dashboard navigation disclosure; `aria-hidden` decorative icons; visible focus rings on interactive controls.
 - The Figma palette passes AA for text roles (§2.1 notes); `POPULAR` pill (11px bold sand-on-ink) is decorative-adjacent — keep ≥11px bold if reused.
 - `lang="en"` on `<html>`; `sr-only` naming for the legacy logo block.
-- Known gap: the landing page's between-`lg`-and-`xl` nav hole (§5) is also an accessibility gap (keyboard users lose nav there); fix alongside the responsive fix.
+- The dashboard's planned destinations use non-interactive, `aria-disabled` labels until those routes are implemented.
 
 ## 12. Certificate presentation [PLANNED — design not yet defined]
 
@@ -187,11 +189,11 @@ Public, unauthenticated surface. Conventions: brand (marketing) system rather th
 ## 15. Consistency requirements (enforceable)
 
 1. New marketing-facing UI **MUST** use Figma tokens (§2.1), Fraunces/Manrope, and the marketing button/card recipes (§6.1) — no shadcn palette on marketing pages.
-2. New authenticated UI **MUST** use shadcn primitives and semantic tokens (§2.2) — no raw hex from the brand palette except via new documented variants.
+2. New UI **MUST** follow an existing Figma frame when one exists; planned product screens without frames must be designed and documented before implementation. Reuse shadcn primitives where useful without replacing the Figma visual tokens.
 3. Never edit `components/icons.tsx` by hand; regenerate from Figma exports.
 4. Copy strings on the landing page must match the Figma frame (`figma-texts.txt` is the reference) — copy edits require a Figma source or an explicit decision recorded in `MEMORY.md`.
 5. Radii: `rounded-lg` (8px, buttons/tiles), `rounded-xl` (12px, step cards), `rounded-2xl` (16px, testimonials/pricing), shadcn `--radius 0.5rem` for app primitives. Don't mix outside these.
 6. Borders: 1px `sandline` for marketing surfaces; 1.5px `border-ink` only for outline CTAs (exact Figma treatment).
 7. Shadows: only `shadow-figma-hero` and `shadow-figma-pro` on marketing surfaces; `shadow-sm`/shadcn defaults in app.
-8. Spacing: stick to Tailwind's 4px scale plus the Figma-exact values already in `app/page.tsx` (`py-[120px]`, 1440 container, 574px hero) — arbitrary values only when citing Figma geometry.
+8. Spacing: stick to Tailwind's 4px scale plus values measured from the Figma exports; the 1440px landing frame, section bounds, and 574×407 hero frame are guarded by `scripts/test-figma-layout.mjs`.
 9. Every PR that changes visuals must state which source (Figma frame/node or shadcn default) it implements.

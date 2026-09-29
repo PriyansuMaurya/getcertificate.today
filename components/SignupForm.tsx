@@ -14,7 +14,7 @@ function SubmitButton() {
       disabled={pending}
       className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-ink px-6 py-3.5 text-[15px] font-bold text-cream transition-colors hover:bg-ink/90 disabled:opacity-50"
     >
-      <span>{pending ? 'Creating account...' : 'Get Started Free'}</span>
+      <span>{pending ? 'Creating account...' : 'Create Account'}</span>
       <ArrowRightIcon className="h-4 w-4 shrink-0" />
     </button>
   );
@@ -30,7 +30,7 @@ export default function SignupForm() {
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="name" className="text-xs font-bold uppercase tracking-wider text-clay">
+        <label htmlFor="name" className="text-sm font-semibold text-clay">
           Full Name
         </label>
         <input
@@ -39,35 +39,36 @@ export default function SignupForm() {
           name="name"
           placeholder="Alex Developer"
           required
-          className="h-11 rounded-lg border border-sandline bg-cream px-3.5 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
+          className="h-[50px] rounded-lg border border-sandline bg-cream px-3.5 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
         />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-clay">
-          Email address
+        <label htmlFor="email" className="text-sm font-semibold text-clay">
+          Email Address
         </label>
         <input
           id="email"
           type="email"
           name="email"
-          placeholder="alex@example.com"
+          placeholder="priyanshu@creativetech.com"
           required
-          className="h-11 rounded-lg border border-sandline bg-cream px-3.5 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
+          className="h-[50px] rounded-lg border border-sandline bg-cream px-3.5 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
         />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="password" className="text-xs font-bold uppercase tracking-wider text-clay">
+        <label htmlFor="password" className="text-sm font-semibold text-clay">
           Password
         </label>
         <input
           id="password"
           type="password"
           name="password"
-          placeholder="••••••••"
+          placeholder="Minimum 8 characters"
+          minLength={8}
           required
-          className="h-11 rounded-lg border border-sandline bg-cream px-3.5 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
+          className="h-[50px] rounded-lg border border-sandline bg-cream px-3.5 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
         />
       </div>
 

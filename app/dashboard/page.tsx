@@ -4,14 +4,7 @@ import { createClient } from '@/utils/supabase/server';
 import { db } from '@/utils/db/db';
 import { usersTable } from '@/utils/db/schema';
 import { eq } from 'drizzle-orm';
-import {
-  ArrowRightIcon,
-  BrainIcon,
-  ShieldIcon,
-  ChartColumnIcon,
-  SparklesIcon,
-  CheckIcon,
-} from '@/components/icons';
+import { ArrowRight, BadgeCheck, BookOpen, Clock3, LockKeyhole, Play } from 'lucide-react';
 
 export default async function Dashboard() {
   const supabase = await createClient();
@@ -38,159 +31,139 @@ export default async function Dashboard() {
       : (profile?.username ?? data.user.email);
   const isSubscribed = Boolean(profile && profile.plan && profile.plan !== 'none');
 
+  const stats = [
+    {
+      label: 'Courses In Progress',
+      value: 'N/A',
+      icon: BookOpen,
+      help: 'Learning paths are not available yet',
+    },
+    {
+      label: 'Certificates Earned',
+      value: 'N/A',
+      icon: BadgeCheck,
+      help: 'Credentials are not available yet',
+    },
+    {
+      label: 'Hours Learned',
+      value: 'N/A',
+      icon: Clock3,
+      help: 'Learning time is not tracked yet',
+    },
+  ];
+
   return (
-    <main className="min-h-[calc(100vh-80px)] bg-cream text-ink">
-      <div className="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 md:py-14 xl:px-20">
-        {/* Top Header */}
+    <main className="min-h-[calc(100dvh-80px)] bg-cream text-ink">
+      <div className="mx-auto max-w-[1440px] px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
         <div className="flex flex-col gap-2">
-          <p className="text-[13px] font-bold uppercase tracking-wider text-sand">
-            Learner Workspace
-          </p>
+          <p className="text-[13px] font-bold uppercase tracking-wider text-sand">MyLearning</p>
           <h1 className="font-fraunces text-3xl font-black text-ink sm:text-4xl">
             Welcome back, {displayName}
           </h1>
-          <p className="text-base text-clay">
-            Track your YouTube learning, test your comprehension, and earn verified credentials.
+          <p className="text-sm text-clay sm:text-base">
+            Your learner workspace is ready. Learning paths are coming soon.
           </p>
         </div>
 
-        {/* Stats Grid */}
-        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="flex flex-col gap-4 rounded-2xl border border-sandline bg-paper p-6 shadow-figma-hero sm:p-8">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-clay">Verified Credentials</span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-linen text-ink">
-                <ShieldIcon className="h-5 w-5" />
-              </div>
+        <section
+          aria-labelledby="new-path-heading"
+          className="mt-8 rounded-2xl border border-sandline bg-paper p-5 sm:p-8"
+        >
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-linen text-ink">
+              <Play aria-hidden="true" className="h-5 w-5" />
             </div>
-            <div>
-              <p className="font-fraunces text-4xl font-black text-ink">0</p>
-              <p className="mt-1 text-xs text-clay">Pass an assessment (80%+) to earn your first</p>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-4 rounded-2xl border border-sandline bg-paper p-6 shadow-figma-hero sm:p-8">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-clay">Hours Studied</span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-linen text-ink">
-                <ChartColumnIcon className="h-5 w-5" />
-              </div>
-            </div>
-            <div>
-              <p className="font-fraunces text-4xl font-black text-ink">0.0h</p>
-              <p className="mt-1 text-xs text-clay">YouTube tutorial watch time recorded</p>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-4 rounded-2xl border border-sandline bg-paper p-6 shadow-figma-hero sm:col-span-2 sm:p-8 lg:col-span-1">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-clay">Account Plan</span>
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-linen text-ink">
-                <SparklesIcon className="h-5 w-5 text-sand" />
-              </div>
-            </div>
-            <div>
-              <p className="font-fraunces text-3xl font-black text-ink">
-                {isSubscribed ? 'Professional' : 'Free Explorer'}
-              </p>
-              <p className="mt-1 text-xs text-clay">
-                {isSubscribed
-                  ? 'Unlimited certifications & deep syllabus'
-                  : '1 Certificate / mo included'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Video Learning Action Card */}
-        <div className="mt-10 rounded-2xl border border-sandline bg-paper p-8 shadow-figma-hero sm:p-10">
-          <div className="max-w-2xl">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-linen text-ink">
-                <BrainIcon className="h-5 w-5" />
-              </div>
-              <h2 className="font-fraunces text-2xl font-bold text-ink sm:text-3xl">
-                Add a YouTube Course
+            <div className="min-w-0">
+              <h2 id="new-path-heading" className="font-fraunces text-2xl font-bold text-ink">
+                Start a new learning path
               </h2>
-            </div>
-            <p className="mt-3 text-sm text-clay sm:text-base">
-              Drop any tutorial series, lecture, or educational playlist URL. We track your viewing
-              milestones and formulate customized, syllabus-grounded assessments.
-            </p>
-
-            <form
-              onSubmit={undefined}
-              className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center"
-            >
-              <input
-                type="url"
-                placeholder="https://www.youtube.com/watch?v=... or playlist"
-                className="h-12 flex-1 rounded-lg border border-sandline bg-cream px-4 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
-                disabled
-              />
-              <button
-                type="button"
-                className="flex h-12 items-center justify-center gap-2 rounded-lg bg-ink px-6 py-3.5 text-[15px] font-bold text-cream opacity-90 transition-colors hover:bg-ink/90 sm:w-auto"
-              >
-                <span>Add Video</span>
-                <ArrowRightIcon className="h-4 w-4 shrink-0" />
-              </button>
-            </form>
-            <p className="mt-2 text-xs text-clay">
-              Course ingestion engine will launch in the next release phase.
-            </p>
-          </div>
-        </div>
-
-        {/* Upgrade Card (if on Free plan) */}
-        {!isSubscribed && (
-          <div className="mt-10 rounded-2xl bg-ink p-8 text-cream shadow-figma-pro sm:p-10">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex max-w-2xl flex-col gap-3">
-                <div className="flex items-center gap-3">
-                  <span className="rounded-full bg-sand px-3 py-1 text-[11px] font-bold text-ink">
-                    POPULAR
-                  </span>
-                  <h3 className="font-fraunces text-2xl font-bold text-cream sm:text-3xl">
-                    Upgrade to Professional
-                  </h3>
-                </div>
-                <p className="text-sm text-sand sm:text-base">
-                  Unlock unlimited certificates, deep-syllabus AI assessments, and instant LinkedIn
-                  export badges for $12 / month.
-                </p>
-                <div className="mt-2 grid grid-cols-1 gap-2 text-sm text-cream sm:grid-cols-2">
-                  <div className="flex items-center gap-2">
-                    <CheckIcon className="h-4 w-4 shrink-0 text-sand" />
-                    <span>Unlimited credentials</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckIcon className="h-4 w-4 shrink-0 text-sand" />
-                    <span>Deep-syllabus assessments</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckIcon className="h-4 w-4 shrink-0 text-sand" />
-                    <span>Ad-free learning player</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckIcon className="h-4 w-4 shrink-0 text-sand" />
-                    <span>Resume &amp; LinkedIn export</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="shrink-0">
-                <Link
-                  href="/subscribe"
-                  className="flex h-12 items-center justify-center gap-2 rounded-lg bg-sand px-8 py-3.5 text-[15px] font-bold text-cream transition-colors hover:bg-sand/90"
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-clay">
+                Learning paths are not available yet. Your account and dashboard are ready for when
+                they launch.
+              </p>
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                <label className="sr-only" htmlFor="youtube-url">
+                  YouTube course link
+                </label>
+                <input
+                  id="youtube-url"
+                  type="url"
+                  placeholder="YouTube course link"
+                  disabled
+                  aria-describedby="learning-path-status"
+                  className="h-12 min-w-0 flex-1 rounded-lg border border-sandline bg-cream px-4 text-sm text-ink placeholder:text-clay/70 disabled:cursor-not-allowed disabled:opacity-70"
+                />
+                <button
+                  type="button"
+                  disabled
+                  className="flex h-12 items-center justify-center gap-2 rounded-lg bg-ink px-6 text-sm font-bold text-cream disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <span>Go Pro ($12/mo)</span>
-                  <ArrowRightIcon className="h-4 w-4 shrink-0" />
-                </Link>
+                  <span>Start Learning</span>
+                  <LockKeyhole aria-hidden="true" className="h-4 w-4" />
+                </button>
               </div>
+              <p id="learning-path-status" className="mt-2 text-xs text-clay">
+                Course and credential features are coming soon.
+              </p>
             </div>
           </div>
-        )}
+        </section>
+
+        <section
+          aria-label="Learning summary"
+          className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3"
+        >
+          {stats.map(({ label, value, icon: Icon, help }) => (
+            <div key={label} className="rounded-2xl border border-sandline bg-paper p-5 sm:p-6">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-sm font-bold text-clay">{label}</h2>
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-linen text-ink">
+                  <Icon aria-hidden="true" className="h-5 w-5" />
+                </span>
+              </div>
+              <p className="mt-3 font-fraunces text-4xl font-black text-ink">{value}</p>
+              <p className="mt-1 text-xs text-clay">{help}</p>
+            </div>
+          ))}
+        </section>
+
+        <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+          <section
+            aria-labelledby="recent-activity-heading"
+            className="rounded-2xl border border-sandline bg-paper p-5 sm:p-6"
+          >
+            <h2 id="recent-activity-heading" className="font-fraunces text-xl font-bold text-ink">
+              Recent Activity
+            </h2>
+            <p className="mt-6 text-sm text-clay">Learning activity is not available yet.</p>
+          </section>
+          <section
+            aria-labelledby="next-up-heading"
+            className="rounded-2xl border border-sandline bg-paper p-5 sm:p-6"
+          >
+            <h2 id="next-up-heading" className="font-fraunces text-xl font-bold text-ink">
+              Next Up
+            </h2>
+            <div className="mt-5 flex items-start gap-3 rounded-xl bg-cream p-4">
+              <BookOpen aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-clay" />
+              <div>
+                <p className="text-sm font-semibold text-ink">Learning paths are coming soon</p>
+                <p className="mt-1 text-xs leading-relaxed text-clay">
+                  Your courses, progress, and credentials will appear here.
+                </p>
+              </div>
+            </div>
+            {!isSubscribed && (
+              <Link
+                href="/subscribe"
+                className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-ink underline underline-offset-4"
+              >
+                Explore plans
+                <ArrowRight aria-hidden="true" className="h-4 w-4" />
+              </Link>
+            )}
+          </section>
+        </div>
       </div>
     </main>
   );

@@ -1,4 +1,5 @@
 import DashboardHeader from '@/components/DashboardHeader';
+import DashboardSidebar from '@/components/DashboardSidebar';
 import type { Metadata } from 'next';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
@@ -6,7 +7,7 @@ import { hasCompletedOnboarding } from '@/app/auth/actions';
 
 export const metadata: Metadata = {
   title: 'Dashboard | getcertificate.today',
-  description: 'Manage your YouTube learning credentials and achievements',
+  description: 'Manage your getcertificate.today account and subscription.',
 };
 
 export default async function DashboardLayout({
@@ -31,9 +32,12 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <DashboardHeader />
-      {children}
+    <div className="min-h-screen lg:grid lg:grid-cols-[280px_minmax(0,1fr)]">
+      <DashboardSidebar />
+      <div className="min-w-0">
+        <DashboardHeader />
+        {children}
+      </div>
     </div>
   );
 }

@@ -135,13 +135,13 @@ export default function LandingPage() {
 
       {/* ============ Hero (Figma: pad 96/80, gap 64; left col 642px, gaps 32/16) ============ */}
       <section className="bg-cream">
-        <div className="mx-auto flex max-w-[1440px] flex-col items-center gap-10 px-4 py-16 sm:px-6 md:gap-16 md:py-24 lg:flex-row xl:px-20">
+        <div className="mx-auto flex max-w-[1440px] flex-col items-center gap-10 px-4 py-16 sm:px-6 md:gap-16 md:py-[97px] lg:flex-row xl:px-20">
           <div className="flex flex-1 flex-col gap-8 lg:flex-[1.12_1_0%]">
             <div className="flex flex-col gap-4">
               <h1 className="font-fraunces text-[40px] font-black leading-[1.233] text-ink sm:text-[48px] md:text-[56px] lg:text-[64px]">
                 Turn your YouTube learning into verifiable credentials.
               </h1>
-              <p className="text-base leading-[1.366] text-clay sm:text-lg">
+              <p className="text-base leading-[1.366] text-clay sm:text-lg sm:leading-[1.366]">
                 Describe a field of study. Watch educational videos on YouTube. Pass AI-generated
                 assessments tailored to the content, and earn official shareable certificates. Learn
                 Today. Go Further.
@@ -170,14 +170,14 @@ export default function LandingPage() {
             </div>
           </div>
           {/* Figma: 574x407 rectangle, image fill scale=STRETCH, r8, shadow 0 2 8 #6B6059@5% */}
-          <div className="w-full max-w-[574px] lg:flex-[1_1_0%]">
+          <div className="relative aspect-[574/407] w-full max-w-[574px] lg:flex-[1_1_0%]">
             <Image
               src="/figma/hero.png"
               alt="getcertificate.today product preview"
-              width={574}
-              height={407}
+              fill
               priority
-              className="h-auto w-full rounded-lg shadow-figma-hero"
+              sizes="(max-width: 1024px) 100vw, 574px"
+              className="rounded-lg object-fill shadow-figma-hero"
             />
           </div>
         </div>
@@ -185,7 +185,7 @@ export default function LandingPage() {
 
       {/* ============ HowItWorks (Figma: bg #FAF8F5, pad 120/80, gap 80; cards r12, pad 32, gap 24) ============ */}
       <section id="how-it-works" className="bg-paper">
-        <div className="mx-auto flex max-w-[1440px] flex-col gap-10 px-4 py-16 sm:px-6 md:gap-20 md:py-[120px] xl:px-20">
+        <div className="mx-auto flex max-w-[1440px] flex-col gap-10 px-4 py-16 sm:px-6 md:gap-20 md:py-[118px] xl:px-20">
           <div className="flex flex-col items-center gap-4">
             <p className="text-[13px] font-bold leading-[1.366] text-sand">The Process</p>
             <h2 className="text-center font-fraunces text-[32px] font-bold leading-[1.233] text-ink sm:text-[40px]">
@@ -213,7 +213,7 @@ export default function LandingPage() {
 
       {/* ============ Features (Figma: bg #F5F0EB, pad 120/80, gap 80) ============ */}
       <section id="features" className="bg-cream">
-        <div className="mx-auto flex max-w-[1440px] flex-col gap-10 px-4 py-16 sm:px-6 md:gap-20 md:py-[120px] xl:px-20">
+        <div className="mx-auto flex max-w-[1440px] flex-col gap-10 px-4 py-16 sm:px-6 md:gap-20 md:py-[119.5px] xl:px-20">
           {/* Split intro: left copy 608px + empty right frame 608x100 (Figma keeps the right side empty) */}
           <div className="flex flex-col items-start gap-10 md:gap-16 lg:flex-row lg:items-center">
             <div className="flex flex-1 flex-col gap-6">
@@ -250,7 +250,7 @@ export default function LandingPage() {
 
       {/* ============ Testimonials (Figma: bg #FAF8F5, pad 120/80, gap 64; cards r16, pad 40, gap 32) ============ */}
       <section className="bg-paper">
-        <div className="mx-auto flex max-w-[1440px] flex-col gap-10 px-4 py-16 sm:px-6 md:gap-16 md:py-[120px] xl:px-20">
+        <div className="mx-auto flex max-w-[1440px] flex-col gap-10 px-4 py-16 sm:px-6 md:gap-16 md:py-[118.5px] xl:px-20">
           <div className="flex flex-col items-center gap-4">
             <p className="text-[13px] font-bold leading-[1.366] text-sand">Success Stories</p>
             <h2 className="text-center font-fraunces text-[32px] font-bold leading-[1.233] text-ink sm:text-[40px]">
@@ -276,7 +276,7 @@ export default function LandingPage() {
 
       {/* ============ Pricing (Figma: bg #F5F0EB, pad 120/80, gap 64; cards r16, pad 48, gap 32) ============ */}
       <section id="pricing" className="bg-cream">
-        <div className="mx-auto flex max-w-[1440px] flex-col gap-10 px-4 py-16 sm:px-6 md:gap-16 md:py-[120px] xl:px-20">
+        <div className="mx-auto flex max-w-[1440px] flex-col gap-10 px-4 py-16 sm:px-6 md:gap-16 md:py-[119.75px] xl:px-20">
           <div className="flex flex-col items-center gap-4">
             <p className="text-[13px] font-bold leading-[1.366] text-sand">Pricing Plans</p>
             <h2 className="text-center font-fraunces text-[32px] font-bold leading-[1.233] text-ink sm:text-[40px]">
@@ -354,11 +354,11 @@ export default function LandingPage() {
 
       {/* ============ CTA (Figma: bg #FAF8F5, border top+bottom #E3DCD5, pad 120/80, gap 32) ============ */}
       <section className="border-y border-sandline bg-paper">
-        <div className="mx-auto flex max-w-[1440px] flex-col items-center gap-6 px-4 py-16 sm:px-6 md:gap-8 md:py-[120px] xl:px-20">
+        <div className="mx-auto flex max-w-[1440px] flex-col items-center gap-6 px-4 py-16 sm:px-6 md:gap-8 md:py-[119.25px] xl:px-20">
           <h2 className="text-center font-fraunces text-[36px] font-black leading-[1.233] text-ink sm:text-[40px] md:text-[48px]">
             Ready to certify your curiosity?
           </h2>
-          <p className="max-w-[600px] text-center text-base leading-[1.366] text-clay sm:text-lg">
+          <p className="max-w-[600px] text-center text-base leading-[1.366] text-clay sm:text-lg sm:leading-[1.366]">
             Unlock real value from the tutorials you&apos;re already watching. Take the first step.
           </p>
           <div className="flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-center sm:gap-4">

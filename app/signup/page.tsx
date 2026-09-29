@@ -11,7 +11,7 @@ export const metadata = {
 export default function Signup() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-cream px-4 py-12 text-ink">
-      <div className="w-full max-w-[420px] rounded-2xl border border-sandline bg-paper p-8 shadow-figma-hero sm:p-10">
+      <div className="w-full max-w-[480px] rounded-2xl border border-sandline bg-paper p-8 shadow-figma-hero sm:p-12 lg:h-[787px] lg:p-[47px]">
         <div className="flex flex-col items-center text-center">
           <Link href="/" className="transition-opacity hover:opacity-80">
             <Image
@@ -20,15 +20,12 @@ export default function Signup() {
               width={180}
               height={40}
               priority
-              className="h-9 w-auto sm:h-10"
+              className="h-10 w-auto"
             />
           </Link>
           <h1 className="mt-6 font-fraunces text-2xl font-bold leading-tight text-ink sm:text-3xl">
-            Start Learning
+            Create your account
           </h1>
-          <p className="mt-2 text-sm text-clay">
-            Create an account to turn YouTube minutes into verified certificates
-          </p>
         </div>
 
         <div className="mt-8 grid gap-5">
@@ -39,11 +36,11 @@ export default function Signup() {
               <span className="w-full border-t border-sandline" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-paper px-3 font-semibold text-clay">Or continue with</span>
+              <span className="bg-paper px-3 font-semibold text-clay">Or register with</span>
             </div>
           </div>
 
-          <ProviderSigninBlock />
+          <ProviderSigninBlock actionLabel="Sign up" />
         </div>
 
         <div className="mt-8 flex flex-col gap-2.5 text-center text-sm">

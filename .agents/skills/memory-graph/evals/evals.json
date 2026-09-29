@@ -1,0 +1,23 @@
+{
+  "skill_name": "memory-graph",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I've been using Python for 5 years and I'm pretty good at it. I also know some Rust but I'm still learning. I prefer dark mode in all my editors and I usually code in the mornings. Can you remember all this?",
+      "expected_output": "The skill should extract multiple memories: Python skill (5 years, high confidence), Rust skill (learning, moderate confidence), dark mode preference, morning coding habit. Each should be a separate node with appropriate categories, confidence scores, and relationships.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "What do you know about my programming skills and preferences? I want to see my memory graph.",
+      "expected_output": "The skill should retrieve relevant memories about programming skills and preferences, rank them by relevance, provide citations, and generate an interactive visualization showing the graph structure.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Actually, I've switched from Python to Go for my backend work. I still use Python for data science though. Also, I've started using Neovim instead of VS Code.",
+      "expected_output": "The skill should update existing memories: lower Python backend confidence, create new Go backend node, add Contradicts edge for backend preference, update editor preference to Neovim while preserving VS Code history. Should detect that Python is still used for data science.",
+      "files": []
+    }
+  ]
+}

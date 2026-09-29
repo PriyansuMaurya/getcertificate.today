@@ -1,0 +1,295 @@
+%-------------------------
+% Resume in Latex
+% Author : Priyanshu Maurya
+% Based off of: https://github.com/sb2nov/resume
+% License : MIT
+%------------------------
+
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage{latexsym}
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage{marvosym}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{verbatim}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage[english]{babel}
+\usepackage{tabularx}
+\usepackage{fontawesome5}
+\usepackage{multicol}
+\setlength{\multicolsep}{-3.0pt}
+\setlength{\columnsep}{-1pt}
+\input{glyphtounicode}
+
+%----------FONT OPTIONS----------
+\usepackage{newtxtext,newtxmath} % Professional and clean font
+% Prevent text from bleeding off the page
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+% Disable automatic hyphenation for a cleaner look
+\tolerance=1 
+\emergencystretch=\maxdimen
+\hyphenpenalty=10000
+\hbadness=10000
+
+% Pagestyle setup
+\pagestyle{fancy}
+\fancyhf{} % clear all header and footer fields
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Adjust margins (Optimized for 1-page fit and better aesthetic balance)
+\addtolength{\oddsidemargin}{-0.25in}
+\addtolength{\evensidemargin}{-0.25in}
+\addtolength{\textwidth}{0.5in}
+\addtolength{\topmargin}{-.75in}
+\addtolength{\textheight}{1.5in}
+
+\urlstyle{same}
+
+% Sections formatting
+\titleformat{\section}{
+  \vspace{-5pt}\scshape\raggedright\large\bfseries
+}{}{0em}{}[\color{black}\titlerule \vspace{-6pt}] % Slightly reduced section title spacing
+
+% Ensure that generate pdf is machine readable/ATS parsable
+\pdfgentounicode=1
+
+%-------------------------
+% Custom commands
+\newcommand{\resumeItem}[1]{
+  \item{
+    {#1 \vspace{-2pt}}
+  }
+}
+
+\newcommand{\resumeSubheading}[4]{
+  \vspace{2pt}\item
+    \begin{tabular*}{1.0\textwidth}[t]{l@{\extracolsep{\fill}}r}
+      \textbf{#1} & \textbf{\small #2} \\
+      \textit{\small#3} & \textit{\small #4} \\
+    \end{tabular*}\vspace{-4pt} % Adjusted spacing for tighter fit
+}
+
+% --- Command for SKILLS section (Improved alignment) ---
+\newcommand{\resumeSkillEntry}[2]{
+    % Forces top alignment and uses fixed width columns
+    \begin{tabular*}{\linewidth}[t]{@{} p{0.25\textwidth} @{} p{0.75\textwidth} @{}}
+      \textbf{#1} & #2 \\
+    \end{tabular*}\vspace{-4pt} % Reduced space between entries
+}
+
+% (Around line 85 - Update the existing command)
+\newcommand{\resumeProjectHeading}[2]{
+    \item % Keep this to ensure it's a list item
+    \begin{tabular*}{1.001\textwidth}{l@{\extracolsep{\fill}}r}
+      \small#1 & \textbf{\small #2}\\
+    \end{tabular*}\vspace{-8pt} % <-- FIX 1: Aggressive negative space to minimize title-to-bullet gap
+}
+
+\newcommand{\resumeSubItem}[1]{\resumeItem{#1}}
+
+\renewcommand\labelitemi{$\vcenter{\hbox{\tiny$\bullet$}}$}
+\renewcommand\labelitemii{$\vcenter{\hbox{\tiny$\bullet$}}$}
+
+% FIX 1: Set itemsep to 2pt to increase vertical space between bullet points
+\newcommand{\resumeItemListStart}{\begin{itemize}[itemsep=2pt]}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
+%-------------------------------------------
+%%%%%%  RESUME STARTS HERE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+%----------HEADER----------
+\begin{center}
+    {\Huge  Priyanshu Maurya} \\ \vspace{1pt}
+    \href{}{Galway, Ireland} \\ \vspace{1pt}
+    \small 
+
+        \href{https://wa.me/+353899432607}
+        {\raisebox{-0.2\height}\faWhatsapp\ \underline{+353 899432607}} ~
+        \href{mailto:pr17anshu@gmail.com}
+        {\raisebox{-0.2\height}\faEnvelope\ \underline{pr17anshu@gmail.com}} ~
+        \href{https://www.linkedin.com/in/priyanshu-maurya/}
+        {\raisebox{-0.2\height}\faLinkedin\ \underline{priyanshu-maurya}} ~
+        \href{https://github.com/PriyansuMaurya}
+        {\raisebox{-0.2\height}\faGithub\ \underline{PriyansuMaurya}} ~
+        % {\textcolor{blue}{\faPassport\ \textbf{Stamp 2, 1G Eligible}}}
+        \\
+
+
+    \vspace{-6pt}
+\end{center}
+% -----------SUMMARY-----------
+\section{PERSONAL PROFILE}
+ % Fine-tuned space after title rule
+
+Python Backend Engineer and MSc FinTech candidate with hands-on experience designing and delivering scalable SaaS solutions using FastAPI, PostgreSQL, Redis, and RabbitMQ. Achieved a 90\% reduction in database query latency (3.8s to 420ms) and raised backend test coverage from 52\% to 86\% through systematic optimization. Developed production-ready REST APIs, async processing pipelines, and AI-powered developer tools. Seeking a Graduate Software Engineer role where I can contribute to a high-performing Agile R&D team, write clean maintainable code, and grow into a future technical leader.
+ 
+
+
+
+%-----------EXPERIENCE-----------
+\section{EXPERIENCE}
+
+
+    \resumeSubheading
+    {Kotak Mahindra Bank}{July 2024 -- May 2025}
+    {Python Backend Engineer}{Mumbai}
+    
+    \resumeItemListStart
+        \resumeItem{ Developed three production-ready FastAPI endpoints for a digital loan origination SaaS platform, implementing Pydantic request validation, idempotency key handling, and structured error responses for KYC status retrieval and document upload processes.}
+    
+        \resumeItem{ Reduced median applicant eligibility query latency from 3.8s to 420ms (90\% improvement) by rewriting a five-table join as a materialized CTE and adding a partial index on \(application\_status, created\_at\) covering only active loan applications in PostgreSQL.}
+        
+        \resumeItem{ Integrated Redis-backed session caching for in-progress application state, collaborating with the senior backend engineer to define TTL and eviction policies aligned with regulatory session timeout requirements.}
+        
+        \resumeItem{ Authored 31 pytest test cases with  factory\_boy fixtures covering eligibility decision branching, idempotent document upload behavior, and Celery task retry logic, raising branch coverage on the origination module from 52\% to 86\%.}
+        
+        \resumeItem{ Collaborated cross-functionally with QA and DevOps teams to containerize the origination service with Docker, enabling local development parity and reducing environment-related deployment failures by 40\%.}
+        
+    \resumeItemListEnd
+    
+  \resumeSubHeadingListStart
+  
+  \resumeSubheading
+  {Graduate Teaching Assistant (Tutor)}{Jan 2026 -- April 2026}
+  {University of Galway}{Galway}
+  
+    \resumeItemListStart
+\resumeItem{ Delivered structured academic tutorials for 100+ undergraduate students, clearly explaining complex macroeconomic concepts and models, and reinforcing lecture content aligned with module learning outcomes.}
+\resumeItem{ Facilitated active student engagement through guided problem-solving sessions, encouraging collaborative learning and addressing individual queries to support differentiated understanding.}
+\resumeItem{ Coordinated tutorial delivery across multiple weeks and repeated sessions, managing timetables efficiently and collaborating closely with course lecturers to ensure consistency in teaching objectives and academic standards.}
+% \resumeItem{ Utilized university learning management system \(LMS\) and prescribed textbooks to support student understanding, track participation, and provide constructive feedback on assessment submissions.}
+      
+    \resumeItemListEnd
+  \resumeSubHeadingListEnd
+
+
+
+ % ------EDUCATION-----------
+\section{EDUCATION}
+
+
+\resumeSubHeadingListStart
+
+%--- Master’s Degree ---
+  \resumeSubheading
+    {University of Galway}{Sep. 2025 -- Aug. 2026}
+    {MSc in FinTech}{Galway}
+
+     \textbf{Relevant Modules:} \textbf{Cybersecurity Risk Management}, Financial Technology and Economics, \textbf{Financial Data Analytics}, Applied Portfolio Management
+     \vspace{0.5em}
+
+ %--- Bachelor’s Degree ---
+      \resumeSubheading
+      {Atharva College of Engineering}{Jan. 2021 -- July 2024}
+     {B.E. in Computer Engineering, \textbf{First Class Honours (1.1)}}{Mumbai}
+    
+     \textbf{Relevant Modules:} Software Engineering, Cryptography \& System Security, Data Structures, Database Management System, Operating System, Data Warehousing \& Mining, Artificial Intelligence
+     \vspace{0.5em}
+    
+
+\resumeSubHeadingListEnd
+
+
+% --- BODY FIX (PROJECTS SECTION) ---
+
+% -----------PROJECTS-----------
+\section{PROJECTS}
+
+    \resumeProjectListStart
+    
+\resumeProjectHeading
+    {\textbf{Capsule (Browser Extension)}}{2026}
+    \resumeItemListStart
+        
+    \resumeItem{ Developed a browser extension for transferring structured working context across AI platforms including ChatGPT, Claude, Gemini, and local LLMs, enabling workflow portability across heterogeneous AI ecosystems.}
+    \resumeItem{ Implemented drag-and-drop context transfer with extraction of objectives, constraints, decisions, progress state, and pending tasks instead of raw chat history, improving context preservation fidelity by 60\%.}
+    \resumeItem{ Designed a local-first context card system with bounded storage, deletion controls, and continuation prompt generation for workflow recovery, reducing re-contextualization time by an estimated 70\%.}
+    \resumeItem{ Currently improving browser-side parsing, prompt reconstruction quality, and cross-platform AI session continuity -- aligning with Ministry Brands AI/ML technical pathway.}
+    
+    \resumeItemListEnd
+     \resumeProjectHeading
+        {\textbf{Safe Night Cycling (Andriod)}}{2026}
+        \resumeItemListStart
+             \resumeItem{ Developed a production-ready Android safety application in Kotlin using Jetpack Compose and Material3, transforming smartphones into integrated night cycling visibility systems with flashlight control, red-screen rear beacon functionality, and configurable safety modes.}
+            \resumeItem{ Implemented a dynamic strobe engine with configurable 1-10 Hz frequency control using CameraManager and WindowManager APIs, achieving real-time hardware interaction with sub-50ms latency for visibility optimization.}
+            \resumeItem{ Designed accessibility features including voice feedback for incoming hazards and automatic location sharing with emergency contacts, enhancing user safety in low-visibility scenarios.}
+        \resumeItemListEnd
+        
+      % ... (other projects)
+    \resumeSubHeadingListEnd % <-- The end command remains the original one
+
+
+
+% --- SKILLS SECTION ---
+\section{SKILLS}
+
+
+
+\resumeSkillEntry{ Backend Development} {Python, FastAPI, Django, REST API Design, GraphQL, WebSocket, Celery, RabbitMQ, Redis, PostgreSQL, MongoDB, SQLAlchemy, Pydantic, pytest}
+
+\resumeSkillEntry{ Databases} {PostgreSQL (query optimization, indexing, CTE), MongoDB, Redis (caching and session), Database Design, Data Migration, Backup Strategies} 
+
+\resumeSkillEntry{ DevOps and Cloud} {Docker, Docker Compose, AWS (EC2, S3, RDS, Lambda), CI/CD Pipelines (GitHub Actions, Jenkins), Linux Server Management, Nginx}
+
+\resumeSkillEntry{ AI/ML Engineering} {LangChain, RAG Systems, Vector Databases (ChromaDB), LLM Integration, Prompt Engineering, AI Agent Development, NLP}
+
+% ------CERTIFICATIONS-------
+\section{CERTIFICATIONS}
+
+
+\begin{itemize}[itemsep=1pt, parsep=1pt, before=\vspace{1pt}]
+    % \item Aug 2025 - Atlassian Agile Project Management Professional Certificate
+    % \item Dec 2024 - DevOps Professional Certificate by PagerDuty \& LinkedIn
+    % \item Oct 2024 - ISC2 Certified in Cybersecurity (CC) Cert Prep by Mike Chapple
+    % \item Sep 2024 - AWS Essential Training for Developers, LinkedIn Learning
+    % \item Apr 2023 - Economics, 3rd Edition by Timothy Taylor, The Great Courses
+    % \item Jan 2022 - An Introduction to Artificial Intelligence by Prof. Mausam, IIT Delhi
+    % \item Atlassian Agile Project Management Professional Certificate
+    % ------
+    \item Twelve-week structured AWS and DevOps self-directed programme covering cloud architecture, infrastructure automation, and CI/CD — documented publicly with hands-on project implementations across EC2, ECS, Jenkins, Terraform, Ansible, and six additional AWS services.
+    \item DevOps Professional Certificate by PagerDuty \& LinkedIn
+    \item AWS Essential Training for Developers, LinkedIn Learning
+    % \item ISC2 Certified in Cybersecurity (CC) Cert Prep by Mike Chapple
+    \item Economics, 3rd Edition by Timothy Taylor, The Great Courses
+    \item An Introduction to Artificial Intelligence by Prof. Mausam, IIT Delhi
+\end{itemize}
+
+
+%-----------LEADERSHIP / EXTRACURRICULAR-----------
+\section{LEADERSHIP / EXTRACURRICULAR}
+
+\begin{itemize}[itemsep=1pt, parsep=1pt, before=\vspace{1pt}]
+    \item Apr. 2026 -- Maths Grinds Coach (one-to-one)
+    \item Mar. 2026 -- \textbf{Employability Award} recipient, University of Galway 
+    \item Feb. 2026 -- Exam Invigilator
+    \item Sep. 2025 -- \textbf{Lift Leadership Facilitator}, University of Galway
+    \item Sep. 2025 -- Class Representative, MSc FinTech
+    \item Sep. 2025 -- Recruitment Officer, Toastmasters Club
+    
+    % -----
+    % \item Sep. 2025 – Member, Consultants \& Entrepreneurs Society, University of Galway
+    % \item Apr. 2024 – Managed logistics for 36 teams at PROJECTATHON – National Project Competition, Atharva College of Engineering
+    % \item Sep. 2023 – Conducted Git, GitHub \& Open Source Workshop for 60+ participants, Atharva College of Engineering
+    % \item Sep. 2021 – Apr. 2023 – National Service Scheme, Organized community drives and awareness programs, Atharva College of Engineering
+\end{itemize}
+
+%-----------ACHIEVEMENTS / INTERESTS-----------
+% \section{ACHIEVEMENTS / INTERESTS}
+
+% \begin{itemize}[itemsep=1pt, parsep=1pt, before=\vspace{1pt}]
+    % \item Mar. 2024 – Final-year project \textit{MedGuide} awarded “Best Project” at Projectathon 2.0, Atharva College of Engineering
+    % \item Jan – Mar 2025 – Completed a 63-day DevOps Self-Learning Journey
+    % \item Volunteer at Connacht Youth Climate Assembly
+    % \item Volunteer – The Tuatha of Terryland Forest Park
+% \end{itemize}
+
+\end{document}

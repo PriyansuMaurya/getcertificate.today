@@ -47,6 +47,7 @@
     "dotenv": "^16.4.5",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.3.5",
+    "playwright": "^1.63.0",
     "postcss": "^8",
     "prettier": "^3.2.0",
     "prettier-plugin-tailwindcss": "^0.5.0",

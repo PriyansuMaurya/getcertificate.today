@@ -11,7 +11,7 @@ export const metadata = {
 export default function Login() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-cream px-4 py-12 text-ink">
-      <div className="w-full max-w-[420px] rounded-2xl border border-sandline bg-paper p-8 shadow-figma-hero sm:p-10">
+      <div className="w-full max-w-[480px] rounded-2xl border border-sandline bg-paper p-8 shadow-figma-hero sm:p-12 lg:h-[698px] lg:p-[47px]">
         <div className="flex flex-col items-center text-center">
           <Link href="/" className="transition-opacity hover:opacity-80">
             <Image
@@ -20,13 +20,12 @@ export default function Login() {
               width={180}
               height={40}
               priority
-              className="h-9 w-auto sm:h-10"
+              className="h-10 w-auto"
             />
           </Link>
           <h1 className="mt-6 font-fraunces text-2xl font-bold leading-tight text-ink sm:text-3xl">
             Welcome back
           </h1>
-          <p className="mt-2 text-sm text-clay">Sign in to continue your credential journey</p>
         </div>
 
         <div className="mt-8 grid gap-5">
@@ -41,7 +40,7 @@ export default function Login() {
             </div>
           </div>
 
-          <ProviderSigninBlock />
+          <ProviderSigninBlock actionLabel="Sign in" />
         </div>
 
         <div className="mt-8 flex flex-col gap-2.5 text-center text-sm">

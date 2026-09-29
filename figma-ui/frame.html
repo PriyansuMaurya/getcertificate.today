@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Figma frame</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #333;
+        color: #0f0;
+        font-family: monospace;
+      }
+      #status {
+        padding: 6px 12px;
+        font-size: 18px;
+        font-weight: bold;
+        position: sticky;
+        top: 0;
+        background: #000;
+        z-index: 9;
+      }
+      img {
+        display: none;
+        width: 1440px;
+        margin: 0 auto;
+        background: #fff;
+      }
+      img.ready {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="status">loading…</div>
+    <img id="f" alt="figma frame" />
+    <script>
+      const name = new URLSearchParams(location.search).get('f') || 'unknown';
+      document.title = 'FRAME: ' + name;
+      const img = document.getElementById('f');
+      img.onload = () => {
+        document.getElementById('status').textContent =
+          'FRAME: ' + name + ' (' + img.naturalWidth + 'x' + img.naturalHeight + ')';
+        img.classList.add('ready');
+        window.__ready = true;
+      };
+      img.onerror = () => {
+        document.getElementById('status').textContent = 'ERROR loading ' + name;
+        window.__ready = true;
+      };
+      img.src = 'http://localhost:3000/figma-refs/small/' + encodeURIComponent(name) + '.jpg';
+    </script>
+  </body>
+</html>
