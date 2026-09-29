@@ -1,49 +1,71 @@
+'use client';
 
-"use client"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useActionState } from 'react'
-import { resetPassword } from '@/app/auth/actions'
-import { useSearchParams } from "next/navigation";
-import { Suspense } from "react"
+import { useActionState } from 'react';
+import { resetPassword } from '@/app/auth/actions';
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
+import { ArrowRightIcon } from '@/components/icons';
 
 function GetCodeHiddenInput() {
-    const searchParams = useSearchParams();
-    return <Input type="hidden" name="code" value={searchParams.get('code') ?? ''} />
+  const searchParams = useSearchParams();
+  return <input type="hidden" name="code" value={searchParams.get('code') ?? ''} />;
 }
 
 export default function ResetPasswordForm() {
-    const initialState = {
-        message: ''
-    }
-    const [formState, formAction] = useActionState(resetPassword, initialState)
-    return (<>
-        <form action={formAction}>
-            <div className="grid gap-2">
-                <Label htmlFor="email">Password</Label>
-                <Input
-                    id="password"
-                    type="password"
-                    placeholder="Enter New Password"
-                    name="password"
-                    required
-                />
-                <Input
-                    id="confirm_password"
-                    type="password"
-                    placeholder="Confirm Password"
-                    name="confirm_password"
-                    required
-                />
-                <Suspense>
-                    <GetCodeHiddenInput />
-                </Suspense>
-            </div>
-            <Button className="w-full mt-4" type="submit">Update Password</Button>
-            {formState?.message && (
-                <p className="text-sm text-red-500 text-center py-2">{formState.message}</p>
-            )}
-        </form >
-    </>)
+  const initialState = {
+    message: '',
+  };
+  const [formState, formAction] = useActionState(resetPassword, initialState);
+
+  return (
+    <form action={formAction} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="password" className="text-xs font-bold uppercase tracking-wider text-clay">
+          New Password
+        </label>
+        <input
+          id="password"
+          type="password"
+          name="password"
+          placeholder="••••••••"
+          required
+          className="h-11 rounded-lg border border-sandline bg-cream px-3.5 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label
+          htmlFor="confirm_password"
+          className="text-xs font-bold uppercase tracking-wider text-clay"
+        >
+          Confirm Password
+        </label>
+        <input
+          id="confirm_password"
+          type="password"
+          name="confirm_password"
+          placeholder="••••••••"
+          required
+          className="h-11 rounded-lg border border-sandline bg-cream px-3.5 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
+        />
+        <Suspense>
+          <GetCodeHiddenInput />
+        </Suspense>
+      </div>
+
+      <button
+        type="submit"
+        className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-ink px-6 py-3.5 text-[15px] font-bold text-cream transition-colors hover:bg-ink/90"
+      >
+        <span>Update Password</span>
+        <ArrowRightIcon className="h-4 w-4 shrink-0" />
+      </button>
+
+      {formState?.message && (
+        <p className="rounded-lg bg-red-500/10 p-2.5 text-center text-sm font-medium text-red-700">
+          {formState.message}
+        </p>
+      )}
+    </form>
+  );
 }

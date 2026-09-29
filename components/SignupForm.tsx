@@ -1,54 +1,83 @@
-"use client"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useActionState } from 'react'
-import { useFormStatus } from 'react-dom'
-import { signup } from '@/app/auth/actions'
+'use client';
+
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
+import { signup } from '@/app/auth/actions';
+import { ArrowRightIcon } from '@/components/icons';
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-ink px-6 py-3.5 text-[15px] font-bold text-cream transition-colors hover:bg-ink/90 disabled:opacity-50"
+    >
+      <span>{pending ? 'Creating account...' : 'Get Started Free'}</span>
+      <ArrowRightIcon className="h-4 w-4 shrink-0" />
+    </button>
+  );
+}
 
 export default function SignupForm() {
-    const initialState = {
-        message: ''
-    }
+  const initialState = {
+    message: '',
+  };
 
-    const [formState, formAction] = useActionState(signup, initialState)
-    const { pending } = useFormStatus()
+  const [formState, formAction] = useActionState(signup, initialState);
 
-    return (
-        <form action={formAction}>
-            <div className="grid gap-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                    id="name"
-                    type="text"
-                    placeholder="John Doe"
-                    name="name"
-                    required
-                />
-            </div>
-            <div className="grid gap-2 mt-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                    id="email"
-                    type="email"
-                    placeholder="m@example.com"
-                    name="email"
-                    required
-                />
-            </div>
-            <div className="grid gap-2 mt-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                    id="password"
-                    type="password"
-                    name="password"
-                    required
-                />
-            </div>
-            <Button className="w-full mt-4" type="submit" aria-disabled={pending}>  {pending ? 'Submitting...' : 'Sign up'}</Button>
-            {formState?.message && (
-                <p className="text-sm text-red-500 text-center py-2">{formState.message}</p>
-            )}
-        </form>
-    )
+  return (
+    <form action={formAction} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="name" className="text-xs font-bold uppercase tracking-wider text-clay">
+          Full Name
+        </label>
+        <input
+          id="name"
+          type="text"
+          name="name"
+          placeholder="Alex Developer"
+          required
+          className="h-11 rounded-lg border border-sandline bg-cream px-3.5 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-clay">
+          Email address
+        </label>
+        <input
+          id="email"
+          type="email"
+          name="email"
+          placeholder="alex@example.com"
+          required
+          className="h-11 rounded-lg border border-sandline bg-cream px-3.5 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="password" className="text-xs font-bold uppercase tracking-wider text-clay">
+          Password
+        </label>
+        <input
+          id="password"
+          type="password"
+          name="password"
+          placeholder="••••••••"
+          required
+          className="h-11 rounded-lg border border-sandline bg-cream px-3.5 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
+        />
+      </div>
+
+      <SubmitButton />
+
+      {formState?.message && (
+        <p className="rounded-lg bg-red-500/10 p-2.5 text-center text-sm font-medium text-red-700">
+          {formState.message}
+        </p>
+      )}
+    </form>
+  );
 }

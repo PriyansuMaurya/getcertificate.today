@@ -1,11 +1,11 @@
 # RULES — Development rules for getcertificate.today
 
-| | |
-|---|---|
-| Document status | Enforceable engineering rules |
-| Last updated | 2026-09-28 |
-| Basis | Observed conventions in the repository (ESLint/Prettier configs, existing code patterns, `AGENTS.md`) extended with rules required by the product's trust mission (see `PRD.md` NFR-1) |
-| Related docs | `ARCHITECTURE.md`, `DESIGN.md`, `TASK.md`, `MEMORY.md` |
+|                 |                                                                                                                                                                                        |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Document status | Enforceable engineering rules                                                                                                                                                          |
+| Last updated    | 2026-09-28                                                                                                                                                                             |
+| Basis           | Observed conventions in the repository (ESLint/Prettier configs, existing code patterns, `AGENTS.md`) extended with rules required by the product's trust mission (see `PRD.md` NFR-1) |
+| Related docs    | `ARCHITECTURE.md`, `DESIGN.md`, `TASK.md`, `MEMORY.md`                                                                                                                                 |
 
 **How to use these rules:** an AI agent (or human) changing this repository must satisfy every **MUST** in the section relevant to their change. "MUST" = blocker; "SHOULD" = deviation requires a written reason in the PR/commit or `MEMORY.md`; "MAY" = optional. Verification commands are given per section.
 
@@ -80,7 +80,7 @@
 1. **Current state:** no test framework is installed. Adding one is Phase 0 work in `TASK.md`; until then the minimum bar is: `npm run lint`, `npx tsc --noEmit`, and `npm run build` all pass.
 2. **MUST** (once the framework lands): every new server action or route handler with business logic gets at least one unit test (validation branches included); every new page gets a smoke test asserting render + auth redirect.
 3. **MUST** keep test files adjacent (`*.test.ts(x)` next to the unit) or under a top-level `__tests__/` — pick one and stay consistent (decide when the framework is added; record in `MEMORY.md`).
-4. **MUST NOT** commit tests that require real external services (Stripe/Supabase/LLM). Use mocks; the existing dev scripts (`scripts/test-onboarding-flow.mjs`) are the model for *manual* integration verification against localhost, not CI tests.
+4. **MUST NOT** commit tests that require real external services (Stripe/Supabase/LLM). Use mocks; the existing dev scripts (`scripts/test-onboarding-flow.mjs`) are the model for _manual_ integration verification against localhost, not CI tests.
 5. **MUST NOT** run dev scripts (`scripts/demo-user.mjs`, `scripts/test-onboarding-flow.mjs`, `stripeSetup.ts`) against production env or shared databases; they mutate/delete rows directly.
 6. **SHOULD** verify flows end-to-end with `npm run dev` + the browser before marking roadmap items complete, mirroring the existing `test-onboarding-flow.mjs` approach.
 
@@ -94,7 +94,7 @@
 6. **MUST** ensure visible focus states (`focus-visible:ring-*` from shadcn primitives) are never removed.
 7. **SHOULD** prefer semantic elements (`nav`, `header`, `main`, `ul/li`) over div soup, as the landing page does.
 8. Color contrast must meet 4.5:1 for body text; the Figma palette in `DESIGN.md` was chosen with this in mind — do not lighten `clay`/`sand` text without a contrast check.
-9. Interactive gates (e.g., disabled "Take assessment" button) MUST explain *why* they're disabled in adjacent text, not just `disabled` state.
+9. Interactive gates (e.g., disabled "Take assessment" button) MUST explain _why_ they're disabled in adjacent text, not just `disabled` state.
 
 ## 9. Security
 
@@ -147,7 +147,7 @@
 1. **MUST** keep the six `/docs` files truthful to the codebase: any change that adds/removes routes, tables, env vars, scripts, dependencies, or design tokens MUST update the relevant sections of `ARCHITECTURE.md`, and `MEMORY.md`'s change log, in the same change.
 2. **MUST** update `TASK.md` checkboxes as roadmap items complete (that file is the execution ledger).
 3. **MUST** label anything not yet implemented as `[PLANNED]` in docs; never describe planned behavior in present tense.
-4. Code comments: explain *why* (constraint, Figma node, pooler limitation) like the existing comments do; don't narrate the obvious.
+4. Code comments: explain _why_ (constraint, Figma node, pooler limitation) like the existing comments do; don't narrate the obvious.
 5. `README.md` still describes the generic starter kit — an agent MAY update it when onboarding/verification docs diverge, but MUST NOT delete its setup instructions.
 
 ## 15. Git practices

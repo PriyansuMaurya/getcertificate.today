@@ -4,14 +4,14 @@ Instructions for AI coding agents working in this repository. This file governs 
 
 ## 1. Documentation authority
 
-| Document | Governs |
-|---|---|
-| `/docs/PRD.md` | Product requirements, feature statuses, acceptance criteria |
-| `/docs/ARCHITECTURE.md` | System architecture, stack, data flows, integrations |
-| `/docs/DESIGN.md` | Design system and visual specifications |
-| `/docs/RULES.md` | Engineering standards and enforceable MUST/SHOULD rules |
-| `/docs/TASK.md` | Planned work, phases, execution roadmap |
-| `/docs/MEMORY.md` | Project context, decisions, history; read FIRST in every session |
+| Document                | Governs                                                          |
+| ----------------------- | ---------------------------------------------------------------- |
+| `/docs/PRD.md`          | Product requirements, feature statuses, acceptance criteria      |
+| `/docs/ARCHITECTURE.md` | System architecture, stack, data flows, integrations             |
+| `/docs/DESIGN.md`       | Design system and visual specifications                          |
+| `/docs/RULES.md`        | Engineering standards and enforceable MUST/SHOULD rules          |
+| `/docs/TASK.md`         | Planned work, phases, execution roadmap                          |
+| `/docs/MEMORY.md`       | Project context, decisions, history; read FIRST in every session |
 
 `AGENTS.md` → agent workflow only. Never silently override conflicting documentation. If sources conflict, identify the conflict explicitly and resolve it using repository evidence plus the most domain-specific authoritative document (product behaviour → `PRD.md`; how something is built → `ARCHITECTURE.md`; how to write code → `RULES.md`). Record any resolved conflict in `/docs/MEMORY.md` §12.
 

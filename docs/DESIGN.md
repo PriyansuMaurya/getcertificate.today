@@ -1,11 +1,11 @@
 # DESIGN — Design system of record for getcertificate.today
 
-| | |
-|---|---|
-| Document status | Extracted system of record — **describes what exists; do not invent replacements** |
-| Last updated | 2026-09-28 |
-| Sources | Figma file `ifCw9JuE00PMiaOHgtBxRp`, landing-page frame `6:9` (1440×4477) — audit trail in `.media/` (`figma-bindings.jsonl`, `manifest.jsonl`, `figma-cache/`); implementation in `tailwind.config.ts`, `app/globals.css`, `app/layout.tsx`, `app/page.tsx`, `components/icons.tsx` |
-| Related docs | `RULES.md` (§13 generated files, §16.8), `ARCHITECTURE.md` §8.3, `PRD.md` |
+|                 |                                                                                                                                                                                                                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Document status | Extracted system of record — **describes what exists; do not invent replacements**                                                                                                                                                                                                   |
+| Last updated    | 2026-09-28                                                                                                                                                                                                                                                                           |
+| Sources         | Figma file `ifCw9JuE00PMiaOHgtBxRp`, landing-page frame `6:9` (1440×4477) — audit trail in `.media/` (`figma-bindings.jsonl`, `manifest.jsonl`, `figma-cache/`); implementation in `tailwind.config.ts`, `app/globals.css`, `app/layout.tsx`, `app/page.tsx`, `components/icons.tsx` |
+| Related docs    | `RULES.md` (§13 generated files, §16.8), `ARCHITECTURE.md` §8.3, `PRD.md`                                                                                                                                                                                                            |
 
 **Two coexisting visual systems — read this first.** The repository carries (1) the **Figma brand system** (cream/ink/sand palette, Fraunces + Manrope) implemented on the **landing page** as custom Tailwind color tokens, and (2) the **shadcn/ui default system** (slate HSL variables; the dashboard shell additionally loads Inter) used by all **authenticated surfaces** (login, signup, onboarding, dashboard, subscribe). Both are real and documented below. Do not "unify" them without an explicit design decision; do use Figma tokens for any new marketing-facing surface and the shadcn system for authenticated app surfaces until that decision is made.
 
@@ -23,17 +23,18 @@
 
 ### 2.1 Figma brand tokens (defined in `tailwind.config.ts` → `theme.extend.colors`)
 
-| Token | Hex | Role (from Figma comments) |
-|---|---|---|
-| `cream` | `#F5F0EB` | Page background + light card background |
-| `paper` | `#FAF8F5` | Alternating section background |
-| `ink` | `#1A1A1A` | Primary text, dark card (Pro pricing), dark buttons |
-| `clay` | `#6B6059` | Secondary text |
-| `sand` | `#B5A08E` | Eyebrow text, check icons, accent (Pro CTA button, POPULAR badge) |
-| `linen` | `#EAE3DC` | Feature icon tile background |
-| `sandline` | `#E3DCD5` | Hairline borders |
+| Token      | Hex       | Role (from Figma comments)                                        |
+| ---------- | --------- | ----------------------------------------------------------------- |
+| `cream`    | `#F5F0EB` | Page background + light card background                           |
+| `paper`    | `#FAF8F5` | Alternating section background                                    |
+| `ink`      | `#1A1A1A` | Primary text, dark card (Pro pricing), dark buttons               |
+| `clay`     | `#6B6059` | Secondary text                                                    |
+| `sand`     | `#B5A08E` | Eyebrow text, check icons, accent (Pro CTA button, POPULAR badge) |
+| `linen`    | `#EAE3DC` | Feature icon tile background                                      |
+| `sandline` | `#E3DCD5` | Hairline borders                                                  |
 
 Semantic usage on the landing page:
+
 - Section rhythm: `bg-cream` → `bg-paper` → `bg-cream` → `bg-paper` → `bg-cream` → `bg-paper` (CTA) → `bg-cream` (footer).
 - Primary button: `bg-ink text-cream`; secondary/outline: `border-[1.5px] border-ink text-ink` on cream; Pro-tier accent button: `bg-sand text-cream`; Pro card: `bg-ink` with `text-cream`/`text-sand` and `shadow-figma-pro`.
 - Eyebrow labels ("The Process", "Pricing Plans"…): `text-[13px] font-bold text-sand`.
@@ -56,12 +57,13 @@ The default shadcn palette (slate-based) drives `bg-background`, `text-foregroun
 
 ## 3. Typography
 
-| Role | Font | Classes (as used) |
-|---|---|---|
+| Role                                          | Font                                           | Classes (as used)                                                                                              |
+| --------------------------------------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | Display/headings, prices, big numerals ("01") | **Fraunces** (Google, weights 400/600/700/900) | `font-fraunces`, e.g. `text-[64px] font-black leading-[1.233]` (hero h1), `text-[32px] font-bold` (section h2) |
-| Everything else | **Manrope** (Google, weights 400–800) | body default via `font-manrope` on `<body>`; weights `font-bold`/`font-semibold` |
+| Everything else                               | **Manrope** (Google, weights 400–800)          | body default via `font-manrope` on `<body>`; weights `font-bold`/`font-semibold`                               |
 
 Type scale observed on the landing page (all with `leading-[1.366]` for Manrope, `leading-[1.233]` for Fraunces):
+
 - Hero h1: 40px → 48px (sm) → 56px (md) → 64px (lg), `font-black`.
 - Section h2: 32px → 40px (sm), `font-bold`; CTA h2: 36 → 48px `font-black`.
 - Card h3: `text-lg font-bold`. Body: `text-base`/`sm:text-lg`. Card body: `text-[15px]`. Small: `text-sm`. Eyebrow: `text-[13px] font-bold`. Footer legal: `text-[13px]`.
@@ -92,6 +94,7 @@ Tailwind defaults (`sm 640 / md 768 / lg 1024 / xl 1280 / 2xl 1400`) plus contai
 ## 6. Component inventory
 
 ### 6.1 Figma-styled components (landing)
+
 - **Navbar**: logo (PNG, `h-8 sm:h-10`), text links 15px semibold, `bg-ink` CTA `h-12 rounded-lg px-6`.
 - **Buttons (marketing)**: primary `bg-ink text-cream`; outline `border-[1.5px] border-ink text-ink`; accent `bg-sand text-cream`; all `h-12 rounded-lg px-6 py-3.5 text-[15px] font-bold` with optional 16px trailing icon.
 - **Step card**: number + title + body, `rounded-xl border-sandline bg-cream p-8`.
@@ -103,12 +106,15 @@ Tailwind defaults (`sm 640 / md 768 / lg 1024 / xl 1280 / 2xl 1400`) plus contai
 - **MobileNav**: hamburger/X toggle (`aria-expanded`), drop panel `absolute inset-x-0 top-full border-b border-sandline bg-cream shadow-figma-pro`.
 
 ### 6.2 shadcn/ui primitives (`components/ui/`, style "default")
+
 Button (variants default/destructive/outline/secondary/ghost/link; sizes default/sm/lg/icon), Badge (default/secondary/destructive/outline), Card (Header/Title/Description/Content/Footer), Dropdown Menu (Radix), Input, Label (Radix), Skeleton. These are stock shadcn implementations — treat them as library code: extend via variants/props, don't fork styling.
 
 ### 6.3 Generated icons (`components/icons.tsx`)
+
 Six inline SVGs with Figma-exact paths: `ArrowRightIcon` (16), `SparklesIcon` (20), `BrainIcon` (24), `ShieldIcon` (24), `ChartColumnIcon` (24), `CheckIcon` (16). All `fill="none"`, `stroke="currentColor"`, `strokeWidth 2`, `strokeLinecap round`, `aria-hidden`, sized via `className` (`h-* w-*`). Regenerate only via `scripts/figma-icons-gen.py`.
 
 ### 6.4 Lucide / react-icons usage
+
 Lucide: `Menu`, `X` (MobileNav); `Bell`, `Menu`, `Search`, `ReceiptText`, `User`, `Settings`, `HelpCircle`, `LogOut` (dashboard). react-icons: `FaGoogle`, `FaGithub` (OAuth buttons). Continue these sources before adding new icon sets.
 
 ## 7. Component states
@@ -133,17 +139,17 @@ Lucide: `Menu`, `X` (MobileNav); `Bell`, `Menu`, `Search`, `ReceiptText`, `User`
 1. Figma-generated stroke icons for landing brand moments (§6.3) — `currentColor`, sized by className.
 2. Lucide for app UI chrome (24px stroke icons by default).
 3. `react-icons/fa` brand glyphs for OAuth buttons.
-Rule: no filled/mixed-style icons on the landing page; no new icon libraries.
+   Rule: no filled/mixed-style icons on the landing page; no new icon libraries.
 
 ## 10. Imagery & assets
 
-| Asset | Path | Notes |
-|---|---|---|
-| Logo wordmark | `public/figma/logo.png` (bound to Figma nodes 6:11/6:163) | Landing navbar + footer; `width={180} height={40}` intrinsic |
-| Hero preview | `public/figma/hero.png` (node 6:35) | 574×407 display box, `rounded-lg shadow-figma-hero`, `priority` |
-| Legacy starter logo | `public/logo.png` | Still used by auth pages, dashboard header, subscribe page (square logo, "Acme Inc" sr-only label in subscribe — starter residue) |
-| Starter SVGs | `public/next.svg`, `public/vercel.svg` | Unused leftovers |
-| Figma exports | `.media/images/*` | Source-of-truth vectors/rasters + provenance manifest; do not edit |
+| Asset               | Path                                                      | Notes                                                                                                                             |
+| ------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Logo wordmark       | `public/figma/logo.png` (bound to Figma nodes 6:11/6:163) | Landing navbar + footer; `width={180} height={40}` intrinsic                                                                      |
+| Hero preview        | `public/figma/hero.png` (node 6:35)                       | 574×407 display box, `rounded-lg shadow-figma-hero`, `priority`                                                                   |
+| Legacy starter logo | `public/logo.png`                                         | Still used by auth pages, dashboard header, subscribe page (square logo, "Acme Inc" sr-only label in subscribe — starter residue) |
+| Starter SVGs        | `public/next.svg`, `public/vercel.svg`                    | Unused leftovers                                                                                                                  |
+| Figma exports       | `.media/images/*`                                         | Source-of-truth vectors/rasters + provenance manifest; do not edit                                                                |
 
 Image rules: `next/image` always; explicit width/height; `priority` only for hero/logo above the fold; `alt` text describing function ("getcertificate.today logo", "product preview").
 
@@ -158,6 +164,7 @@ Image rules: `next/image` always; explicit width/height; `priority` only for her
 ## 12. Certificate presentation [PLANNED — design not yet defined]
 
 No certificate, credential, or verification UI exists in code or Figma (frame `6:9` is landing-only). When designed, they MUST:
+
 1. Use the brand system (§2.1): `paper`/`cream` certificate field on `cream` page, `ink` text, Fraunces for the holder's name and score, `sandline` hairlines — consistent with the product's "document" metaphor.
 2. Include the required data set from `PRD.md` FR-E3/FR-F1 (holder, item, score, ID, date, status, QR).
 3. Keep the QR monochrome (`ink` on `paper`), quiet zone intact, minimum print-safe size, with the encoded URL as adjacent selectable text (accessibility).
@@ -169,6 +176,7 @@ No certificate, credential, or verification UI exists in code or Figma (frame `6
 ## 13. Assessment interfaces [PLANNED — design not yet defined]
 
 No assessment UI exists. Target conventions when built (derived from existing app-surface patterns):
+
 - App-shell (shadcn) visual system, single-question-per-screen or one-column form (mobile-first), radio groups with visible labels, per-question error text matching the `{ message }` helper-text pattern, disabled submit until all answered with an explanatory hint (RULES §8.9).
 - Timer/attempt info (if any) must be text-visible, not colour-only. Server-scored; result screens show score, pass/fail, and the credential link on pass.
 

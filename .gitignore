@@ -37,3 +37,11 @@ yarn-error.log*
 next-env.d.ts
 
 .vscode
+
+# agent workspace + local tooling artifacts
+.freebuff/
+.media/
+dev-server.log
+tree.txt
+scripts/demo-user.mjs
+scripts/figma-tree-dump.py
