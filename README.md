@@ -2,22 +2,15 @@
 
 **Turning YouTube video minutes into verifiable professional credentials. Learn Today. Go Further.**
 
-<img width="1122" alt="image" src="https://github.com/user-attachments/assets/63e761c4-aece-47c2-a320-f1cc18bf916b">
-
-<img width="920" alt="image" src="https://github.com/user-attachments/assets/55384d22-cd09-46e4-b92d-e535b7d948fd">
-<img width="1115" alt="image" src="https://github.com/user-attachments/assets/9ec724e6-d46f-4849-a790-efca329d1102">
-<img width="1115" alt="image" src="https://github.com/user-attachments/assets/c5c1a61b-7ff3-49fd-9dea-8104026dd1e6">
-<img width="1141" alt="image" src="https://github.com/user-attachments/assets/06559a5a-ca19-40bb-bf00-d3d2cbd94ee1">
-
-A single [Next.js 16](https://nextjs.org/) application (App Router) that turns YouTube learning into **shareable, tamper-evident credentials**: a learner adds a YouTube video, watches it in a tracked player, passes an AI-generated assessment grounded in the video's transcript, and earns a certificate with a unique credential ID, SHA-256 integrity hash, QR code, and a public verification page anyone can check — no account required.
+A single [Next.js 16](https://nextjs.org/) application (App Router) that turns YouTube learning into **shareable, tamper-evident credentials**: a learner adds a YouTube video, watches it in a tracked player, passes an AI-generated assessment grounded in the video's transcript, and earns a certificate with a unique credential ID, SHA-256 integrity hash, QR code, and a public verification page anyone can check, with no account required.
 
 ## How it works
 
-1. **Add a video** — paste a YouTube URL (`watch`, `youtu.be`, or `shorts`); the system validates it and creates a learning item.
-2. **Learn** — watch in the embedded player; progress is persisted server-side (client-reported, clamped and ownership-checked) and the assessment unlocks at **≥ 80% completion**.
-3. **Assess** — "Generate & start assessment" fetches the transcript through [TranscriptAPI](https://transcriptapi.com/docs/api/) (server-side, cached per video ID in the `transcripts` table), with best-effort YouTube captions (`utils/youtube.ts`) as the fallback source, then sends it to an OpenAI-compatible LLM, and generates multiple-choice questions strictly from that content. Answers are graded **server-side**; each question shows instant feedback with the selected answer, the correct answer, and why each is right/wrong. Pass score is 70%, max 3 attempts per 7-day window.
-4. **Certify** — passing mints a credential transactionally: score, unique credential ID, `sha256-v1:` hash over immutable fields, free-tier quota enforced (1 credential/month on Free, unlimited on Pro).
-5. **Verify** — the certificate page renders an SVG QR code; the public `/verify/<id>` page rechecks the hash and shows valid / revoked / invalid states for anyone, without logging in.
+1. **Add a video.** Paste a YouTube URL (`watch`, `youtu.be`, or `shorts`); the system validates it and creates a learning item.
+2. **Learn.** Watch in the embedded player; progress is persisted server-side (client-reported, clamped and ownership-checked) and the assessment unlocks at **≥ 80% completion**.
+3. **Assess.** "Generate & start assessment" fetches the transcript through [TranscriptAPI](https://transcriptapi.com/docs/api/) (server-side, cached per video ID in the `transcripts` table), with best-effort YouTube captions (`utils/youtube.ts`) as the fallback source, then sends it to an OpenAI-compatible LLM, and generates multiple-choice questions strictly from that content. Answers are graded **server-side**; each question shows instant feedback with the selected answer, the correct answer, and why each is right/wrong. Pass score is 70%, max 3 attempts per 7-day window.
+4. **Certify.** Passing mints a credential transactionally: score, unique credential ID, `sha256-v1:` hash over immutable fields, free-tier quota enforced (1 credential/month on Free, unlimited on Pro).
+5. **Verify.** The certificate page renders an SVG QR code; the public `/verify/<id>` page rechecks the hash and shows valid / revoked / invalid states for anyone, without logging in.
 
 ## Features
 
@@ -63,16 +56,16 @@ cp .env.example .env.local
 ### 1. Supabase (auth + database)
 
 1. Create a project at [supabase.com](https://supabase.com/).
-2. Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (use the publishable key — never an `sb_secret_`/service-role key in a `NEXT_PUBLIC_*` variable).
+2. Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (use the publishable key, never an `sb_secret_`/service-role key, in a `NEXT_PUBLIC_*` variable).
 3. Add `NEXT_PUBLIC_WEBSITE_URL` (defaults to `http://localhost:3000`) so OAuth redirects back correctly.
 4. In the dashboard, set **Authentication → URL Configuration** Site URL and redirect allowlist (`/auth/callback`, `/forgot-password/reset`).
 5. Optional OAuth providers: add `GOOGLE_OAUTH_CLIENT_ID`/`GOOGLE_OAUTH_CLIENT_SECRET` and `GITHUB_OAUTH_CLIENT_ID`/`GITHUB_OAUTH_CLIENT_SECRET`, following the [Google](https://supabase.com/docs/guides/auth/social-login/auth-google) and [GitHub](https://supabase.com/docs/guides/auth/social-login/auth-github) guides.
 
 ### 2. Postgres connection
 
-Add `DATABASE_URL` — a Postgres connection string (Supabase pooler-compatible, e.g. `postgresql://USER:PASSWORD@host/db?sslmode=require`).
+Add `DATABASE_URL`: a Postgres connection string (Supabase pooler-compatible, e.g. `postgresql://USER:PASSWORD@host/db?sslmode=require`).
 
-Then provision the schema. **On a new or existing database, run the idempotent bootstrap scripts — not individual files from `utils/db/migrations/`** (those are drizzle bookkeeping and assume prior state):
+Then provision the schema. **On a new or existing database, run the idempotent bootstrap scripts, not individual files from `utils/db/migrations/`** (those are drizzle bookkeeping and assume prior state):
 
 ```bash
 # create all tables, enable RLS, mark migrations as applied
@@ -88,16 +81,16 @@ Both SQL scripts are idempotent and safe to re-run. If `psql` is unavailable, ru
 After that, normal drizzle workflow applies to schema changes:
 
 1. Edit `utils/db/schema.ts`
-2. `npm run db:generate` — generate the migration
-3. `npm run db:migrate` — apply it
+2. `npm run db:generate` to generate the migration
+3. `npm run db:migrate` to apply it
 
 ### 3. Stripe (optional but recommended)
 
 1. [Register](https://dashboard.stripe.com/register) and add `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID`.
-2. Add `STRIPE_WEBHOOK_SECRET` — the webhook **fails closed** without it (raw-body signature verification). Locally, `npm run stripe:listen` prints the secret and forwards events to `http://localhost:3000/webhook/stripe`.
+2. Add `STRIPE_WEBHOOK_SECRET`. The webhook **fails closed** without it (raw-body signature verification). Locally, `npm run stripe:listen` prints the secret and forwards events to `http://localhost:3000/webhook/stripe`.
 3. `npm run stripe:setup` seeds starter products/prices and (in production mode) the webhook endpoint; then create a [Pricing Table](https://dashboard.stripe.com/test/pricing-tables) pointing its confirmation page at `<YOUR_PUBLIC_URL>/subscribe/success`.
 
-Subscribing is optional for users — the dashboard only shows a voluntary upgrade card.
+Subscribing is optional for users; the dashboard only shows a voluntary upgrade card.
 
 ### 4. AI assessment generation
 
@@ -142,34 +135,34 @@ Open [http://localhost:3000](http://localhost:3000).
 ## Project structure
 
 ```
-app/            # App Router — landing, auth, dashboard, learn/[id], certificates, verify, webhook
-components/     # Shared components (icons.tsx is generated from Figma — never hand-edit)
+app/            # App Router: landing, auth, dashboard, learn/[id], certificates, verify, webhook
+components/     # Shared components (icons.tsx is generated from Figma; never hand-edit)
 utils/          # Server-only integrations: db/ (schema+migrations), transcripts.ts, ai.ts,
                 # youtube.ts, credentials.ts, stripe/, supabase/
 lib/            # cn() class helper
 sql/            # Idempotent production bootstrap + seed + transactional validator
 scripts/        # db-preflight, Figma icon generator, dev-only flow checks
-docs/           # PRD, ARCHITECTURE, DESIGN, RULES, TASK, MEMORY — source of truth
+docs/           # PRD, ARCHITECTURE, DESIGN, RULES, TASK, MEMORY: source of truth
 ```
 
 ## Documentation
 
 This repository is documented in [`docs/`](docs/):
 
-- [`docs/PRD.md`](docs/PRD.md) — product requirements and feature status tags (`[EXISTS]` / `[PLANNED]`)
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — system design, routes, data flows, env vars
-- [`docs/DESIGN.md`](docs/DESIGN.md) — design system and Figma consistency rules
-- [`docs/RULES.md`](docs/RULES.md) — engineering standards
-- [`docs/TASK.md`](docs/TASK.md) — roadmap
+- [`docs/PRD.md`](docs/PRD.md): product requirements and feature status tags (`[EXISTS]` / `[PLANNED]`)
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): system design, routes, data flows, env vars
+- [`docs/DESIGN.md`](docs/DESIGN.md): design system and Figma consistency rules
+- [`docs/RULES.md`](docs/RULES.md): engineering standards
+- [`docs/TASK.md`](docs/TASK.md): roadmap
 
 Agents: see [`AGENTS.md`](AGENTS.md) for workflow rules. **Check the `[EXISTS]`/`[PLANNED]` tags in the PRD before assuming any capability exists.**
 
 ## Deploy on Vercel
 
-Deploy with the [Vercel Platform](https://vercel.com/new). Set the environment variables above in the project settings (they must be available to **Builds** — the build runs the DB preflight and migrations, so `DATABASE_URL` must be reachable at build time), then deploy. See the [Next.js deployment documentation](https://nextjs.org/docs/deployment) for details.
+Deploy with the [Vercel Platform](https://vercel.com/new). Set the environment variables above in the project settings (they must be available to **Builds**, because the build runs the DB preflight and migrations, so `DATABASE_URL` must be reachable at build time), then deploy. See the [Next.js deployment documentation](https://nextjs.org/docs/deployment) for details.
 
 ## Known gaps
 
-- No committed test suite or CI yet — Playwright is installed but only used by dev-only scripts (`docs/TASK.md` Phase 0).
+- No committed test suite or CI yet. Playwright is installed but only used by dev-only scripts (`docs/TASK.md` Phase 0).
 - `stripeSetup.ts` seeds placeholder plans that do not match the Free/Pro tiers shown on the landing page.
 - Legal pages (privacy/terms) are outstanding.
