@@ -1,3 +1,0 @@
-# Memory Graph - Requirements
-# Python 3.7+ required (uses datetime.fromisoformat, f-strings, pathlib)
-# No external dependencies - uses only Python standard library
