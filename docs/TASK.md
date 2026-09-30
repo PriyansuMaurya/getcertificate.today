@@ -99,7 +99,7 @@ Status legend: ✅ complete · 🔶 partial · ❌ missing · 🩹 technical deb
 
 ### 2.2 Data model
 
-- [x] ✅ `learning_items` table (id, user_id, kind, source_url, youtube_id, title, author, status, progress_percent, last_position_seconds, timestamps) — migration `0002_striped_misty_knight`.
+- [x] ✅ `learning_items` table (id, user_id, kind, source_url, youtube_id, title, author, status, progress_percent, position_seconds, timestamps) — schema in `utils/db/schema.ts`; provisioned on live DBs outside the committed chain, idempotently creatable via `sql/01_production_schema.sql` (see `docs/ARCHITECTURE.md` §5).
 - [x] ✅ Progress columns on `learning_items` (percent + last position).
 - [x] ✅ Migration generated; `ARCHITECTURE.md` §5 updated.
 
