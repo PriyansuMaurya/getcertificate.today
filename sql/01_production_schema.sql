@@ -533,11 +533,11 @@ SELECT '9626616eefa33c26e94f4c0552355834ae9f83db00376f39548c1652f08aee78', 17489
 WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at = 1748947435391);
 
 INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
-SELECT '3f4d0ad912bb0823edee39aa24001aa890618aa5a62c9855ddf8bf09a629b6ad', 1790630360970
+SELECT '9ecd3d77bf70ef07799d4bc61b1b197aaf8a3d28449117df67c82824f8359677', 1790630360970
 WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at = 1790630360970);
 
 INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
-SELECT 'f503f55da5e086734639b8dbb9ae5e5b76900ffc2900592514bf68659dd6a832', 1790724396506
+SELECT 'f786dea9d48c95b008008e04a76cded5d9f1bb17f7397f3d374411bc6dc10549', 1790724396506
 WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at = 1790724396506);
 
 -- -----------------------------------------------------------------------------
