@@ -13,16 +13,16 @@
 
 - **Name:** getcertificate.today — "Turning YouTube video minutes into verifiable professional credentials. Learn Today. Go Further."
 - **Core promise:** add a YouTube video/playlist → learn it → pass an AI assessment grounded in that exact content → earn a shareable credential (score, unique ID, QR code) with a public verification page.
-- **Current reality:** the repo contains the **marketing landing page + full account/billing chassis only**. The core loop (YouTube → assessment → credential → verification) is entirely `[PLANNED]` and described in `PRD.md` §5–§7 with statuses. Never describe planned features as existing.
+- **Current reality:** the repo now contains the marketing landing page, the account/billing chassis, **and the full core loop**: add a YouTube video → progress-tracked player with 80% gate → AI-generated assessment (OpenAI-compatible, best-effort captions) → server-scored attempt → credential minting with Free quota → certificate with QR → public `/verify/[id]`. Dashboard navigation, settings (profile/password/plan/sign-out), and header quick search all work. Marketing-only features still absent: playlists, PDF export, LinkedIn share, public profile, emails (`PRD.md` §5 statuses authoritative).
 - **Business posture:** Free tier (1 credential/month) and Professional ($12/mo, unlimited) are _marketed_; subscriptions are currently **optional** by design (commit `a1bd15d`). Real Stripe products don't match these tiers yet.
 
 ## 2. Architecture at a glance (details: `ARCHITECTURE.md`)
 
 - Next.js **16.3.6** App Router (Turbopack), React **18.3.1**, TypeScript strict, Tailwind 3.4, shadcn/ui, Node 20.18.1, npm.
 - Supabase for auth (cookie SSR sessions via `@supabase/ssr`; Google/GitHub OAuth) + hosted Postgres. DB accessed via Drizzle + postgres.js (`prepare: false` — pooler requirement, do not remove).
-- Stripe: embedded pricing table via Customer Sessions; billing portal; **webhook currently unverified (critical, see §6)**.
+- Stripe: embedded pricing table via Customer Sessions; billing portal; **webhook signature-verified** (`STRIPE_WEBHOOK_SECRET`, raw-body `constructEvent`), handles created/updated/deleted idempotently, logs event types only.
 - Single Vercel-deployed app; build = `db-preflight && drizzle-kit migrate && next build`.
-- One table today: `users_table` (mirrors `auth.users.id`; `plan` holds `'none'` or a Stripe subscription ID; onboarding columns username/first_name/last_name/dob).
+- Six tables: `users_table` + `learning_items`, `assessments`, `attempts`, `credentials` (migration `0002_striped_misty_knight`). `plan` holds `'none'` or a Stripe subscription ID.
 - No client state library; no tests; no CI; no error tracking (all scheduled in `TASK.md`).
 
 ## 3. Important decisions & their rationale
@@ -54,35 +54,37 @@
 - 2026-09-27 — `useFormState`→`useActionState` migration (`fcc23be`); ESLint 9 flat config, all lint errors cleared (`97e89f1`); dependency updates in-range (`091a4e4`); fail-fast `DATABASE_URL` in drizzle config (`f4cfd9f`); DB preflight added to build (`5cebb67`).
 - 2026-09-28 — Figma landing page implemented 1:1 + full responsiveness + generated icons (`12915a5`); onboarding-before-dashboard flow with optional subscription (`a1bd15d`).
 - 2026-09-28 — (docs session) `/docs` created: PRD, ARCHITECTURE, RULES, DESIGN, TASK, MEMORY. No application code changed.
+- 2026-09-30 — Full core-loop dashboard build (uncommitted): new tables + migration `0002_striped_misty_knight`, learning/assessment/credential server actions, routes (`/dashboard/{learning,settings,certificates}`, `/learn/[id]`, `/certificates/[id]`, `/verify/[id]`), navigation + quick search, Stripe webhook security fix, `openai`/`qrcode` deps, docs updated (see §12).
 
 ## 6. Known bugs (verified in code, unfixed)
 
-1. **Stripe webhook unverified (critical, top priority):** `app/webhook/stripe/route.ts` trusts `req.json()` with no signature check; anyone able to reach `/webhook/stripe` can set any user's `plan`. Also: missing `break` (fall-through), `subscription.deleted` unhandled (plan never resets), payload logged via `console.log`. Fix in `TASK.md` Phase 0.2.
+1. ~~Stripe webhook unverified~~ **Fixed:** raw-body signature verification, created/updated/deleted handling, idempotent upsert, no payload logging.
 2. **Migration application on live DBs unverified (low risk):** migration `0001_add-profile-fields.sql` exists, is tracked in git (commit `a1bd15d`, dated 2026-09-28), and matches `schema.ts` exactly, with a valid journal entry. The repository cannot prove that each live database (local dev, production) actually has `0001` applied — e.g., a DB provisioned by `db:push` would have the columns but no migration history. One-time verification in `TASK.md` Phase 0.1.
-3. **Nested link:** `components/DashboardHeaderProfileDropdown.tsx` renders `<Link>` (Billing) inside `<DropdownMenuItem>` wrapped in another `<Link href="#">` — invalid nesting.
+3. ~~Nested link~~ **Fixed:** `DashboardHeaderProfileDropdown` rebuilt without nested `<Link>`.
 4. **Provisioning race:** user rows + Stripe customers are created in two code paths (`signup` action and OAuth callback); email-confirm users get no row until callback; concurrent paths can double-insert (unique constraint surfaces a raw error).
 5. **Billing portal UX:** Stripe failures degrade the dropdown item to `href="#"` silently.
 
 ## 7. Technical debt register (non-bug)
 
 - `stripeSetup.ts` seeds generic starter plans (Basic $10 / Pro $20 / Enterprise $50) — not the product's Free/Pro tiers.
-- Starter residue: placeholder landing footer links, `"Acme Inc"` sr-only label on `/subscribe`, unused `public/next.svg`/`vercel.svg`, empty `compositions/components/landing-page/`, empty `app/dashboard/actions.ts`, and unused `utils/supabase/client.ts`.
+- Starter residue: placeholder landing footer links, `"Acme Inc"` sr-only label on `/subscribe`, unused `public/next.svg`/`vercel.svg`, empty `compositions/components/landing-page/`, and unused `utils/supabase/client.ts`. (`app/dashboard/actions.ts` now hosts real actions.)
 - Stripe pricing-table script loads globally from root layout (every route pays the cost).
 - `users_table` has no timestamps; keep adding `created_at/updated_at` to new tables (`RULES.md` §17.6).
 - Forms use raw `text-red-500` for errors (off-token color).
 - No `typecheck` npm script; no CI; README still describes the generic starter.
 - `dev-server.log`, `tree.txt`, `tsconfig.tsbuildinfo`, `.freebuff/` present in worktree but not ignored/committed consistently (`.gitignore` covers `*.tsbuildinfo`).
+- New runtime deps this session: `openai`, `qrcode` (+ dev `@types/qrcode`).
 - Two visual systems coexist (Figma brand on landing; shadcn defaults in app) — intentional until a unification decision (`DESIGN.md` intro).
 
 ## 8. Unresolved questions / open decisions (from `PRD.md` §14 — keep in sync)
 
-1. Pass score & attempt policy (proposal: 70%, 3 attempts, 7-day cooldown).
-2. Transcript acquisition method that satisfies YouTube ToS (spike needed).
-3. LLM provider choice; thin internal interface so it's swappable.
-4. Verification route name (`/verify/[id]` proposed) and public data set.
-5. Quota semantics for "1 credential/month" (proposal: calendar month UTC).
+1. Pass score & attempt policy — **resolved:** 70% pass (`PASS_SCORE`), 3 attempts / 7-day window (`utils/credentials.ts`).
+2. Transcript acquisition method that satisfies YouTube ToS — **resolved pragmatically:** best-effort YouTube captions endpoint with fallback to title/author grounding when unavailable; no scraping of protected content.
+3. LLM provider — **resolved:** single thin interface `utils/ai.ts` over the OpenAI-compatible Chat Completions API (`OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL`), swappable via env.
+4. Verification route name — **resolved:** `/verify/[id]`, public data set = holder name, item title, score, passed_at, status, hash (no email/DOB/questions).
+5. Quota semantics — **resolved:** calendar month UTC (`monthWindowStart()`), 1 credential/month on Free (`FREE_CREDENTIALS_PER_MONTH`).
 6. Real Stripe product/price IDs for Free/Pro; plan representation in DB (`'none'`+subscription-id today vs normalized `'free'|'pro'`).
-7. New-table naming: continue `*_table` suffix (`users_table`) or standard snake plurals (`learning_items`)? (Proposal: snake plurals for new tables; keep `users_table` as-is.)
+7. New-table naming — **resolved:** lowercase snake_case plurals for new tables (`learning_items`, `assessments`, `attempts`, `credentials`); `users_table` kept as-is.
 8. Whether `utils/supabase/client.ts` stays (reserved for future client-side Supabase use) — decide during Phase 0.4 cleanup.
 9. Profile picture/avatar, holder display name on credentials (currently `first_name last_name` from onboarding is the only name source).
 
@@ -104,9 +106,9 @@
 - 80% completion unlock and pass threshold semantics come from marketing copy, not a spec ("pass" has no number anywhere in code).
 - Testimonials are illustrative copy from the Figma design, not real users.
 
-## 10. Current state (snapshot 2026-09-28)
+## 10. Current state (snapshot 2026-09-30, core-loop session)
 
-- Branch `main`, HEAD `a1bd15d` (feat(auth): onboard new users before dashboard, make subscribing optional). 11 commits total, single human contributor, direct-to-main workflow, no PR/CI history.
+- Branch `main`, HEAD `a1bd15d` at session start; the core-loop build (schema, routes, components, webhook fix, docs) was **uncommitted work in the worktree** at time of writing — inspect `git status` before assuming clean.
 - Worktree (uncommitted at snapshot time): `.media/` (Figma provenance), `.freebuff/`, `AGENTS.md`, `scripts/figma-tree-dump.py`, `scripts/demo-user.mjs`, `dev-server.log`, `tree.txt`, `public/figma/hero.png`. These are untracked working files — do not commit them blindly (`TASK.md` 0.5 decides their fate).
 - Local dev runs on port 3000 (a second concurrent dev server must pick another port — see `dev-server.log` incident; the log itself is untracked noise). Migration `0001_add-profile-fields` (onboarding columns) is tracked in git as part of commit `a1bd15d`.
 - The app boots: landing page renders; auth/onboarding/dashboard/subscribe flows function locally per the flow-test script's expectations. Signup passes `email_confirm: NODE_ENV !== 'production'` in user metadata — dev-auto-confirm is the apparent intent, but Supabase governs real confirmation behavior via project settings, not this metadata field.
@@ -115,7 +117,7 @@
 ## 11. Guidance for the next session
 
 1. Read `MEMORY.md` (this file) → `TASK.md` → the doc relevant to your task.
-2. Start with `TASK.md` **Phase 0** — the webhook security fix (0.2) and migration verification (0.1) precede any feature work.
+2. Start with `TASK.md` — Phase 0.2 (webhook) and Phases 2–4 (core loop) are done; remaining: migration verification (0.1), legal pages (1.2), real Stripe tiers (1.1), tests/CI (0.6), then Phases 5–6.
 3. If you implement any core-loop feature, follow the PRD's acceptance criteria and update: schema docs (`ARCHITECTURE.md` §5), env table (§12.1), `TASK.md` checkboxes, this file's §10 snapshot and §12 log.
 4. Do not trust marketing copy as a feature inventory — check `PRD.md` §5 statuses.
 5. Run `npm run lint && npx tsc --noEmit && npm run build` before declaring anything done.
@@ -130,3 +132,4 @@
   - Redesigned `/subscribe` and error fallbacks (`/error`, `/not-found`, `/auth/auth-code-error`) using cohesive Figma tokens and layout standards.
   - Created test users and verified `typecheck`, `lint`, and `format:check` pass 100%.
 - **2026-09-29 — Figma screen parity and responsive QA.** Matched the landing page's 1440×4477 geometry (including the stretched 574×407 hero frame), corrected sign-in/sign-up Figma card bounds, and rebuilt the dashboard around its 280px sidebar with responsive native navigation. The dashboard uses unavailable/empty states for planned learning and credential features instead of sample data. Added `scripts/test-figma-layout.mjs` to verify landing/auth geometry and responsive overflow, plus authenticated dashboard layout. Created a unique isolated-development QA account for browser verification; credentials were provided in the session response, not stored here. The sign-up legal consent control and login "Remember me" control remain omitted because their policies/session semantics are not implemented; both OAuth providers remain functional even though the reference shows only Google.
+- **2026-09-30 — Full core-loop dashboard build (Buffy/Codebuff).** User asked for a fully functional dashboard with every page navigable and all features working. Decisions locked with user: AI provider = OpenAI-compatible thin interface (`utils/ai.ts`); captions = best-effort with fallback. Delivered: (a) schema `learning_items`/`assessments`/`attempts`/`credentials` + migration `0002_striped_misty_knight`; (b) server utils `utils/youtube.ts` (URL parsing, oEmbed, captions), `utils/ai.ts` (OpenAI-compatible generation, `AIUnavailableError`), `utils/credentials.ts` (constants, quota, `sha256-v1:` hashing); (c) server actions for learning/progress, assessment start/submit/mint, settings (profile/password), credential revoke; (d) routes: `/dashboard/learning`, `/dashboard/settings`, `/dashboard/certificates`, `/learn/[id]`, `/learn/[id]/assessment(+result)`, `/certificates/[id]`, public `/verify/[id]`; (e) navigation: active-state sidebar/mobile links (`DashboardNavLinks`), Cmd/Ctrl+K `DashboardQuickSearch`, header/dropdown fixes (nested Link removed); (f) Stripe webhook rewritten (raw-body `constructEvent`, created/updated/deleted idempotent, no payload logging); (g) middleware public paths add `/certificates`, `/verify`; (h) new deps `openai`, `qrcode` (+`@types/qrcode`); `.env.example` gains `STRIPE_WEBHOOK_SECRET`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL`. Verification: `npx tsc --noEmit` 0 errors, `npm run lint` 0 errors (6 pre-existing warnings in `app/auth/actions.ts` + `scripts/create-test-user.mjs`), `npm run format` clean; multiple code-review passes. Docs updated: ARCHITECTURE (§1–§7, §8.2, §9.4, §12.1, §14–§16), TASK (Phases 0.2/0.3/0.4, 1.3, 2–4 checked), MEMORY (§1, §2, §6, §8), PRD §5 statuses. **Lessons:** (1) `redirect()` in Next must sit outside try/catch or `NEXT_REDIRECT` is swallowed — audit every action; (2) always pass `instructions` to `write_file`; (3) `useFormStatus` comes from `react-dom` in this repo; (4) regenerate migrations only from corrected schema — delete orphaned SQL+journal entries first. Still open: playlists, PDF export, real Stripe tiers, rate limiting, tests/CI, legal pages (TASK Phases 1.2, 5, 6).

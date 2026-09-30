@@ -81,3 +81,11 @@
     height: auto;
   }
 }
+
+/* Certificate print stylesheet (DESIGN.md §12.5): strip navigation/chrome when
+   printing so browser print → PDF yields a clean, QR-sharp document. */
+@media print {
+  [data-print-hide] {
+    display: none !important;
+  }
+}

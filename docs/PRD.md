@@ -43,7 +43,7 @@ Tagline (exact, from `app/page.tsx` footer): **"Turning YouTube video minutes in
 Self-taught developer / DevOps / designer who already learns from YouTube playlists and tutorials. Needs portable, shareable proof of skill for job applications, LinkedIn, and internal promotion cases. Willing to pay ~$12/month (the "Professional" tier price shown on the landing page) for unlimited credentials. This persona is the audience for every core journey in section 6.
 
 **P2 — The verifier (employer / recruiter / team lead).**
-Receives a credential link or QR code scan. Does **not** have an account and must never be forced to create one. Needs a fast, trustworthy, read-only answer: is this credential real, whose is it, what did they learn, what did they score? Served by the public verification page **[PLANNED]**.
+Receives a credential link or QR code scan. Does **not** have an account and must never be forced to create one. Needs a fast, trustworthy, read-only answer: is this credential real, whose is it, what did they learn, what did they score? Served by the public verification page **[EXISTS]**.
 
 **P3 — The team lead / training coordinator (secondary, future).**
 Uses the platform to assign YouTube course material to a team and track who is certified on what ("Our team uses it to track internal developer training" — landing testimonial). No functionality for this persona exists or is scheduled; treat as **[N/A YET]** and see §12 (exclusions).
@@ -63,40 +63,42 @@ Uses the platform to assign YouTube course material to a team and track who is c
 
 Differentiators (as claimed in landing copy — note claims are marketing, not implemented features):
 
-- Assessments generated _from the video transcripts_ of the exact content consumed **[PLANNED]**.
-- Engagement-gated assessment unlocking (80% watch progress) **[PLANNED]**.
-- Every certificate carries "a cryptographic hash and quick-verify QR code" **[PLANNED]**.
+- Assessments generated _from the video transcripts_ of the exact content consumed **[EXISTS — best-effort captions with fallback]**.
+- Engagement-gated assessment unlocking (80% watch progress) **[EXISTS]**.
+- Every certificate carries "a cryptographic hash and quick-verify QR code" **[EXISTS]**.
 
 ## 5. Implemented capabilities today (repository-audited)
 
-The application currently consists of a **marketing landing page plus a complete account/billing chassis**. Concretely:
+The application consists of a **marketing landing page, a complete account/billing chassis, and the end-to-end core loop** (add video → progress-gated assessment → credential → public verification), built in the 2026-09-30 session. Concretely:
 
-| Capability                                                                                                          | Status                   | Evidence                                                                                                                                                     |
-| ------------------------------------------------------------------------------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Figma-faithful responsive marketing landing page (hero, how-it-works, features, testimonials, pricing, CTA, footer) | **[EXISTS]**             | `app/page.tsx`, `components/MobileNav.tsx`, `components/icons.tsx`, `public/figma/*`                                                                         |
-| Email + password signup / login / logout                                                                            | **[EXISTS]**             | `app/auth/actions.ts` (`signup`, `loginUser`, `logout`), `app/login`, `app/signup`                                                                           |
-| Google + GitHub OAuth sign-in                                                                                       | **[EXISTS]**             | `signInWithGoogle`, `signInWithGithub` in `app/auth/actions.ts` (requires provider env vars)                                                                 |
-| Email confirmation, forgot/reset password flows                                                                     | **[EXISTS]**             | `forgotPassword`, `resetPassword` actions; `app/forgot-password/**`; `app/auth/auth/confirm/route.ts`                                                        |
-| Auth callback that provisions DB + Stripe customer for new users                                                    | **[EXISTS]**             | `app/auth/callback/route.ts`                                                                                                                                 |
-| Mandatory profile onboarding before dashboard (username, first/last name, DOB with 13+ age check)                   | **[EXISTS]**             | `app/onboarding/page.tsx`, `components/OnboardingForm.tsx`, `completeOnboarding` in `app/auth/actions.ts`                                                    |
-| Protected `/dashboard` with personalized greeting and voluntary upgrade card                                        | **[EXISTS]**             | `app/dashboard/layout.tsx`, `app/dashboard/page.tsx`                                                                                                         |
-| Route protection via middleware (proxy) incl. redirect `/ → /dashboard` for logged-in users                         | **[EXISTS]**             | `proxy.ts`, `utils/supabase/middleware.ts`                                                                                                                   |
-| Stripe subscription billing: pricing table, customer portal, webhook storing subscription ID as `plan`              | **[EXISTS but PARTIAL]** | `utils/stripe/api.ts`, `app/subscribe/**`, `app/webhook/stripe/route.ts` — the webhook is unverified and has a fall-through bug; see §8 and `TASK.md`        |
-| Free-tier posture: subscribing is optional; dashboard shows an _optional_ upgrade card                              | **[EXISTS]**             | `app/dashboard/page.tsx` (`isSubscribed` logic), commit `a1bd15d`                                                                                            |
-| Add a YouTube video/playlist, track watch progress, enforce 80% completion gate                                     | **[MISSING → PLANNED]**  | No YouTube integration code exists anywhere in the repo                                                                                                      |
-| Transcript parsing and AI assessment generation                                                                     | **[MISSING → PLANNED]**  | No LLM/AI dependency, API route, or prompt code exists                                                                                                       |
-| Assessment taking UI, scoring, pass/fail flow                                                                       | **[MISSING → PLANNED]**  | No assessment routes, components, or tables exist                                                                                                            |
-| Credential minting: score, unique credential ID, cryptographic hash, certificate                                    | **[MISSING → PLANNED]**  | No credential tables, generation code, or UI exists                                                                                                          |
-| QR code generation                                                                                                  | **[MISSING → PLANNED]**  | No QR dependency or code exists                                                                                                                              |
-| Public verification page (no-auth read-only)                                                                        | **[MISSING → PLANNED]**  | No `/verify` route or equivalent exists                                                                                                                      |
-| PDF export / LinkedIn share                                                                                         | **[MISSING → PLANNED]**  | Pro-tier feature only in pricing copy                                                                                                                        |
-| Chrome extension integration                                                                                        | **[MISSING → PLANNED]**  | Free-tier feature only in pricing copy                                                                                                                       |
-| Plan-based feature gating (1 cert/month free vs unlimited Pro)                                                      | **[MISSING → PLANNED]**  | Pricing copy exists; no entitlement/quota logic exists; Stripe products configured by `stripeSetup.ts` are still generic starter plans (see FR-B7 and §14.6) |
-| Progress tracking data model, watch history                                                                         | **[MISSING → PLANNED]**  | Only `users_table` exists in the schema                                                                                                                      |
+| Capability                                                                                                                | Status                  | Evidence                                                                                                                                                                     |
+| ------------------------------------------------------------------------------------------------------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Figma-faithful responsive marketing landing page (hero, how-it-works, features, testimonials, pricing, CTA, footer)       | **[EXISTS]**            | `app/page.tsx`, `components/MobileNav.tsx`, `components/icons.tsx`, `public/figma/*`                                                                                         |
+| Email + password signup / login / logout                                                                                  | **[EXISTS]**            | `app/auth/actions.ts` (`signup`, `loginUser`, `logout`), `app/login`, `app/signup`                                                                                           |
+| Google + GitHub OAuth sign-in                                                                                             | **[EXISTS]**            | `signInWithGoogle`, `signInWithGithub` in `app/auth/actions.ts` (requires provider env vars)                                                                                 |
+| Email confirmation, forgot/reset password flows                                                                           | **[EXISTS]**            | `forgotPassword`, `resetPassword` actions; `app/forgot-password/**`; `app/auth/auth/confirm/route.ts`                                                                        |
+| Auth callback that provisions DB + Stripe customer for new users                                                          | **[EXISTS]**            | `app/auth/callback/route.ts`                                                                                                                                                 |
+| Mandatory profile onboarding before dashboard (username, first/last name, DOB with 13+ age check)                         | **[EXISTS]**            | `app/onboarding/page.tsx`, `components/OnboardingForm.tsx`, `completeOnboarding` in `app/auth/actions.ts`                                                                    |
+| Protected `/dashboard` with personalized greeting and voluntary upgrade card                                              | **[EXISTS]**            | `app/dashboard/layout.tsx`, `app/dashboard/page.tsx`                                                                                                                         |
+| Route protection via middleware (proxy) incl. redirect `/ → /dashboard` for logged-in users                               | **[EXISTS]**            | `proxy.ts`, `utils/supabase/middleware.ts`                                                                                                                                   |
+| Stripe subscription billing: pricing table, customer portal, signature-verified webhook storing subscription ID as `plan` | **[EXISTS]**            | `utils/stripe/api.ts`, `app/subscribe/**`, `app/webhook/stripe/route.ts` — raw-body `constructEvent` + `STRIPE_WEBHOOK_SECRET`, handles created/updated/deleted idempotently |
+| Free-tier posture: subscribing is optional; dashboard shows an _optional_ upgrade card                                    | **[EXISTS]**            | `app/dashboard/page.tsx` (`isSubscribed` logic), commit `a1bd15d`                                                                                                            |
+| Add a YouTube video (watch/youtu.be/shorts URLs), track watch progress, enforce 80% completion gate                       | **[EXISTS]**            | `addLearningItem`/`saveProgress` in `app/dashboard/actions.ts`, `app/dashboard/learning`, `app/learn/[id]`, `learning_items` table — video only, playlists [PLANNED]         |
+| Best-effort transcript (captions) + AI assessment generation                                                              | **[EXISTS]**            | `utils/youtube.ts` (oEmbed + captions fallback), `utils/ai.ts` (OpenAI-compatible, `OPENAI_*` env) — degrades gracefully when captions/key absent                            |
+| Assessment taking UI, server-side scoring, pass/fail flow                                                                 | **[EXISTS]**            | `app/learn/[id]/assessment(+/result)`, `submitAssessment` in `app/learn/actions.ts` — 70% pass, 3 attempts / 7-day window                                                    |
+| Credential minting: score, unique credential ID, cryptographic hash, certificate                                          | **[EXISTS]**            | `credentials` table, transactional mint in `submitAssessment`/`mintFromAttempt`, `utils/credentials.ts` (`sha256-v1:` hash)                                                  |
+| QR code generation                                                                                                        | **[EXISTS]**            | `qrcode` lib, `buildCertificateQrSvg` in `components/certificates/CertificateQR.tsx`                                                                                         |
+| Public verification page (no-auth read-only)                                                                              | **[EXISTS]**            | `/verify/[id]` (middleware public list), hash recheck, valid/revoked/invalid/not-found states                                                                                |
+| Certificate view + print                                                                                                  | **[EXISTS]**            | `/certificates/[id]` + `PrintCertificateButton` (print → PDF for MVP)                                                                                                        |
+| Free-plan quota: 1 credential/month (calendar UTC) vs unlimited Pro                                                       | **[EXISTS]**            | `hasFreeQuotaRemaining` enforced in-transaction; plan detection still keys on raw subscription ID (representation undecided — §14.6)                                         |
+| Dashboard navigation, settings (profile/password/plan/sign-out), quick search                                             | **[EXISTS]**            | `DashboardNavLinks`, `DashboardQuickSearch` (Cmd/Ctrl+K), `/dashboard/settings`                                                                                              |
+| PDF export / LinkedIn share                                                                                               | **[MISSING → PLANNED]** | Pro-tier feature only in pricing copy                                                                                                                                        |
+| Chrome extension integration                                                                                              | **[MISSING → PLANNED]** | Free-tier feature only in pricing copy                                                                                                                                       |
+| Playlist support                                                                                                          | **[MISSING → PLANNED]** | FR-C2 — single videos only today                                                                                                                                             |
 
 ### What the current app _is_ (honest framing)
 
-Today the deployed capability set is: **convince → sign up → onboard → optionally pay**. The product promise in the hero is visible to visitors, but the "paste a YouTube link" step has no corresponding product surface yet. This framing must be preserved in all future AI sessions: do not describe assessments, certificates, or verification as existing features.
+The deployed capability set is: **convince → sign up → onboard → optionally pay → add a video → learn to 80% → pass the AI assessment → earn a verifiable credential**. Still marketing-only: playlists, PDF export, LinkedIn share, Chrome extension, public profiles, emails. Future AI sessions must check the §5 tags — never describe those as existing.
 
 ## 6. User journeys
 
@@ -111,11 +113,11 @@ Today the deployed capability set is: **convince → sign up → onboard → opt
    - _Known friction:_ in production, Supabase requires email confirmation before `auth/callback` runs; the DB row is only provisioned on callback or first password login, and OAuth users skip `signup` entirely (provisioning happens in the callback instead). See `ARCHITECTURE.md` §6.5 and `TASK.md` Phase 1.3.
 3. User completes onboarding (username regex `[a-z0-9_]{3,20}`, names, DOB ≥ 13 years) → redirected to `/dashboard` **[EXISTS]**.
 4. Dashboard greets by name; if `plan='none'`, shows a _voluntary_ "Upgrade your plan" card linking to `/subscribe` **[EXISTS]**.
-5. **From here the intended core loop is missing:** the user should add a YouTube video/playlist and begin learning, but no such surface exists **[PLANNED]**.
+5. **From here the learner enters the core loop:** the dashboard offers "Add a video" (`/dashboard/learning`) and the implemented Journey B below.
 
-### 6.2 Journey B — Learn → assess → certify (the core product loop) [PLANNED]
+### 6.2 Journey B — Learn → assess → certify (the core product loop) [EXISTS — video only]
 
-> This journey is assembled from the landing page's own copy (steps 01–03, feature cards, pricing feature lists). It is the canonical target state; every step below is **unimplemented** and detailed as requirements in §7.
+> Assembled from landing copy and now implemented (playlists deferred). Steps below map to the built routes/actions. Note: step 5's PDF/LinkedIn export is post-MVP (§10) — the built share path is the certificate/verification URL itself.
 
 1. Learner pastes a YouTube video or playlist URL ("Paste YouTube Link").
 2. Learner watches in a "customized split-screen player"; the system tracks viewing progress and unlocks the assessment at ≥ 80% completion ("Watch & Learn", "Engagement Milestones").
@@ -123,7 +125,7 @@ Today the deployed capability set is: **convince → sign up → onboard → opt
 4. On passing, the system "mints" a credential containing the assessment score, a unique credential ID, a cryptographic hash, and a QR code.
 5. Learner shares the credential link on LinkedIn / résumé; Pro users can export PDF ("PDF/LinkedIn resume generator export").
 
-### 6.3 Journey C — Verification (verifier persona) [PLANNED]
+### 6.3 Journey C — Verification (verifier persona) [EXISTS]
 
 1. Employer receives a credential URL or scans the QR code.
 2. Public, no-auth page loads showing: holder identity, field of study / content source, assessment score, issue date, credential ID, and validity.
@@ -140,7 +142,7 @@ Today the deployed capability set is: **convince → sign up → onboard → opt
 - **FR-A3.** Users can request a password reset and set a new password via emailed code. _(Implemented — `forgotPassword`, `resetPassword`.)_
 - **FR-A4.** Users can log out from the dashboard dropdown. _(Implemented — `logout` via form action.)_
 - **FR-A5.** Every user must complete onboarding (unique username matching `[a-z0-9_]{3,20}`, first name, last name, DOB with age ≥ 13) before accessing `/dashboard`; logged-in users who skipped onboarding are redirected there from `/`, `/dashboard`, and `/onboarding` itself once complete. _(Implemented — `hasCompletedOnboarding` + redirects.)_
-- **FR-A6.** Unauthenticated visitors can access only `/`, `/login`, `/signup`, `/auth/**`, `/forgot-password/**`, and webhook routes; everything else redirects to `/login`. _(Implemented — `utils/supabase/middleware.ts`.)_
+- **FR-A6.** Unauthenticated visitors can access `/`, `/login`, `/signup`, `/auth/**`, `/forgot-password/**`, `/certificates/**`, `/verify/**`, and webhook routes; everything else redirects to `/login`. _(Implemented — `utils/supabase/middleware.ts`.)_
 - **FR-A7.** A session cookie is refreshed transparently on every matched request. _(Implemented — `updateSession`.)_
 - **FR-A8. [PLANNED]** Account deletion / data export (implied by credential-platform privacy posture; not designed).
 
@@ -149,12 +151,12 @@ Today the deployed capability set is: **convince → sign up → onboard → opt
 - **FR-B1.** A Stripe customer is provisioned for every user at signup or first OAuth callback. _(Implemented.)_
 - **FR-B2.** Users can view a Stripe-embedded pricing table and start a checkout Customer Session from `/subscribe`. _(Implemented.)_
 - **FR-B3.** Users can open the Stripe billing portal from the dashboard dropdown. _(Implemented — degrades to `#` if Stripe errors.)_
-- **FR-B4.** The `customer.subscription.*` webhook writes the subscription ID into `users_table.plan`. _(Implemented but **insecure and buggy** — see `ARCHITECTURE.md` §8.2; treating B4 as not-production-ready.)_
+- **FR-B4.** The `customer.subscription.*` webhook writes the subscription ID into `users_table.plan`. _(Implemented and **signature-verified**, idempotent across created/updated/deleted — `ARCHITECTURE.md` §8.2.)_
 - **FR-B5.** Subscribing is optional; a non-subscriber sees a voluntary upgrade card. _(Implemented.)_
-- **FR-B6. [PLANNED]** Entitlement enforcement: Free = 1 credential/month; Pro = unlimited, plus deep-syllabus assessments, PDF export. No quota or entitlement code exists.
+- **FR-B6. [PARTIAL]** Entitlement enforcement: Free = 1 credential/month (calendar UTC) enforced at mint time; Pro = unlimited. _(Quota implemented — `hasFreeQuotaRemaining`; deep-syllabus assessments and PDF export still PLANNED; plan representation still keyed on raw subscription ID.)_
 - **FR-B7. [PLANNED]** Plan products must reflect actual tiers (Free Explorer / Professional $12/mo). Today `stripeSetup.ts` seeds unrelated starter plans (Basic $10 / Pro $20 / Enterprise $50). Mismatch documented in `TASK.md`.
 
-### 7.3 Learning content (core loop) [PLANNED — not started]
+### 7.3 Learning content (core loop) [EXISTS — video only; FR-C2 playlist PLANNED]
 
 > Acceptance criteria here define the _first implementable MVP slice_ of each requirement; they are intentionally minimal so an AI agent can build them sequentially (execution order lives in `TASK.md`).
 
@@ -178,9 +180,9 @@ Today the deployed capability set is: **convince → sign up → onboard → opt
   - _AC3:_ The gate is enforced server-side, not only in UI.
 - **FR-C6. [N/A YET]** Anti-cheat protections around progress (e.g., preventing API-level progress forgery) — design decision pending; interactions with YouTube ToS must be reviewed before any scraping approach is chosen.
 
-### 7.4 Assessment (core loop) [PLANNED — not started]
+### 7.4 Assessment (core loop) [EXISTS]
 
-- **FR-D1. Transcript acquisition.** For each learning item the system obtains the content's transcript(s) to ground question generation. (Mechanism undecided: captions API vs. third-party service vs. LLM with URL context — see `MEMORY.md` open questions.)
+- **FR-D1. Transcript acquisition.** For each learning item the system obtains the content's captions to ground question generation. _(Implemented best-effort — `utils/youtube.ts` timedtext; falls back to title/author grounding when captions are unavailable.)_
 - **FR-D2. Assessment generation.** On first unlock, the system generates a multiple-choice assessment from the transcript using an LLM, tied to "the creator's syllabus."
   - _AC1:_ Assessment has a fixed, documented question count (recommend 10 for MVP).
   - _AC2:_ Each question has exactly one correct answer and 3 distractors; questions reference only content present in the transcript.
@@ -190,11 +192,11 @@ Today the deployed capability set is: **convince → sign up → onboard → opt
   - _AC1:_ All questions must be answered before submission; unanswered submits are blocked client- and server-side.
   - _AC2:_ Submission is server-scored; the client never receives correct answers before submission.
 - **FR-D4. Scoring & attempts.** Score = % correct, persisted per attempt.
-  - _AC1:_ Pass threshold is 70% (proposed; confirm before build — landing copy says "pass" without a number).
-  - _AC2:_ Failed attempts may be retried; the number of allowed attempts is a product decision to make before implementing (proposal: 3 per item, then 7-day cooldown).
+  - _AC1:_ Pass threshold is 70% (`PASS_SCORE`).
+  - _AC2:_ Failed attempts may be retried; 3 attempts per 7-day window, enforced server-side (`MAX_ATTEMPTS_PER_WINDOW`, `ATTEMPT_COOLDOWN_DAYS`).
 - **FR-D5.** Results feed directly into credential minting (FR-E1) — the credential's score field is the passing attempt's score.
 
-### 7.5 Credentials & certificates (core loop) [PLANNED — not started]
+### 7.5 Credentials & certificates (core loop) [EXISTS — FR-E6 PLANNED]
 
 - **FR-E1. Minting.** On passing, the system creates an immutable credential record containing: user identity, learning item identity, assessment score, pass date, and a **unique credential ID**.
   - _AC1:_ Credential ID is globally unique, URL-safe, and non-sequential (e.g., UUIDv4 or prefixed random).
@@ -213,9 +215,9 @@ Today the deployed capability set is: **convince → sign up → onboard → opt
   - _AC1:_ Revoked credential's QR/link still resolves but shows "REVOKED" prominently.
 - **FR-E6. [N/A YET]** LinkedIn share deep-link and OpenGraph card images for credential URLs.
 
-### 7.6 Verification (verifier persona) [PLANNED — not started]
+### 7.6 Verification (verifier persona) [EXISTS]
 
-- **FR-F1. Public verification page.** `/verify/<credentialId>` (route name TBD at build time; see `MEMORY.md`) is publicly accessible without login, middleware-exempt, and shows: holder name, learning item title + source, score, pass date, credential ID, and validity (valid / revoked / invalid hash).
+- **FR-F1. Public verification page.** `/verify/<credentialId>` (route name confirmed) is publicly accessible without login, middleware-exempt, and shows: holder name, learning item title + source, score, pass date, credential ID, and validity (valid / revoked / invalid hash).
   - _AC1:_ Unauthenticated fetch returns 200 with the credential data.
   - _AC2:_ Nonexistent ID → clear "not found" state (no stack traces, no user enumeration beyond the ID).
   - _AC3:_ Page never reveals assessor/question data beyond what verification requires.
@@ -230,7 +232,7 @@ Today the deployed capability set is: **convince → sign up → onboard → opt
 
 ## 8. Non-functional requirements
 
-- **NFR-1. Security & trust (highest priority for this product).** Credential verification is the product's core promise, so every trust surface must be technically sound: signature/secret-verified Stripe webhooks, tamper-evident credential hashes, no client-trusted scoring, no client-trusted progress writes. Current state fails the Stripe part (see `ARCHITECTURE.md` §8.2).
+- **NFR-1. Security & trust (highest priority for this product).** Credential verification is the product's core promise, so every trust surface must be technically sound: signature/secret-verified Stripe webhooks, tamper-evident credential hashes, no client-trusted scoring, no client-trusted progress writes. Stripe part now satisfied (signature-verified webhook, server-authoritative scoring/progress); remaining gaps: no rate limiting, no error tracking (see `ARCHITECTURE.md` §14).
 - **NFR-2. Privacy & data protection.** The app stores DOB and full names (onboarding) and will store learning/assessment history. Requirements: privacy policy and terms pages before public launch; minimal PII exposure on public verification pages; no PII in logs. Age gate (13+) already implemented.
 - **NFR-3. Accessibility.** Target WCAG 2.1 AA for all new surfaces (baseline largely present on landing page: semantic landmarks, `aria-expanded` nav, focus-visible rings via shadcn primitives; Radix dropdown for dashboard menus). Verification and assessment pages must be keyboard-complete and screen-reader navigable.
 - **NFR-4. Performance.** Landing page is statically rendered with ISR (`revalidate = 3600`) and priority-loads hero assets. New dynamic surfaces should keep server-rendered data fetching, avoid client-side waterfalls, and hold interactive flows (assessment) to < 2s first contentful paint on mid-range mobile.
@@ -264,8 +266,8 @@ The MVP is the **smallest end-to-end path from "I watched it" to "an employer ca
 4. Transcript-grounded LLM assessment (10 MCQs) with server-side scoring, ≥ 70% pass, limited attempts.
 5. Credential minting with unique ID + SHA-256 integrity hash.
 6. Public verification page + QR code encoding its URL.
-7. Plan gating for Free (1 credential/month) vs Pro (unlimited) — requires fixing Stripe webhook security first.
-8. Legal pages (privacy/terms) — plus the marketing-copy reality check in Phase 4.4 of `TASK.md` (the "cryptographic hash / QR" claims become true there).
+7. Plan gating for Free (1 credential/month) vs Pro (unlimited) — ✅ quota enforced; webhook security fixed (signature-verified).
+8. Legal pages (privacy/terms) — **still outstanding** (`TASK.md` Phase 1.2); the "cryptographic hash / QR" marketing claims are now true.
 
 **Explicitly out of MVP** (post-MVP scope): PDF export, LinkedIn résumé generator, Chrome extension, team/org training features, creator-facing analytics, mobile apps, localization beyond English, anti-cheat hardening beyond server-side validation.
 
@@ -285,7 +287,7 @@ The MVP is the **smallest end-to-end path from "I watched it" to "an employer ca
 - `npm run lint` and `npx tsc --noEmit` pass with zero errors.
 - `npm run build` succeeds (preflight + migrate + build).
 - Every new core-loop feature ships with tests (framework added in Phase 0 of `TASK.md`).
-- Stripe webhook verification lands before any production credential issuance.
+- Stripe webhook verification has landed (signature-verified handler).
 
 ## 12. Exclusions (explicit non-goals)
 
@@ -313,16 +315,16 @@ The following are **not** being built, despite appearing in marketing copy or be
 9. **Emails** — transactional templates (welcome, credential earned, verification reminders) beyond Supabase's built-in auth emails.
 10. **Internationalization.**
 
-## 14. Open product decisions (must be resolved before related build)
+## 14. Product decisions (rows 1–5 resolved 2026-09-30; 6–7 still open)
 
-| #   | Decision                                                                             | Affects                     | Proposed default                                                      |
-| --- | ------------------------------------------------------------------------------------ | --------------------------- | --------------------------------------------------------------------- |
-| 1   | Pass score (70%?) and attempt policy                                                 | FR-D4                       | 70%, 3 attempts, 7-day cooldown                                       |
-| 2   | Transcript acquisition method (YouTube captions vs. third-party vs. LLM URL context) | FR-D1, §12.2 ToS constraint | Prefer official/ToS-compliant source; decide in a spike               |
-| 3   | LLM provider & prompt ownership                                                      | FR-D2                       | Single provider behind a thin internal interface so it can be swapped |
-| 4   | Verification route name & public data set                                            | FR-F1                       | `/verify/<id>`, holder name + item title + score + date + ID + status |
-| 5   | Quota reset semantics ("1 credential/month" — rolling vs calendar)                   | FR-B6                       | Calendar month, UTC                                                   |
-| 6   | Real Stripe product/price IDs matching Free/Pro tiers                                | FR-B7                       | Replace `stripeSetup.ts` plan array with the two real tiers           |
-| 7   | Whether watch-progress writes need abuse limits (rate limiting)                      | FR-C4/C6                    | Add simple per-user rate limit on progress writes                     |
+| #   | Decision                                                                                                                            | Affects                     | Proposed default                                            |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------- | ----------------------------------------------------------- |
+| 1   | Pass score (70%?) and attempt policy — **resolved:** 70%, 3 attempts, 7-day window (`utils/credentials.ts`)                         | FR-D4                       | ✅ Done                                                     |
+| 2   | Transcript acquisition method — **resolved:** best-effort official YouTube captions with title/author fallback (`utils/youtube.ts`) | FR-D1, §12.2 ToS constraint | ✅ Done                                                     |
+| 3   | LLM provider & prompt ownership — **resolved:** one thin OpenAI-compatible interface (`utils/ai.ts`, `OPENAI_*` env)                | FR-D2                       | ✅ Done                                                     |
+| 4   | Verification route name & public data set — **resolved:** `/verify/<id>`, holder name + item title + score + date + ID + status     | FR-F1                       | ✅ Done                                                     |
+| 5   | Quota reset semantics — **resolved:** calendar month, UTC (`monthWindowStart()`)                                                    | FR-B6                       | ✅ Done                                                     |
+| 6   | Real Stripe product/price IDs matching Free/Pro tiers                                                                               | FR-B7                       | Replace `stripeSetup.ts` plan array with the two real tiers |
+| 7   | Whether watch-progress writes need abuse limits (rate limiting)                                                                     | FR-C4/C6                    | Add simple per-user rate limit on progress writes           |
 
 These decisions are mirrored in `MEMORY.md` (unresolved questions) so future sessions inherit them without re-deriving.

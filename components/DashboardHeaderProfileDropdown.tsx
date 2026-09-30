@@ -6,7 +6,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ReceiptText, User, LogOut, ExternalLink } from 'lucide-react';
+import { ReceiptText, User, LogOut, ExternalLink, Settings, BadgeCheck } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 import { logout } from '@/app/auth/actions';
@@ -18,12 +18,13 @@ export default async function DashboardHeaderProfileDropdown() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  let billingPortalURL = '#';
+  let billingPortalURL: string | null = null;
   if (user?.email) {
     try {
       billingPortalURL = await generateStripeBillingPortalLink(user.email);
     } catch {
-      // Billing portal unavailable
+      // Stripe unavailable — degrade to a disabled hint instead of a dead link.
+      billingPortalURL = null;
     }
   }
 
@@ -53,20 +54,54 @@ export default async function DashboardHeaderProfileDropdown() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator className="my-1 bg-sandline" />
 
-          <Link href="/dashboard">
-            <DropdownMenuItem className="cursor-pointer rounded-lg px-2.5 py-2 text-sm font-medium text-ink focus:bg-cream focus:text-ink">
+          {/* shadcn pattern: DropdownMenuItem-asChild wrapping Link — avoids the
+              invalid Link-inside-Link nesting (MEMORY §6.3). */}
+          <DropdownMenuItem asChild className="cursor-pointer">
+            <Link href="/dashboard" className="rounded-lg px-2.5 py-2 text-sm font-medium text-ink">
               <User className="mr-2.5 h-4 w-4 text-clay" />
               <span>Dashboard</span>
-            </DropdownMenuItem>
-          </Link>
+            </Link>
+          </DropdownMenuItem>
 
-          <Link href={billingPortalURL} target={billingPortalURL !== '#' ? '_blank' : undefined}>
-            <DropdownMenuItem className="cursor-pointer rounded-lg px-2.5 py-2 text-sm font-medium text-ink focus:bg-cream focus:text-ink">
-              <ReceiptText className="mr-2.5 h-4 w-4 text-clay" />
-              <span>Manage Billing</span>
-              {billingPortalURL !== '#' && <ExternalLink className="ml-auto h-3 w-3 text-clay" />}
+          <DropdownMenuItem asChild className="cursor-pointer">
+            <Link
+              href="/dashboard/certificates"
+              className="rounded-lg px-2.5 py-2 text-sm font-medium text-ink"
+            >
+              <BadgeCheck className="mr-2.5 h-4 w-4 text-clay" />
+              <span>Certificates</span>
+            </Link>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem asChild className="cursor-pointer">
+            <Link
+              href="/dashboard/settings"
+              className="rounded-lg px-2.5 py-2 text-sm font-medium text-ink"
+            >
+              <Settings className="mr-2.5 h-4 w-4 text-clay" />
+              <span>Settings</span>
+            </Link>
+          </DropdownMenuItem>
+
+          {billingPortalURL ? (
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link
+                href={billingPortalURL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-lg px-2.5 py-2 text-sm font-medium text-ink"
+              >
+                <ReceiptText className="mr-2.5 h-4 w-4 text-clay" />
+                <span>Manage Billing</span>
+                <ExternalLink className="ml-auto h-3 w-3 text-clay" />
+              </Link>
             </DropdownMenuItem>
-          </Link>
+          ) : (
+            <DropdownMenuItem disabled className="px-2.5 py-2 text-sm font-medium">
+              <ReceiptText className="mr-2.5 h-4 w-4" />
+              <span>Billing unavailable</span>
+            </DropdownMenuItem>
+          )}
 
           <DropdownMenuSeparator className="my-1 bg-sandline" />
 

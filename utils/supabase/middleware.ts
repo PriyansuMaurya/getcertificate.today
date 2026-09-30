@@ -39,8 +39,14 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
+  // Public, no-auth routes (FR-F1 verification, FR-E3 certificate sharing).
+  // Kept as exact prefixes per RULES §9.5 — add new ones narrowly.
+  const PUBLIC_PREFIXES = ['/verify', '/certificates'];
+  const isPublicPath = PUBLIC_PREFIXES.some((p) => request.nextUrl.pathname.startsWith(p));
+
   if (
     !user &&
+    !isPublicPath &&
     !request.nextUrl.pathname.startsWith('/login') &&
     !request.nextUrl.pathname.startsWith('/auth') &&
     !request.nextUrl.pathname.startsWith('/signup') &&

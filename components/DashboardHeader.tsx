@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 import DashboardHeaderProfileDropdown from './DashboardHeaderProfileDropdown';
+import DashboardQuickSearch from './DashboardQuickSearch';
 import { getStripePlan } from '@/utils/stripe/api';
-import { Menu, Search } from 'lucide-react';
-import { DashboardNavLinks } from './DashboardSidebar';
+import { Menu } from 'lucide-react';
+import DashboardNavLinks from './DashboardNavLinks';
 
 export default async function DashboardHeader() {
   const supabase = await createClient();
@@ -40,14 +41,7 @@ export default async function DashboardHeader() {
         </details>
 
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          <div
-            aria-disabled="true"
-            title="Search is not available yet"
-            className="hidden max-w-[420px] flex-1 items-center gap-3 rounded-lg border border-sandline bg-paper px-4 sm:flex"
-          >
-            <Search aria-hidden="true" className="h-4 w-4 shrink-0 text-clay" />
-            <span className="truncate py-3 text-sm text-clay">Search is not available yet</span>
-          </div>
+          <DashboardQuickSearch />
           <span className="hidden rounded-full border border-sandline bg-paper px-3 py-1 text-xs font-bold text-clay md:inline-flex">
             {stripePlan === 'none' || !stripePlan ? 'Free Explorer' : stripePlan}
           </span>

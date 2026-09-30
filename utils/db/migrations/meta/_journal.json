@@ -15,6 +15,13 @@
       "when": 1790630360970,
       "tag": "0001_add-profile-fields",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790724396506,
+      "tag": "0002_striped_misty_knight",
+      "breakpoints": true
     }
   ]
 }
