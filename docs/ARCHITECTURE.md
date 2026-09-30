@@ -106,9 +106,11 @@ getcertificate.today/
 ├── utils/
 │   ├── db/
 │   │   ├── db.ts                 # postgres.js client + drizzle instance (module singleton)
-│   │   ├── schema.ts             # Drizzle schema: users + learning/assessment/credential tables
+│   │   ├── schema.ts             # Drizzle schema: users + learning/assessment/credential/transcript tables
 │   │   └── migrations/           # Generated SQL + snapshot metadata (drizzle-kit)
 │   ├── youtube.ts                # YouTube ID parsing, oEmbed meta, best-effort captions (server)
+│   ├── transcripts.ts            # TranscriptAPI client with per-video DB cache (server-only)
+│   ├── assessment-config.ts      # Assessment shape constants (question count)
 │   ├── ai.ts                     # Thin OpenAI-compatible assessment generation (server-only)
 │   ├── credentials.ts            # Constants, quota policy, SHA-256 credential hashing (server)
 │   ├── supabase/
@@ -429,21 +431,22 @@ flowchart LR
 
 ### 12.1 Environment variables (authoritative list)
 
-| Variable                              | Scope  | Used by                                     | Notes                                                                                       |
-| ------------------------------------- | ------ | ------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`            | public | all Supabase clients                        |                                                                                             |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY`       | public | all Supabase clients                        | Must be the publishable key; `.env.example` warns never to expose `sb_secret_`/service-role |
-| `NEXT_PUBLIC_WEBSITE_URL`             | public | auth actions, stripe api, stripeSetup       | Redirect base; defaults to `http://localhost:3000`                                          |
-| `DATABASE_URL`                        | server | Drizzle, preflight, dev scripts             | Postgres connection string (Supabase pooler-compatible)                                     |
-| `GOOGLE_OAUTH_CLIENT_ID/SECRET`       | server | Supabase dashboard config                   | Gates the Google button render (server reads presence via `process.env`)                    |
-| `GITHUB_OAUTH_CLIENT_ID/SECRET`       | server | Supabase dashboard config                   | Gates the GitHub button                                                                     |
-| `STRIPE_SECRET_KEY`                   | server | utils/stripe/api, stripeSetup, dev scripts  |                                                                                             |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`  | public | StripePricingTable                          |                                                                                             |
-| `NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID` | public | StripePricingTable                          |                                                                                             |
-| **`STRIPE_WEBHOOK_SECRET`**           | server | `app/webhook/stripe` signature verification | Required for the webhook to process events (requests fail verification without it)          |
-| **`OPENAI_API_KEY`** (optional)       | server | `utils/ai.ts` (assessment generation)       | Without it, assessments return a friendly "not configured" message                          |
-| **`OPENAI_BASE_URL`** (optional)      | server | `utils/ai.ts`                               | Any OpenAI-compatible endpoint (OpenRouter, Ollama, Azure, …); defaults to api.openai.com   |
-| **`OPENAI_MODEL`** (optional)         | server | `utils/ai.ts`                               | Defaults to `gpt-4o-mini`                                                                   |
+| Variable                              | Scope  | Used by                                      | Notes                                                                                                                 |
+| ------------------------------------- | ------ | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`            | public | all Supabase clients                         |                                                                                                                       |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`       | public | all Supabase clients                         | Must be the publishable key; `.env.example` warns never to expose `sb_secret_`/service-role                           |
+| `NEXT_PUBLIC_WEBSITE_URL`             | public | auth actions, stripe api, stripeSetup        | Redirect base; defaults to `http://localhost:3000`                                                                    |
+| `DATABASE_URL`                        | server | Drizzle, preflight, dev scripts              | Postgres connection string (Supabase pooler-compatible)                                                               |
+| `GOOGLE_OAUTH_CLIENT_ID/SECRET`       | server | Supabase dashboard config                    | Gates the Google button render (server reads presence via `process.env`)                                              |
+| `GITHUB_OAUTH_CLIENT_ID/SECRET`       | server | Supabase dashboard config                    | Gates the GitHub button                                                                                               |
+| `STRIPE_SECRET_KEY`                   | server | utils/stripe/api, stripeSetup, dev scripts   |                                                                                                                       |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`  | public | StripePricingTable                           |                                                                                                                       |
+| `NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID` | public | StripePricingTable                           |                                                                                                                       |
+| **`STRIPE_WEBHOOK_SECRET`**           | server | `app/webhook/stripe` signature verification  | Required for the webhook to process events (requests fail verification without it)                                    |
+| **`OPENAI_API_KEY`** (optional)       | server | `utils/ai.ts` (assessment generation)        | Without it, assessments return a friendly "not configured" message                                                    |
+| **`OPENAI_BASE_URL`** (optional)      | server | `utils/ai.ts`                                | Any OpenAI-compatible endpoint (OpenRouter, Ollama, Azure, …); defaults to api.openai.com                             |
+| **`OPENAI_MODEL`** (optional)         | server | `utils/ai.ts`                                | Defaults to `gpt-4o-mini`                                                                                             |
+| **`TRANSCRIPTAPI_KEY`** (optional)    | server | `utils/transcripts.ts` (TranscriptAPI fetch) | Server-only; without it, cached transcripts are reused but new videos get a friendly "transcript unavailable" message |
 
 Env loading convention (must stay consistent): production reads `.env`, development reads `.env.local` (see `drizzle.config.ts`, `scripts/db-preflight.mjs`, `stripeSetup.ts`, dev scripts). `.gitignore` excludes `.env*` except `.env.example`; `.env.example` documents the shape with placeholder values. A local `.env.local` also currently holds `FIGMA_TOKEN` (design tooling only, not app runtime).
 

@@ -179,7 +179,19 @@ BEGIN
   END IF;
 END $$;
 
--- 3.4 attempts (answers JSONB = number[] of chosen indices; score 0-100;
+-- 3.4 transcripts (per-video TranscriptAPI cache — utils/transcripts.ts;
+-- fetched once per YouTube video ID, reused by every later assessment start)
+CREATE TABLE IF NOT EXISTS public.transcripts (
+  id text PRIMARY KEY,
+  youtube_id text NOT NULL,
+  transcript text NOT NULL,
+  language text,
+  fetched_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS transcripts_youtube_id_unique
+  ON public.transcripts (youtube_id);
+
+-- 3.5 attempts (answers JSONB = number[] of chosen indices; score 0-100;
 -- server-scored only — app/learn/actions.ts submitAssessment)
 CREATE TABLE IF NOT EXISTS public.attempts (
   id text PRIMARY KEY,
@@ -192,7 +204,7 @@ CREATE TABLE IF NOT EXISTS public.attempts (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- 3.5 credentials (immutable credential record, sha256-v1 hash —
+-- 3.6 credentials (immutable credential record, sha256-v1 hash —
 -- utils/credentials.ts; revocation flips status only, RULES §18.4)
 CREATE TABLE IF NOT EXISTS public.credentials (
   id text PRIMARY KEY,
@@ -264,19 +276,31 @@ BEGIN
   END IF;
 END $$;
 
--- assessments.source: 'captions' | 'metadata' (schema comment; default 'metadata')
+-- assessments.source: 'captions' | 'metadata' | 'transcriptapi' (schema comment; default 'metadata')
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint
-                 WHERE conrelid = 'public.assessments'::regclass
-                   AND conname = 'assessments_source_check') THEN
+  IF EXISTS (SELECT 1 FROM pg_constraint
+             WHERE conrelid = 'public.assessments'::regclass
+               AND conname = 'assessments_source_check') THEN
+    -- Widen a pre-existing check that predates 'transcriptapi' (values only
+    -- ever grow here; the guard below still refuses when rows would violate).
     IF EXISTS (SELECT 1 FROM public.assessments
-               WHERE source NOT IN ('captions', 'metadata')) THEN
-      RAISE NOTICE 'skipping assessments_source_check: violating rows exist';
+               WHERE source NOT IN ('captions', 'metadata', 'transcriptapi')) THEN
+      -- Stale 2-value constraint stays in place here: manual cleanup required
+      -- (fix the offending rows, then re-run this block to widen it).
+      RAISE NOTICE 'skipping assessments_source_check widening: violating rows exist';
     ELSE
       ALTER TABLE public.assessments
-        ADD CONSTRAINT assessments_source_check CHECK (source IN ('captions', 'metadata'));
+        DROP CONSTRAINT assessments_source_check;
+      ALTER TABLE public.assessments
+        ADD CONSTRAINT assessments_source_check CHECK (source IN ('captions', 'metadata', 'transcriptapi'));
     END IF;
+  ELSIF EXISTS (SELECT 1 FROM public.assessments
+                WHERE source NOT IN ('captions', 'metadata', 'transcriptapi')) THEN
+    RAISE NOTICE 'skipping assessments_source_check: violating rows exist';
+  ELSE
+    ALTER TABLE public.assessments
+      ADD CONSTRAINT assessments_source_check CHECK (source IN ('captions', 'metadata', 'transcriptapi'));
   END IF;
 END $$;
 
@@ -386,7 +410,7 @@ DECLARE
   t text;
   owner_name text;
 BEGIN
-  FOREACH t IN ARRAY ARRAY['users_table', 'learning_items', 'assessments', 'attempts', 'credentials']
+  FOREACH t IN ARRAY ARRAY['users_table', 'learning_items', 'assessments', 'transcripts', 'attempts', 'credentials']
   LOOP
     SELECT pg_get_userbyid(c.relowner) INTO owner_name
       FROM pg_class c
@@ -410,6 +434,7 @@ END $$;
 ALTER TABLE public.users_table ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.learning_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.assessments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.transcripts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.attempts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.credentials ENABLE ROW LEVEL SECURITY;
 
@@ -425,6 +450,7 @@ ALTER TABLE public.credentials ENABLE ROW LEVEL SECURITY;
 --   assessments     SELECT via owning learning_item                no writes
 --   attempts        SELECT own rows                                no writes
 --   credentials     SELECT own rows                                no writes
+--   transcripts     no policy (server-only cache; never read from the client)
 
 DROP POLICY IF EXISTS users_select_own ON public.users_table;
 CREATE POLICY users_select_own ON public.users_table
@@ -522,7 +548,8 @@ CREATE INDEX IF NOT EXISTS users_table_stripe_id_idx
 -- (the four core tables were provisioned outside the chain), and it would
 -- error on a database where the dropped constraint never existed. Meanwhile
 -- migration 0001 would fail on any database that already has the profile
--- columns. Marking all three journal entries as applied (hash = sha256 of the
+-- columns. (0003 creates the `transcripts` cache table — see utils/transcripts.ts.)
+-- Marking all four journal entries as applied (hash = sha256 of the
 -- exact file bytes, created_at = journal `when`, matching drizzle-orm's
 -- migrator: SELECT ... ORDER BY created_at DESC LIMIT 1) makes
 -- `drizzle-kit migrate` (npm run build) a no-op against this schema.
@@ -540,6 +567,10 @@ INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
 SELECT 'f786dea9d48c95b008008e04a76cded5d9f1bb17f7397f3d374411bc6dc10549', 1790724396506
 WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at = 1790724396506);
 
+INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
+SELECT '77d3c91110d6dd1832cccc1f7e9c51f212b1fc93e05d58510d804aeeca391f7e', 1790784869180
+WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at = 1790784869180);
+
 -- -----------------------------------------------------------------------------
 -- SECTION 10 — Post-run verification queries (read-only, for manual check).
 -- -----------------------------------------------------------------------------
@@ -549,4 +580,5 @@ WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at = 
 -- SELECT schemaname, tablename, policyname FROM pg_policies
 --   WHERE schemaname = 'public' ORDER BY tablename, policyname;
 -- SELECT hash, created_at FROM drizzle.__drizzle_migrations ORDER BY created_at;
---   -- last row created_at must be 1790724396506 (journal 0002)
+--   last row created_at must match journal _journal.json's latest `when`
+--   (1790784869180 for 0003_stale_princess_powerful)

@@ -25,10 +25,32 @@ import {
   monthWindowStart,
   newCredentialId,
 } from '@/utils/credentials';
-import { AIUnavailableError, generateAssessment } from '@/utils/ai';
-import { getVideoMeta } from '@/utils/youtube';
+import {
+  AIUnavailableError,
+  AIRateLimitError,
+  AITimeoutError,
+  generateAssessment,
+} from '@/utils/ai';
+import {
+  TranscriptAPIError,
+  TranscriptNotConfiguredError,
+  TranscriptNotFoundError,
+  TranscriptRateLimitError,
+  TranscriptTimeoutError,
+  getTranscript,
+} from '@/utils/transcripts';
 
 export type AssessmentActionState = { message: string; success?: boolean };
+
+/** Feedback returned after the server validates one committed answer. */
+export type AnswerFeedback = {
+  correct: boolean;
+  correctIndex: number;
+  selectedText: string;
+  correctText: string;
+  explanation: string;
+  selectedExplanation: string;
+};
 
 async function requireUser() {
   const supabase = await createClient();
@@ -69,6 +91,10 @@ async function attemptsInWindow(assessmentId: string, userId: string) {
  * Generate (once) the assessment for a learning item after the server-side 80%
  * gate passes, then open the assessment route (FR-C5, FR-D2). Idempotent: an
  * existing assessment is reused, never regenerated.
+ *
+ * Transcript flow: DB cache by YouTube video ID → TranscriptAPI fetch → store
+ * → LLM generation grounded strictly in the transcript (never re-fetched for
+ * the same video).
  */
 export async function startAssessment(
   _currentState: AssessmentActionState,
@@ -100,13 +126,59 @@ export async function startAssessment(
   const title = displayTitle(item.title, item.youtube_id);
   let generated: Awaited<ReturnType<typeof generateAssessment>>;
   try {
-    const meta = await getVideoMeta(item.youtube_id);
-    generated = await generateAssessment(title, item.author ?? meta.author, meta.transcript);
+    // Cache-first TranscriptAPI fetch (DB → API → DB). Title/author come from
+    // the learning item row — both were stored when the video was added, so no
+    // extra oEmbed/captions round-trip is needed here.
+    const { transcript } = await getTranscript(item.youtube_id);
+    generated = await generateAssessment(title, item.author, transcript);
   } catch (err) {
+    if (err instanceof TranscriptNotConfiguredError) {
+      return {
+        message:
+          'Transcript API is not configured yet. Set TRANSCRIPTAPI_KEY to enable assessment generation.',
+      };
+    }
+    if (err instanceof TranscriptNotFoundError) {
+      return {
+        message:
+          'No transcript is available for this video (it may have no captions), so an assessment cannot be generated. Try another course.',
+      };
+    }
+    if (err instanceof TranscriptRateLimitError) {
+      return {
+        message: 'The transcript service is busy right now. Please try again in a moment.',
+      };
+    }
+    if (err instanceof TranscriptTimeoutError) {
+      return {
+        message: 'Fetching the transcript took too long. Please try again in a moment.',
+      };
+    }
+    if (err instanceof TranscriptAPIError) {
+      if (err.message.startsWith('Invalid YouTube video ID')) {
+        return {
+          message: 'This course has an invalid YouTube URL, so its transcript cannot be fetched.',
+        };
+      }
+      console.error('[assessment] transcript fetch failed:', err.message);
+      return {
+        message: "We could not fetch this video's transcript. Please try again in a moment.",
+      };
+    }
     if (err instanceof AIUnavailableError) {
       return {
         message:
           'AI assessments are not configured yet. Set OPENAI_API_KEY to enable question generation.',
+      };
+    }
+    if (err instanceof AIRateLimitError) {
+      return {
+        message: 'The AI service is rate-limited right now. Please try again in a moment.',
+      };
+    }
+    if (err instanceof AITimeoutError) {
+      return {
+        message: 'Question generation took too long. Please try again in a moment.',
       };
     }
     console.error(
@@ -127,16 +199,73 @@ export async function startAssessment(
       questions: generated.questions,
     });
   } catch (err) {
-    // Concurrent start: another request inserted first — reuse it.
-    const msg = err instanceof Error ? err.message : '';
-    if (!(msg.includes('unique') || msg.includes('duplicate'))) {
-      console.error('[assessment] insert failed:', msg || 'unknown');
+    // Concurrent start: another request inserted first — reuse it. Detect the
+    // unique violation by SQLSTATE (23505): drizzle's message only contains
+    // the SQL + params, while the Postgres details live on the error itself
+    // (or its `cause` when the driver error is wrapped).
+    const e = err as { code?: string; cause?: { code?: string } } | null;
+    const code = e?.code ?? e?.cause?.code;
+    if (code !== '23505') {
+      console.error('[assessment] insert failed:', code ?? 'unknown', err);
       return { message: 'Could not save the assessment. Please try again.' };
     }
   }
 
   revalidatePath(`/learn/${itemId}/assessment`);
   redirect(`/learn/${itemId}/assessment`);
+}
+
+/**
+ * Validate one committed answer server-side and return instant feedback:
+ * correctness, the correct choice, and both explanations (FR-D3 — answers and
+ * explanations never ship in the page payload; they cross the wire only after
+ * the learner selects a choice). Ownership + 80% gate re-checked every call.
+ */
+export async function checkAnswer(
+  itemId: string,
+  questionIndex: number,
+  choice: number
+): Promise<AnswerFeedback | { message: string }> {
+  const user = await requireUser();
+  if (!user) return { message: 'Your session has expired. Please sign in again.' };
+
+  const item = await getOwnedItem(itemId, user.id);
+  if (!item) return { message: 'That course was not found.' };
+  if (item.progress_percent < UNLOCK_PERCENT) {
+    return { message: 'This assessment is locked until you finish the course.' };
+  }
+
+  const assessmentRows = await db
+    .select()
+    .from(assessmentsTable)
+    .where(eq(assessmentsTable.learning_item_id, itemId));
+  const assessment = assessmentRows[0];
+  if (!assessment) return { message: 'No assessment exists for this course yet.' };
+
+  const question = assessment.questions[questionIndex];
+  if (!question) return { message: 'That question does not exist.' };
+  if (!Number.isInteger(choice) || choice < 0 || choice >= question.choices.length) {
+    return { message: 'That answer is not a valid choice.' };
+  }
+
+  // Same attempt-window gate as submitAssessment — no feedback after the
+  // weekly attempt limit is exhausted.
+  const windowAttempts = await attemptsInWindow(assessment.id, user.id);
+  if (windowAttempts.length >= MAX_ATTEMPTS_PER_WINDOW) {
+    return {
+      message: `Attempt limit reached (${MAX_ATTEMPTS_PER_WINDOW} per ${ATTEMPT_COOLDOWN_DAYS} days).`,
+    };
+  }
+
+  const correct = choice === question.correct;
+  return {
+    correct,
+    correctIndex: question.correct,
+    selectedText: question.choices[choice],
+    correctText: question.choices[question.correct],
+    explanation: question.explanation ?? '',
+    selectedExplanation: question.choice_explanations?.[choice] ?? '',
+  };
 }
 
 /**

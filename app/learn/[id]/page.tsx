@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/server';
 import { db } from '@/utils/db/db';
 import { assessmentsTable, attemptsTable, learningItemsTable } from '@/utils/db/schema';
 import { UNLOCK_PERCENT } from '@/utils/credentials';
+import { ASSESSMENT_QUESTION_COUNT } from '@/utils/assessment-config';
 import LearnPlayerPanel from '@/components/learn/LearnPlayerPanel';
 import StartAssessmentButton from '@/components/learn/StartAssessmentButton';
 import { ArrowLeft, LockKeyhole, Sparkles } from 'lucide-react';
@@ -97,7 +98,7 @@ export default async function LearnPage({ params }: { params: Promise<{ id: stri
                   <h2 className="font-fraunces text-xl font-bold text-ink">AI Assessment</h2>
                   <p className="mt-1 text-sm text-clay">
                     {unlocked
-                      ? 'You have unlocked the assessment. 10 questions, 70% to pass.'
+                      ? `You have unlocked the assessment. ${ASSESSMENT_QUESTION_COUNT} questions, 70% to pass.`
                       : `Watch ${UNLOCK_PERCENT}% of this course to unlock the assessment. You are at ${item.progress_percent}%.`}
                   </p>
                 </div>
@@ -129,7 +130,11 @@ export default async function LearnPage({ params }: { params: Promise<{ id: stri
                 <p className="mt-3 text-xs text-clay">
                   Questions grounded from:{' '}
                   <span className="font-semibold text-ink">
-                    {assessment.source === 'captions' ? 'video captions' : 'video metadata'}
+                    {assessment.source === 'transcriptapi'
+                      ? 'video transcript'
+                      : assessment.source === 'captions'
+                        ? 'video captions'
+                        : 'video metadata'}
                   </span>
                 </p>
               )}

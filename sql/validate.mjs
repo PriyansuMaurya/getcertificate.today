@@ -80,17 +80,21 @@ const ROLLBACK = new Error('__ROLLBACK__');
         SELECT c.relname, c.relrowsecurity, pg_get_userbyid(c.relowner) AS owner
         FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
         WHERE n.nspname = 'public'
-          AND c.relname IN ('users_table','learning_items','assessments','attempts','credentials')
+          AND c.relname IN ('users_table','learning_items','assessments','transcripts','attempts','credentials')
         ORDER BY c.relname`;
-      check('all 5 tables exist', tables.length === 5, `got ${tables.length}`);
       check(
-        'RLS enabled on all 5 tables',
-        tables.length === 5 && tables.every((r) => r.relrowsecurity),
+        'all 6 tables exist (incl. transcripts cache)',
+        tables.length === 6,
+        `got ${tables.length}`
+      );
+      check(
+        'RLS enabled on all 6 tables',
+        tables.length === 6 && tables.every((r) => r.relrowsecurity),
         tables.map((r) => `${r.relname}=${r.relrowsecurity}`).join(', ')
       );
       check(
         'tables owned by postgres (app role bypasses RLS)',
-        tables.length === 5 && tables.every((r) => r.owner === 'postgres'),
+        tables.length === 6 && tables.every((r) => r.owner === 'postgres'),
         tables.map((r) => `${r.relname}=${r.owner}`).join(', ')
       );
 
@@ -207,11 +211,13 @@ const ROLLBACK = new Error('__ROLLBACK__');
         '0000_colossal_kree',
         '0001_add-profile-fields',
         '0002_striped_misty_knight',
+        '0003_stale_princess_powerful',
       ];
       const expectedMig = [
         ['9626616eefa33c26e94f4c0552355834ae9f83db00376f39548c1652f08aee78', 1748947435391],
         ['9ecd3d77bf70ef07799d4bc61b1b197aaf8a3d28449117df67c82824f8359677', 1790630360970],
         ['f786dea9d48c95b008008e04a76cded5d9f1bb17f7397f3d374411bc6dc10549', 1790724396506],
+        ['77d3c91110d6dd1832cccc1f7e9c51f212b1fc93e05d58510d804aeeca391f7e', 1790784869180],
       ];
       check(
         'migration rows = journal entries (hash + when)',
@@ -220,8 +226,8 @@ const ROLLBACK = new Error('__ROLLBACK__');
       );
       const last = mig[mig.length - 1];
       check(
-        'last applied migration = journal 0002 (migrator SELECT ... ORDER BY created_at DESC LIMIT 1)',
-        last !== undefined && Number(last.created_at) === 1790724396506,
+        'last applied migration = journal 0003 (migrator SELECT ... ORDER BY created_at DESC LIMIT 1)',
+        last !== undefined && Number(last.created_at) === 1790784869180,
         last ? String(last.created_at) : 'no rows'
       );
 
@@ -241,7 +247,11 @@ const ROLLBACK = new Error('__ROLLBACK__');
         SELECT (SELECT count(*) FROM public.users_table WHERE id IN (
                  'a0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000002',
                  'c0000000-0000-4000-8000-000000000003','d0000000-0000-4000-8000-000000000004')) AS users,
-               (SELECT count(*) FROM public.learning_items) AS items,
+               (SELECT count(*) FROM public.learning_items WHERE id IN (
+                 'aa000000-0000-4000-8000-000000000001','aa000000-0000-4000-8000-000000000002',
+                 'aa000000-0000-4000-8000-000000000003','aa000000-0000-4000-8000-000000000004',
+                 'aa000000-0000-4000-8000-000000000005','aa000000-0000-4000-8000-000000000006',
+                 'aa000000-0000-4000-8000-000000000007','aa000000-0000-4000-8000-000000000008')) AS items,
                (SELECT count(*) FROM public.assessments) AS assessments,
                (SELECT count(*) FROM public.attempts) AS attempts,
                (SELECT count(*) FROM public.credentials) AS creds,
@@ -251,7 +261,7 @@ const ROLLBACK = new Error('__ROLLBACK__');
                  ('a0000000-0000-4000-8000-000000000001','b0000000-0000-4000-8000-000000000002',
                   'c0000000-0000-4000-8000-000000000003','d0000000-0000-4000-8000-000000000004')) AS identities`;
       check(
-        'seed counts users=4 items=8 assessments=5 attempts=6 credentials=3',
+        'seed counts users=4 items=8 (scoped to aa000000-* seeds) assessments=5 attempts=6 credentials=3',
         counts[0].users == 4 &&
           counts[0].items == 8 &&
           counts[0].assessments == 5 &&

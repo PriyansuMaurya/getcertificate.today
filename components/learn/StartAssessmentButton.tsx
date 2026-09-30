@@ -3,6 +3,7 @@
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { startAssessment, type AssessmentActionState } from '@/app/learn/actions';
+import { ASSESSMENT_QUESTION_COUNT } from '@/utils/assessment-config';
 import { Sparkles, Loader2 } from 'lucide-react';
 
 function SubmitButton({ label }: { label: string }) {
@@ -48,7 +49,9 @@ export default function StartAssessmentButton({
         </p>
       )}
       <p className="mt-2 text-xs text-clay">
-        Generation takes a few seconds. 10 questions · 70% to pass · 3 attempts per week.
+        {hasAssessment
+          ? '70% to pass · 3 attempts per week · scoring happens on the server.'
+          : `Generation takes a few seconds. ${ASSESSMENT_QUESTION_COUNT} questions · 70% to pass · 3 attempts per week.`}
       </p>
     </form>
   );

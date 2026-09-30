@@ -53,12 +53,35 @@ export type SelectLearningItem = typeof learningItemsTable.$inferSelect;
 export type InsertLearningItem = typeof learningItemsTable.$inferInsert;
 
 // Question text + choices are stored with the correct index server-side and
-// stripped before any pre-submission render (RULES §9.3).
+// stripped before any pre-submission render (RULES §9.3). Explanations stay
+// server-side too — they are revealed only through the checkAnswer action
+// after the learner commits to a choice (instant-feedback flow).
 export type AssessmentQuestion = {
   prompt: string;
   choices: string[];
   correct: number;
+  /** Why the correct answer is correct. Optional: legacy rows predate it. */
+  explanation?: string;
+  /** Why each choice is right/wrong, aligned with `choices` (index-matched). */
+  choice_explanations?: string[];
 };
+
+// Cached YouTube transcript per video, fetched once from TranscriptAPI and
+// reused by every future assessment start for the same video (FR-D1).
+export const transcriptsTable = pgTable(
+  'transcripts',
+  {
+    id: text('id').primaryKey(),
+    youtube_id: text('youtube_id').notNull(),
+    transcript: text('transcript').notNull(),
+    language: text('language'),
+    fetched_at: timestamp('fetched_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('transcripts_youtube_id_unique').on(t.youtube_id)]
+);
+
+export type SelectTranscript = typeof transcriptsTable.$inferSelect;
+export type InsertTranscript = typeof transcriptsTable.$inferInsert;
 
 export const assessmentsTable = pgTable('assessments', {
   id: text('id').primaryKey(),
@@ -67,7 +90,8 @@ export const assessmentsTable = pgTable('assessments', {
     .unique()
     .references(() => learningItemsTable.id, { onDelete: 'cascade' }),
   schema_version: text('schema_version').notNull().default('mcq-v1'),
-  // How question content was grounded: 'captions' (transcript fetched) or 'metadata'.
+  // How question content was grounded: 'transcriptapi' (TranscriptAPI fetch),
+  // legacy 'captions' (YouTube timedtext) or 'metadata' (title/channel only).
   source: text('source').notNull().default('metadata'),
   questions: jsonb('questions').$type<AssessmentQuestion[]>().notNull(),
   created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
