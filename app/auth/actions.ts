@@ -2,6 +2,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { bootstrapOAuthUser } from '@/app/auth/user-bootstrap';
 import { createStripeCustomer } from '@/utils/stripe/api';
 import { db } from '@/utils/db/db';
 import { usersTable } from '@/utils/db/schema';
@@ -222,6 +223,34 @@ export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect('/login');
+}
+
+// Completes a Google sign-in performed client-side via Google Identity
+// Services (signInWithIdToken). The session cookie is already written by the
+// browser client before this action runs; we only need the shared OAuth
+// bootstrap (Stripe customer + users row) and the onboarding/dashboard route.
+export async function finishGoogleSignIn() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/auth/auth-code-error');
+  }
+
+  const bootstrapped = await bootstrapOAuthUser(user!);
+  if (!bootstrapped.ok) {
+    redirect('/auth/auth-code-error');
+  }
+
+  revalidatePath('/', 'layout');
+
+  // New users (or anyone who never finished onboarding) set up their profile first.
+  if (await hasCompletedOnboarding(user!.id)) {
+    redirect('/dashboard');
+  }
+  redirect('/onboarding');
 }
 
 export async function signInWithGoogle() {

@@ -60,6 +60,7 @@ cp .env.example .env.local
 3. Add `NEXT_PUBLIC_WEBSITE_URL` (defaults to `http://localhost:3000`) so OAuth redirects back correctly.
 4. In the dashboard, set **Authentication → URL Configuration** Site URL and redirect allowlist (`/auth/callback`, `/forgot-password/reset`).
 5. Optional OAuth providers: add `GOOGLE_OAUTH_CLIENT_ID`/`GOOGLE_OAUTH_CLIENT_SECRET` and `GITHUB_OAUTH_CLIENT_ID`/`GITHUB_OAUTH_CLIENT_SECRET`, following the [Google](https://supabase.com/docs/guides/auth/social-login/auth-google) and [GitHub](https://supabase.com/docs/guides/auth/social-login/auth-github) guides.
+   - **Google sign-in uses [Google Identity Services](https://developers.google.com/identity/gsi/web) directly** (`signInWithIdToken`) so Google's account chooser shows your own domain instead of `<project-ref>.supabase.co`. In the [Google Cloud OAuth client](https://console.cloud.google.com/apis/credentials), add your app origins under **Authorized JavaScript origins** (e.g. `http://localhost:3000` and `https://getcertificate.today`), and keep the Supabase callback under **Authorized redirect URIs** (used by the built-in fallback flow). `GOOGLE_OAUTH_CLIENT_ID` must match the client configured in the Supabase Google provider.
 
 ### 2. Postgres connection
 

@@ -1,11 +1,8 @@
 import { NextResponse } from 'next/server';
 // The client you created from the Server-Side Auth instructions
 import { createClient } from '@/utils/supabase/server';
-import { createStripeCustomer } from '@/utils/stripe/api';
 import { hasCompletedOnboarding } from '@/app/auth/actions';
-import { db } from '@/utils/db/db';
-import { usersTable } from '@/utils/db/schema';
-import { eq } from 'drizzle-orm';
+import { bootstrapOAuthUser } from '@/app/auth/user-bootstrap';
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -21,27 +18,11 @@ export async function GET(request: Request) {
         data: { user },
       } = await supabase.auth.getUser();
 
-      // check to see if user already exists in db
-      const checkUserInDB = await db
-        .select()
-        .from(usersTable)
-        .where(eq(usersTable.email, user!.email!));
-      const isUserInDB = checkUserInDB.length > 0 ? true : false;
-      if (!isUserInDB) {
-        // create Stripe customers
-        const stripeID = await createStripeCustomer(
-          user!.id,
-          user!.email!,
-          user!.user_metadata.full_name
-        );
-        // Create record in DB
-        await db.insert(usersTable).values({
-          id: user!.id,
-          name: user!.user_metadata.full_name,
-          email: user!.email!,
-          stripe_id: stripeID,
-          plan: 'none',
-        });
+      // Create the local user row (Stripe customer + DB record) when this is
+      // the user's first sign-in through any OAuth provider.
+      const bootstrapped = await bootstrapOAuthUser(user!);
+      if (!bootstrapped.ok) {
+        return NextResponse.redirect(`${origin}/auth/auth-code-error`);
       }
 
       const forwardedHost = request.headers.get('x-forwarded-host'); // original origin before load balancer
