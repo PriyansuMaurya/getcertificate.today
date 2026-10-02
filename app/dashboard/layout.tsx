@@ -33,6 +33,13 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[280px_minmax(0,1fr)]">
+      {/* Keyboard/screen-reader bypass for the sidebar + header chrome. */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-ink focus:px-4 focus:py-2.5 focus:text-sm focus:font-bold focus:text-cream focus:shadow-figma-pro"
+      >
+        Skip to main content
+      </a>
       <DashboardSidebar />
       <div className="min-w-0">
         <DashboardHeader />

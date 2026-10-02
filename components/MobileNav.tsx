@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
 
@@ -15,17 +15,44 @@ const LINKS = [
 
 export default function MobileNav() {
   const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  // Escape and outside-click dismiss (overlay must be keyboard-closable).
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(e: PointerEvent) {
+      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    }
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
 
   return (
-    <div className="lg:hidden">
+    <div ref={containerRef} className="lg:hidden">
       <button
+        ref={triggerRef}
         type="button"
         aria-label="Toggle navigation menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="flex h-10 w-10 items-center justify-center rounded-lg text-ink"
+        className="flex h-10 w-10 items-center justify-center rounded-lg text-ink transition-colors hover:bg-linen focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
       >
-        {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        {open ? (
+          <X aria-hidden="true" className="h-5 w-5" />
+        ) : (
+          <Menu aria-hidden="true" className="h-5 w-5" />
+        )}
       </button>
 
       {open && (

@@ -8,13 +8,13 @@ const StripePricingTableElement = 'stripe-pricing-table' as React.ElementType;
 export default function StripePricingTable({
   checkoutSessionSecret,
 }: {
-  checkoutSessionSecret: string;
+  checkoutSessionSecret: string | null;
 }) {
   return (
     <StripePricingTableElement
       pricing-table-id={process.env.NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID}
       publishable-key={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
-      customer-session-client-secret={checkoutSessionSecret}
+      customer-session-client-secret={checkoutSessionSecret ?? undefined}
     ></StripePricingTableElement>
   );
 }

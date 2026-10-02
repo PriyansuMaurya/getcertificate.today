@@ -114,7 +114,7 @@ export default function DashboardQuickSearch() {
 
   return (
     <div ref={containerRef} className="relative hidden max-w-[420px] flex-1 sm:block">
-      <div className="flex items-center gap-3 rounded-lg border border-sandline bg-paper px-4 focus-within:border-ink">
+      <div className="flex items-center gap-3 rounded-lg border border-sandline bg-paper px-4 focus-within:border-ink focus-within:ring-1 focus-within:ring-ink">
         <Search aria-hidden="true" className="h-4 w-4 shrink-0 text-clay" />
         <label htmlFor="dashboard-quick-search" className="sr-only">
           Search dashboard pages

@@ -61,7 +61,7 @@ export default function LearnPlayerPanel({
           className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-linen"
         >
           <div
-            className="h-full rounded-full bg-ink transition-all duration-500"
+            className="h-full rounded-full bg-ink transition-[width] duration-500"
             style={{ width: `${percent}%` }}
           />
         </div>

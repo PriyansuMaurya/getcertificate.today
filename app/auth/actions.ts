@@ -107,7 +107,7 @@ export async function resetPassword(currentState: { message: string }, formData:
     return { message: 'Passwords do not match' };
   }
 
-  const { data } = await supabase.auth.exchangeCodeForSession(passwordData.code);
+  await supabase.auth.exchangeCodeForSession(passwordData.code);
 
   const { error } = await supabase.auth.updateUser({
     password: passwordData.password,
@@ -121,7 +121,7 @@ export async function resetPassword(currentState: { message: string }, formData:
 export async function forgotPassword(currentState: { message: string }, formData: FormData) {
   const supabase = await createClient();
   const email = formData.get('email') as string;
-  const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${PUBLIC_URL}/forgot-password/reset`,
   });
 
@@ -220,7 +220,7 @@ export async function loginUser(currentState: { message: string }, formData: For
 
 export async function logout() {
   const supabase = await createClient();
-  const { error } = await supabase.auth.signOut();
+  await supabase.auth.signOut();
   redirect('/login');
 }
 
@@ -233,8 +233,14 @@ export async function signInWithGoogle() {
     },
   });
 
+  if (error) {
+    redirect('/auth/auth-code-error');
+  }
+
   if (data.url) {
     redirect(data.url); // use the redirect API for your server framework
+  } else {
+    redirect('/auth/auth-code-error');
   }
 }
 
@@ -247,7 +253,13 @@ export async function signInWithGithub() {
     },
   });
 
+  if (error) {
+    redirect('/auth/auth-code-error');
+  }
+
   if (data.url) {
     redirect(data.url); // use the redirect API for your server framework
+  } else {
+    redirect('/auth/auth-code-error');
   }
 }

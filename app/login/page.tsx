@@ -11,7 +11,7 @@ export const metadata = {
 export default function Login() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-cream px-4 py-12 text-ink">
-      <div className="w-full max-w-[480px] rounded-2xl border border-sandline bg-paper p-8 shadow-figma-hero sm:p-12 lg:h-[698px] lg:p-[47px]">
+      <div className="w-full max-w-[480px] rounded-2xl border border-sandline bg-paper p-8 shadow-figma-hero sm:p-12 lg:min-h-[698px] lg:p-[47px]">
         <div className="flex flex-col items-center text-center">
           <Link href="/" className="transition-opacity hover:opacity-80">
             <Image

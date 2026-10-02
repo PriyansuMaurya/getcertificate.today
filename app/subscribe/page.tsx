@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 import { createStripeCheckoutSession } from '@/utils/stripe/api';
+import { redirect } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 
 export const metadata = {
@@ -16,7 +17,24 @@ export default async function Subscribe() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const checkoutSessionSecret = await createStripeCheckoutSession(user!.email!);
+  // Was: `user!.email!` — crashed with a TypeError for signed-out visitors.
+  if (!user) {
+    redirect('/login');
+  }
+
+  // Degrade to the public pricing table (no customer session) when the user
+  // has no email (rare OAuth edge case) or Stripe is unavailable.
+  let checkoutSessionSecret: string | null = null;
+  try {
+    if (user.email) {
+      checkoutSessionSecret = await createStripeCheckoutSession(user.email);
+    }
+  } catch (err) {
+    console.error(
+      'Stripe checkout session failed:',
+      err instanceof Error ? err.message : 'unknown error'
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-cream text-ink">

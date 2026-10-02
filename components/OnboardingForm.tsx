@@ -14,7 +14,7 @@ function SubmitButton() {
       disabled={pending}
       className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-ink px-6 py-3.5 text-[15px] font-bold text-cream transition-colors hover:bg-ink/90 disabled:opacity-50"
     >
-      <span>{pending ? 'Saving profile...' : 'Continue to Dashboard'}</span>
+      <span>{pending ? 'Saving profile…' : 'Continue to Dashboard'}</span>
       <ArrowRightIcon className="h-4 w-4 shrink-0" />
     </button>
   );
@@ -51,6 +51,8 @@ export default function OnboardingForm({
           minLength={3}
           maxLength={20}
           pattern="[a-z0-9_]+"
+          autoComplete="off"
+          spellCheck={false}
           defaultValue={defaultUsername}
           required
           className="h-11 rounded-lg border border-sandline bg-cream px-3.5 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
@@ -74,6 +76,7 @@ export default function OnboardingForm({
             type="text"
             name="firstName"
             placeholder="John"
+            autoComplete="given-name"
             defaultValue={defaultFirstName}
             required
             className="h-11 rounded-lg border border-sandline bg-cream px-3.5 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
@@ -92,6 +95,7 @@ export default function OnboardingForm({
             type="text"
             name="lastName"
             placeholder="Doe"
+            autoComplete="family-name"
             defaultValue={defaultLastName}
             required
             className="h-11 rounded-lg border border-sandline bg-cream px-3.5 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
@@ -107,6 +111,7 @@ export default function OnboardingForm({
           id="dob"
           type="date"
           name="dob"
+          autoComplete="bday"
           defaultValue={defaultDob}
           max={new Date().toISOString().split('T')[0]}
           required
@@ -118,7 +123,10 @@ export default function OnboardingForm({
       <SubmitButton />
 
       {formState?.message && (
-        <p className="rounded-lg bg-red-500/10 p-2.5 text-center text-sm font-medium text-red-700">
+        <p
+          role="alert"
+          className="rounded-lg bg-red-500/10 p-2.5 text-center text-sm font-medium text-red-700"
+        >
           {formState.message}
         </p>
       )}

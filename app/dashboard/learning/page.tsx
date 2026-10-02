@@ -38,7 +38,7 @@ export default async function MyLearningPage() {
     .orderBy(desc(learningItemsTable.updated_at));
 
   return (
-    <main className="min-h-[calc(100dvh-80px)] bg-cream text-ink">
+    <main id="main-content" className="min-h-[calc(100dvh-80px)] bg-cream text-ink">
       <div className="mx-auto max-w-[1440px] px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
         <div className="flex flex-col gap-2">
           <p className="text-[13px] font-bold uppercase tracking-wider text-sand">My Learning</p>
@@ -116,7 +116,7 @@ export default async function MyLearningPage() {
                           className="mt-3 h-2 w-full max-w-[360px] overflow-hidden rounded-full bg-linen"
                         >
                           <div
-                            className="h-full rounded-full bg-ink transition-all"
+                            className="h-full rounded-full bg-ink transition-[width]"
                             style={{ width: `${item.progress_percent}%` }}
                           />
                         </div>

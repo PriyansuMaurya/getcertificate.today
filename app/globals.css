@@ -82,6 +82,24 @@
   }
 }
 
+/* Honor prefers-reduced-motion: collapse transitions/animations to a single
+   frame (Web Interface Guidelines — Animation). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  /* Loading spinners still need to communicate activity. */
+  .animate-spin {
+    animation-duration: 1s !important;
+    animation-iteration-count: infinite !important;
+  }
+}
+
 /* Certificate print stylesheet (DESIGN.md §12.5): strip navigation/chrome when
    printing so browser print → PDF yields a clean, QR-sharp document. */
 @media print {

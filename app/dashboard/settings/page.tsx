@@ -42,7 +42,7 @@ export default async function SettingsPage() {
   const isSubscribed = Boolean(profile?.plan && profile.plan !== 'none');
 
   return (
-    <main className="min-h-[calc(100dvh-80px)] bg-cream text-ink">
+    <main id="main-content" className="min-h-[calc(100dvh-80px)] bg-cream text-ink">
       <div className="mx-auto max-w-[840px] px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
         <div className="flex flex-col gap-2">
           <p className="text-[13px] font-bold uppercase tracking-wider text-sand">Account</p>

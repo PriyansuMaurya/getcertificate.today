@@ -88,10 +88,10 @@ export default async function Dashboard() {
   const nextUp = items.find((i) => i.progress_percent < 100);
 
   return (
-    <main className="min-h-[calc(100dvh-80px)] bg-cream text-ink">
+    <main id="main-content" className="min-h-[calc(100dvh-80px)] bg-cream text-ink">
       <div className="mx-auto max-w-[1440px] px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
         <div className="flex flex-col gap-2">
-          <p className="text-[13px] font-bold uppercase tracking-wider text-sand">MyLearning</p>
+          <p className="text-[13px] font-bold uppercase tracking-wider text-sand">My Learning</p>
           <h1 className="font-fraunces text-3xl font-black text-ink sm:text-4xl">
             Welcome back, {displayName}
           </h1>
@@ -173,7 +173,7 @@ export default async function Dashboard() {
                       className="flex items-center gap-3 rounded-xl bg-cream p-4 transition-colors hover:bg-linen"
                     >
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ink text-cream">
-                        <BadgeCheck aria-hidden="true" className="h-4.5 w-4.5" />
+                        <BadgeCheck aria-hidden="true" className="h-4 w-4" />
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-semibold text-ink">

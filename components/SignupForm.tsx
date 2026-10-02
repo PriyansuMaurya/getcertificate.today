@@ -14,7 +14,7 @@ function SubmitButton() {
       disabled={pending}
       className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-ink px-6 py-3.5 text-[15px] font-bold text-cream transition-colors hover:bg-ink/90 disabled:opacity-50"
     >
-      <span>{pending ? 'Creating account...' : 'Create Account'}</span>
+      <span>{pending ? 'Creating account…' : 'Create Account'}</span>
       <ArrowRightIcon className="h-4 w-4 shrink-0" />
     </button>
   );
@@ -38,6 +38,7 @@ export default function SignupForm() {
           type="text"
           name="name"
           placeholder="Alex Developer"
+          autoComplete="name"
           required
           className="h-[50px] rounded-lg border border-sandline bg-cream px-3.5 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
         />
@@ -51,7 +52,9 @@ export default function SignupForm() {
           id="email"
           type="email"
           name="email"
-          placeholder="priyanshu@creativetech.com"
+          placeholder="alex@creativetech.com"
+          autoComplete="email"
+          spellCheck={false}
           required
           className="h-[50px] rounded-lg border border-sandline bg-cream px-3.5 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
         />
@@ -67,6 +70,7 @@ export default function SignupForm() {
           name="password"
           placeholder="Minimum 8 characters"
           minLength={8}
+          autoComplete="new-password"
           required
           className="h-[50px] rounded-lg border border-sandline bg-cream px-3.5 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
         />
@@ -75,7 +79,10 @@ export default function SignupForm() {
       <SubmitButton />
 
       {formState?.message && (
-        <p className="rounded-lg bg-red-500/10 p-2.5 text-center text-sm font-medium text-red-700">
+        <p
+          role="alert"
+          className="rounded-lg bg-red-500/10 p-2.5 text-center text-sm font-medium text-red-700"
+        >
           {formState.message}
         </p>
       )}

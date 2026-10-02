@@ -1,8 +1,22 @@
 'use client';
 
 import { useActionState, useState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { revokeCredential, type CredentialActionState } from '@/app/dashboard/certificates/actions';
 import { Ban } from 'lucide-react';
+
+function ConfirmRevokeButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="inline-flex h-11 items-center rounded-lg bg-red-600 px-4 text-sm font-bold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+    >
+      {pending ? 'Revoking…' : 'Confirm revoke'}
+    </button>
+  );
+}
 
 export default function RevokeCredentialButton({
   credentialId,
@@ -28,16 +42,11 @@ export default function RevokeCredentialButton({
       <input type="hidden" name="credentialId" value={credentialId} />
       {confirming ? (
         <span className="inline-flex items-center gap-2">
-          <button
-            type="submit"
-            className="inline-flex h-11 items-center rounded-lg bg-red-600 px-4 text-sm font-bold text-white transition-colors hover:bg-red-700"
-          >
-            Confirm revoke
-          </button>
+          <ConfirmRevokeButton />
           <button
             type="button"
             onClick={() => setConfirming(false)}
-            className="inline-flex h-11 items-center rounded-lg border border-sandline px-4 text-sm font-semibold text-clay"
+            className="inline-flex h-11 items-center rounded-lg border border-sandline px-4 text-sm font-semibold text-clay transition-colors hover:border-ink hover:text-ink"
           >
             Keep active
           </button>

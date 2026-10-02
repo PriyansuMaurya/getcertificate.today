@@ -55,7 +55,7 @@ export default function DeleteLearningItemButton({
           <button
             type="button"
             onClick={() => setConfirming(false)}
-            className="inline-flex h-11 items-center rounded-lg border border-sandline px-4 text-sm font-semibold text-clay"
+            className="inline-flex h-11 items-center rounded-lg border border-sandline px-4 text-sm font-semibold text-clay transition-colors hover:border-ink hover:text-ink"
           >
             Cancel
           </button>
