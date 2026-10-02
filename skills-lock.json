@@ -1,0 +1,185 @@
+{
+  "version": 1,
+  "skills": {
+    "api-types": {
+      "source": "supabase/supabase",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/api-types/SKILL.md",
+      "computedHash": "79daa90b61781fa5aacc6dded4e58011cd41e2e5b505b7a1aed65419b23a1977"
+    },
+    "ask-the-docs": {
+      "source": "supabase/supabase",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/ask-the-docs/SKILL.md",
+      "computedHash": "a749407ae5471c50a8d00c581e3eefba024a4bb086096439856d7c7f9d41611c"
+    },
+    "better-auth-best-practices": {
+      "source": "better-auth/skills",
+      "sourceType": "github",
+      "skillPath": "better-auth/best-practices/SKILL.md",
+      "computedHash": "f35281e7a0c07b3fd3c4e96c7833dafb294a3a8662cb68a8544f4225008d6568"
+    },
+    "clickhouse-logs-queries": {
+      "source": "supabase/supabase",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/clickhouse-logs-queries/SKILL.md",
+      "computedHash": "f1159dc881a237c0791d7fcdc416ecd788737829a15b21c0b91109053b936f0c"
+    },
+    "copywriting": {
+      "source": "supabase/supabase",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/copywriting/SKILL.md",
+      "computedHash": "1ac85c3324d4416e1172fc41460e55d32316c1eebeea3989634f93f4e452cbd9"
+    },
+    "design-taste-frontend": {
+      "source": "leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/taste-skill/SKILL.md",
+      "computedHash": "899b84384f74f540ea5284d9b2e9234e050998b42eacc805410b518d4226c0b3"
+    },
+    "dev-toolbar-review": {
+      "source": "supabase/supabase",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/dev-toolbar-review/SKILL.md",
+      "computedHash": "82ab8ccdacd66c52bfc0b533a303a35a059d54ff1158dc664d44a2039ce4bcc6"
+    },
+    "edit-the-docs": {
+      "source": "supabase/supabase",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/edit-the-docs/SKILL.md",
+      "computedHash": "27a71fd8a92be602cc7b3c81c23257421b95fc6ab4a066ad580f573cede7b2fe"
+    },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "computedHash": "106acf230014cbb43ca34e6410371321b56ca742f9ee0442e8ec05bf02eb0384"
+    },
+    "pm-the-docs": {
+      "source": "supabase/supabase",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/pm-the-docs/SKILL.md",
+      "computedHash": "bdfab62e4d689ea836510c6fcd33e3e57446819e24119289af146a510b92f240"
+    },
+    "ponytail": {
+      "source": "dietrichgebert/ponytail",
+      "sourceType": "github",
+      "skillPath": "skills/ponytail/SKILL.md",
+      "computedHash": "9e8d05cbbaf6dc38f0cffc924c09b3cbe76d94ba4ba0d09bde803da2f8c6b5a0"
+    },
+    "react-hook-form": {
+      "source": "supabase/supabase",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/react-hook-form/SKILL.md",
+      "computedHash": "63871f2416ddd1a6a54364f9071c25248ac94da3bc22ce9619b89cd55ace305a"
+    },
+    "review-the-docs": {
+      "source": "supabase/supabase",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/review-the-docs/SKILL.md",
+      "computedHash": "dad03e67e05e24f9682886f94cd7627b6d85df6372d054b88c96c9511ddd3c2b"
+    },
+    "safe-sql-execution": {
+      "source": "supabase/supabase",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/safe-sql-execution/SKILL.md",
+      "computedHash": "0020493f349497ddb64a90bd8c87b78a2dcb527dd2861de9c0ce92c67c0ddb51"
+    },
+    "studio-e2e-tests": {
+      "source": "supabase/supabase",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/studio-e2e-tests/SKILL.md",
+      "computedHash": "d4173a22fdf4bedaf07c0a3e900bd58a5edb159223f0069b46383d14b7389ba8"
+    },
+    "studio-error-handling": {
+      "source": "supabase/supabase",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/studio-error-handling/SKILL.md",
+      "computedHash": "a9390ea69014a3b2f3cc62d8f9c915c7605f306c616fd587dbba6802ad294cac"
+    },
+    "studio-mock-api-tests": {
+      "source": "supabase/supabase",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/studio-mock-api-tests/SKILL.md",
+      "computedHash": "40397c343cdbd997333f3f5129381a3a4a6d29d5ad3b8c5948062b0261071281"
+    },
+    "studio-queries": {
+      "source": "supabase/supabase",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/studio-queries/SKILL.md",
+      "computedHash": "5fea1ff5627f2565ff9e8e6a20e86d2f1e390ec4f760546a67359a58496fb945"
+    },
+    "studio-shortcuts": {
+      "source": "supabase/supabase",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/studio-shortcuts/SKILL.md",
+      "computedHash": "a152cdf3b5d35cda2216a4b5a9eb0fd97d481848699cce305be26fac780888d3"
+    },
+    "studio-testing": {
+      "source": "supabase/supabase",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/studio-testing/SKILL.md",
+      "computedHash": "9d3d631c20b4917a3a0bbe7bf870fe4b678bb78ce3fcc3a0c708a344289e192d"
+    },
+    "studio-ui-patterns": {
+      "source": "supabase/supabase",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/studio-ui-patterns/SKILL.md",
+      "computedHash": "648b010ab21e3437410cb7ad2b9d3b791b203e158aaba5b25fbe8f6de6088fd5"
+    },
+    "supabase": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase/SKILL.md",
+      "computedHash": "2efca3570897e9c22c0788f3a0372a649797c8bd973e4ba5fc1ed1a1c5ef39d5"
+    },
+    "supabase-postgres-best-practices": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase-postgres-best-practices/SKILL.md",
+      "computedHash": "128fac78002d916c8ca908245d398e634f540d8bcf20915b2b2359aeb18eba59"
+    },
+    "supabase-server": {
+      "source": "supabase/server",
+      "sourceType": "github",
+      "skillPath": "skills/supabase-server/SKILL.md",
+      "computedHash": "c4c29a1ac1c1c11da456604fb07127d69524afedbc358e4ac41540db013d0fef"
+    },
+    "telemetry-standards": {
+      "source": "supabase/supabase",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/telemetry-standards/SKILL.md",
+      "computedHash": "480dd91de63e99cc02f0f6a3c4a2a1ef8d49a5f81b943a937a4903ceeb4ce55a"
+    },
+    "test-the-docs": {
+      "source": "supabase/supabase",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/test-the-docs/SKILL.md",
+      "computedHash": "6ab5ccfa8b388ceffb042fd3acb83ebc596a3d025f75539ceff31bc8e114d85e"
+    },
+    "ui-ux-pro-max": {
+      "source": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sourceType": "github",
+      "skillPath": ".claude/skills/ui-ux-pro-max/SKILL.md",
+      "computedHash": "b0f52ab109c122ee4de15f4880cba51a70a14fc6dca9ab63f1027b09120da0ef"
+    },
+    "vercel-composition-patterns": {
+      "source": "supabase/supabase",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/vercel-composition-patterns/SKILL.md",
+      "computedHash": "435ca4776cfa3c77e5b9b1ee9ae3f6acf0250103ab009680b796189d034300b9"
+    },
+    "vitest": {
+      "source": "supabase/supabase",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/vitest/SKILL.md",
+      "computedHash": "2f576973fd4e6be3b8da52fd1b6bd00d8636115e5c771a3a3dfc95ef7c799a9f"
+    },
+    "write-the-docs": {
+      "source": "supabase/supabase",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/write-the-docs/SKILL.md",
+      "computedHash": "fc33ef5b2d7d4b018fa5adecd5ea4a8d2f93076c283d19cf8f908dbcd0a0e80b"
+    }
+  }
+}
