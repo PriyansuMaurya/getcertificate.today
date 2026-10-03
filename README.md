@@ -87,9 +87,9 @@ After that, normal drizzle workflow applies to schema changes:
 
 ### 3. Stripe (optional but recommended)
 
-1. [Register](https://dashboard.stripe.com/register) and add `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID`.
+1. [Register](https://dashboard.stripe.com/register) and add `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, plus `STRIPE_PRICE_BASIC`, `STRIPE_PRICE_POPULAR`, and `STRIPE_PRICE_PREMIUM` (the price IDs behind the `/subscribe` pricing cards).
 2. Add `STRIPE_WEBHOOK_SECRET`. The webhook **fails closed** without it (raw-body signature verification). Locally, `npm run stripe:listen` prints the secret and forwards events to `http://localhost:3000/webhook/stripe`.
-3. `npm run stripe:setup` seeds starter products/prices and (in production mode) the webhook endpoint; then create a [Pricing Table](https://dashboard.stripe.com/test/pricing-tables) pointing its confirmation page at `<YOUR_PUBLIC_URL>/subscribe/success`.
+3. `npm run stripe:setup` seeds the $9/$19/$39 products/prices and (in production mode) the webhook endpoint. `/subscribe` renders its own pricing cards — no Stripe-hosted Pricing Table involved — and returns to `/subscribe?checkout=success|canceled`.
 
 Subscribing is optional for users; the dashboard only shows a voluntary upgrade card.
 

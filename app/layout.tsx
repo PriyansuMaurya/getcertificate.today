@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Manrope, Fraunces } from 'next/font/google';
-import Script from 'next/script';
 import './globals.css';
 
 // Fonts imported from the Figma design (getcertificate.today, landing-page 6:9)
@@ -31,10 +30,6 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${manrope.variable} ${fraunces.variable} font-manrope antialiased`}>
         {children}
-        {/* Required for the Stripe pricing table custom element (/subscribe).
-            A raw <script> as a child of <html> is invalid HTML — next/script
-            injects it into the document head instead. */}
-        <Script src="https://js.stripe.com/v3/pricing-table.js" strategy="beforeInteractive" />
       </body>
     </html>
   );

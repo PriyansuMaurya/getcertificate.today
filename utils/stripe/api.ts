@@ -31,19 +31,6 @@ export async function createStripeCustomer(id: string, email: string, name?: str
   return customer.id;
 }
 
-export async function createStripeCheckoutSession(email: string) {
-  const user = await db.select().from(usersTable).where(eq(usersTable.email, email));
-  const customerSession = await stripe.customerSessions.create({
-    customer: user[0].stripe_id,
-    components: {
-      pricing_table: {
-        enabled: true,
-      },
-    },
-  });
-  return customerSession.client_secret;
-}
-
 export async function generateStripeBillingPortalLink(email: string) {
   const user = await db.select().from(usersTable).where(eq(usersTable.email, email));
   const portalSession = await stripe.billingPortal.sessions.create({

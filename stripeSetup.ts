@@ -35,24 +35,27 @@ const CURRENCY = 'usd';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 // Product Plans
+// Tiers must match components/SubscribePricingCards.tsx and the STRIPE_PRICE_*
+// env price IDs. Product names are exact matches so re-running the script
+// updates the existing products instead of creating duplicates.
 const plans: Plan[] = [
   {
-    name: IS_PRODUCTION ? 'Basic' : 'Basic-Test',
-    price: 1000, // price in cents
-    description: 'Perfect for small teams and individuals',
-    features: ['Up to 10 users', 'Up to 1000 records', 'Up to 1000 API calls'],
+    name: 'Basic',
+    price: 900, // $9/mo, price in cents
+    description: 'Perfect for beginners',
+    features: ['Access to selected courses', 'Community support', 'Progress tracking', 'Limited AI insights'],
   },
   {
-    name: IS_PRODUCTION ? 'Pro' : 'Pro-Test',
-    price: 2000,
-    description: 'Great for growing teams',
-    features: ['Up to 100 users', 'Up to 10000 records', 'Up to 10000 API calls'],
+    name: 'Most Popular',
+    price: 1900, // $19/mo
+    description: 'Best for consistent learners',
+    features: ['Access to all courses', 'Personalized AI learning path', 'Priority support', 'Certificates of completion', 'Weekly progress reports'],
   },
   {
-    name: IS_PRODUCTION ? 'Enterprise' : 'Enterprise-Test',
-    price: 5000,
-    description: 'For large organizations',
-    features: ['Unlimited users', 'Unlimited records', 'Unlimited API calls'],
+    name: 'Premium',
+    price: 3900, // $39/mo
+    description: 'For ambitious learners',
+    features: ['Unlimited course access', '1-on-1 mentor sessions', 'Advanced AI performance analytics', 'Exclusive webinars & resources', 'Lifetime certificate access'],
   },
 ];
 

@@ -1,17 +1,25 @@
-import StripePricingTable from '@/components/StripePricingTable';
+import SubscribePricingCards from '@/components/SubscribePricingCards';
 import Image from 'next/image';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
-import { createStripeCheckoutSession } from '@/utils/stripe/api';
 import { redirect } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
+import { db } from '@/utils/db/db';
+import { usersTable } from '@/utils/db/schema';
+import { eq } from 'drizzle-orm';
+import { generateStripeBillingPortalLink } from '@/utils/stripe/api';
 
 export const metadata = {
   title: 'Pricing & Plans | getcertificate.today',
   description: 'Upgrade your learning with unlimited certificates and deep-syllabus assessments',
 };
 
-export default async function Subscribe() {
+export default async function Subscribe({
+  searchParams,
+}: {
+  searchParams: Promise<{ checkout?: string }>;
+}) {
+  const { checkout } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -22,18 +30,24 @@ export default async function Subscribe() {
     redirect('/login');
   }
 
-  // Degrade to the public pricing table (no customer session) when the user
-  // has no email (rare OAuth edge case) or Stripe is unavailable.
-  let checkoutSessionSecret: string | null = null;
-  try {
-    if (user.email) {
-      checkoutSessionSecret = await createStripeCheckoutSession(user.email);
+  // Existing subscribers should manage their plan, not buy a second one.
+  const rows = await db
+    .select({ plan: usersTable.plan })
+    .from(usersTable)
+    .where(eq(usersTable.id, user.id));
+  const subscribed = Boolean(rows[0]?.plan && rows[0].plan !== 'none');
+  let billingUrl: string | null = null;
+  if (subscribed) {
+    try {
+      billingUrl = await generateStripeBillingPortalLink(user.email!);
+    } catch (err) {
+      // Customer portal disabled in Stripe settings or no Stripe customer yet —
+      // fall back to the default Get Started buttons rather than a dead link.
+      console.error(
+        'subscribe: billing portal link failed:',
+        err instanceof Error ? err.message : 'unknown error'
+      );
     }
-  } catch (err) {
-    console.error(
-      'Stripe checkout session failed:',
-      err instanceof Error ? err.message : 'unknown error'
-    );
   }
 
   return (
@@ -72,8 +86,25 @@ export default async function Subscribe() {
           </p>
         </div>
 
-        <div className="mx-auto mt-10 w-full max-w-[1200px] rounded-2xl border border-sandline bg-paper p-6 shadow-figma-hero sm:p-10">
-          <StripePricingTable checkoutSessionSecret={checkoutSessionSecret} />
+        {checkout && (
+          <p
+            role="status"
+            className={
+              checkout === 'success'
+                ? 'mx-auto mt-8 max-w-[600px] rounded-lg border border-ink bg-paper p-4 text-center text-sm font-semibold text-ink'
+                : 'mx-auto mt-8 max-w-[600px] rounded-lg border border-sandline bg-paper p-4 text-center text-sm text-clay'
+            }
+          >
+            {checkout === 'success'
+              ? 'Subscription active — welcome aboard!'
+              : checkout === 'canceled'
+                ? 'Checkout canceled. No charge was made.'
+                : 'Checkout is temporarily unavailable. Please try again later.'}
+          </p>
+        )}
+
+        <div className="mx-auto mt-10 w-full max-w-[1200px]">
+          <SubscribePricingCards subscribed={subscribed} billingUrl={billingUrl} />
         </div>
       </div>
     </div>
