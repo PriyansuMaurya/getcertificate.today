@@ -69,7 +69,7 @@ export default async function Dashboard() {
       label: 'Courses In Progress',
       value: String(inProgress),
       icon: BookOpen,
-      help: inProgress > 0 ? 'Keep going — 80% unlocks the assessment' : 'Add a video to begin',
+      help: inProgress > 0 ? 'Keep going - 80% unlocks the assessment' : 'Add a video to begin',
     },
     {
       label: 'Certificates Earned',
@@ -115,7 +115,7 @@ export default async function Dashboard() {
                 Start a new learning path
               </h2>
               <p className="mt-2 max-w-3xl text-sm leading-relaxed text-clay">
-                Paste any YouTube video link — watch it in the app, and the AI assessment unlocks at
+                Paste any YouTube video link - watch it in the app, and the AI assessment unlocks at
                 80% completion.
               </p>
               <div className="mt-5">
@@ -162,7 +162,7 @@ export default async function Dashboard() {
 
             {items.length === 0 && credentials.length === 0 ? (
               <p className="mt-6 text-sm text-clay">
-                No activity yet — add your first video above and it will show up here.
+                No activity yet - add your first video above and it will show up here.
               </p>
             ) : (
               <ul className="mt-5 flex flex-col gap-3">
@@ -177,7 +177,7 @@ export default async function Dashboard() {
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-semibold text-ink">
-                          Certificate earned — {cred.item_title}
+                          Certificate earned - {cred.item_title}
                         </span>
                         <span className="block text-xs text-clay">
                           Score {cred.score}% ·{' '}
@@ -234,7 +234,7 @@ export default async function Dashboard() {
                       {nextUp.title ?? 'YouTube video'}
                     </p>
                     <p className="mt-1 text-xs leading-relaxed text-clay">
-                      {nextUp.progress_percent}% watched — pick up where you left off.
+                      {nextUp.progress_percent}% watched - pick up where you left off.
                     </p>
                   </div>
                 </div>
@@ -252,7 +252,7 @@ export default async function Dashboard() {
                 <div>
                   <p className="text-sm font-semibold text-ink">Your queue is empty</p>
                   <p className="mt-1 text-xs leading-relaxed text-clay">
-                    Add a course above — it will appear here as your next thing to learn.
+                    Add a course above - it will appear here as your next thing to learn.
                   </p>
                 </div>
               </div>

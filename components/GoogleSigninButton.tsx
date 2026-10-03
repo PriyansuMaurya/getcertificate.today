@@ -51,7 +51,7 @@ const SCRIPT_TIMEOUT_MS = 8000;
 const RESIZE_DEBOUNCE_MS = 200;
 const RESIZE_THRESHOLD_PX = 8;
 // GIS renders a 0x0 iframe when the origin is rejected for the client ID
-// (403 "given origin is not allowed") — poll for real size before trusting it.
+// (403 "given origin is not allowed") - poll for real size before trusting it.
 const GIS_SIZE_POLL_MS = 100;
 const GIS_RENDER_TIMEOUT_MS = 2000;
 const GIS_MIN_SIZE_PX = 10;
@@ -149,7 +149,7 @@ export default function GoogleSigninButton({ actionLabel, clientId }: GoogleSign
         // finish bootstrap + land on onboarding/dashboard.
         await finishGoogleSignIn();
       } catch (err) {
-        // The server action's redirect() surfaces as a NEXT_REDIRECT digest —
+        // The server action's redirect() surfaces as a NEXT_REDIRECT digest -
         // navigation is already in flight, so don't treat it as a failure.
         if (isNextRedirectError(err)) return;
         console.error('Google sign-in failed:', err);
@@ -183,14 +183,14 @@ export default function GoogleSigninButton({ actionLabel, clientId }: GoogleSign
         });
         watchForIframe();
       } catch (err) {
-        // GIS failed to render (bad client id, blocked, etc.) — stay on the
+        // GIS failed to render (bad client id, blocked, etc.) - stay on the
         // legacy redirect flow, which keeps working.
         console.error('Google Identity Services failed to render:', err);
       }
     };
 
     // MutationObserver instead of a fixed poll: iframe can render at any time
-    // (slow network) — start size-watching whenever it appears.
+    // (slow network) - start size-watching whenever it appears.
     const watchForIframe = () => {
       if (cancelled) return;
       if (container.querySelector('iframe')) {
@@ -220,7 +220,7 @@ export default function GoogleSigninButton({ actionLabel, clientId }: GoogleSign
 
     // Only switch to 'gis' mode (styled button disabled, clicks owned by the
     // Google overlay) once the iframe actually has size. A 0x0 iframe means
-    // Google rejected the origin — drop GIS entirely and keep the styled
+    // Google rejected the origin - drop GIS entirely and keep the styled
     // button on the legacy redirect flow instead of leaving it dead.
     const armGisSizeCheck = () => {
       if (gisLive || gisAbandoned || sizeCheckTimer) return;
@@ -277,7 +277,7 @@ export default function GoogleSigninButton({ actionLabel, clientId }: GoogleSign
           renderGisButton(width);
         }
       } catch (err) {
-        // GIS unavailable (blocked, offline, timeout) — silently keep the
+        // GIS unavailable (blocked, offline, timeout) - silently keep the
         // legacy redirect flow so Google sign-in still works.
         console.warn('Google Identity Services unavailable, using redirect flow:', err);
       }
@@ -320,7 +320,7 @@ export default function GoogleSigninButton({ actionLabel, clientId }: GoogleSign
           and the legacy redirect fallback: if GIS never renders an iframe,
           clicks fall through (pointer-events: none) to the form above. When
           the iframe exists, pointer-events:auto on the iframe routes clicks
-          to Google's popup instead — Google shows this app's own domain.
+          to Google's popup instead - Google shows this app's own domain.
         */}
         <div
           ref={overlayRef}

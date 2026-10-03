@@ -25,7 +25,7 @@ export const PLANS = [
     price: 19,
     popular: true,
     tagline: 'Best for consistent learners',
-    sub: 'Get started — grow faster',
+    sub: 'Get started - grow faster',
     features: [
       'Access to all courses',
       'Personalized AI learning path',
@@ -58,7 +58,7 @@ export default function SubscribePricingCards({
   subscribed?: boolean;
   billingUrl?: string | null;
 }) {
-  // Subscribers never see checkout buttons — even when the portal link failed
+  // Subscribers never see checkout buttons - even when the portal link failed
   // to generate, fall back to settings (which hosts the billing portal link)
   // instead of offering a second subscription.
   const manageHref = billingUrl ?? '/dashboard/settings';

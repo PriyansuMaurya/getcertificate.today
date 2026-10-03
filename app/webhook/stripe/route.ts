@@ -70,7 +70,7 @@ export async function POST(req: Request) {
       '[stripe-webhook] handler error:',
       err instanceof Error ? err.message : 'unknown error'
     );
-    // 500 so Stripe retries — updates are idempotent by design above.
+    // 500 so Stripe retries - updates are idempotent by design above.
     return new Response('Webhook handler error', { status: 500 });
   }
 }

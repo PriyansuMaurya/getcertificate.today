@@ -119,7 +119,7 @@ export default async function LearnPage({ params }: { params: Promise<{ id: stri
                       <LockKeyhole aria-hidden="true" className="h-4 w-4" />
                     </button>
                     <p id="gate-explanation" className="mt-2 text-xs text-clay">
-                      Complete {UNLOCK_PERCENT}% of the video first — this gate is enforced on the
+                      Complete {UNLOCK_PERCENT}% of the video first - this gate is enforced on the
                       server, so the assessment stays locked until your progress is recorded.
                     </p>
                   </div>

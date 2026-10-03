@@ -8,7 +8,7 @@ import CertificateQR, { buildCertificateQrSvg } from '@/components/certificates/
 import PrintCertificateButton from '@/components/certificates/PrintCertificateButton';
 import { BadgeCheck, QrCode } from 'lucide-react';
 
-// Certificate pages must always reflect live status (e.g. revocation) — no
+// Certificate pages must always reflect live status (e.g. revocation) - no
 // static caching of DB reads.
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +20,7 @@ export const metadata = {
 const PUBLIC_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || 'http://localhost:3000';
 
 /**
- * Public certificate presentation (FR-E3). No auth required — this page is the
+ * Public certificate presentation (FR-E3). No auth required - this page is the
  * artifact shared with employers. Follows DESIGN.md §12: brand tokens, full
  * data set, monochrome QR with adjacent URL text, explicit validity state,
  * print-friendly (rules in globals.css `@media print`).
@@ -57,7 +57,7 @@ export default async function CertificatePage({ params }: { params: Promise<{ id
 
   return (
     <main className="min-h-screen bg-cream text-ink print:bg-white">
-      {/* Minimal top bar — stripped when printing. */}
+      {/* Minimal top bar - stripped when printing. */}
       <header
         data-print-hide
         className="sticky top-0 z-40 h-20 border-b border-sandline bg-cream/95 backdrop-blur print:hidden"
@@ -149,7 +149,7 @@ export default async function CertificatePage({ params }: { params: Promise<{ id
           </div>
 
           <p className="mt-8 text-xs leading-relaxed text-clay">
-            Issued by getcertificate.today — turning YouTube video minutes into verifiable
+            Issued by getcertificate.today - turning YouTube video minutes into verifiable
             professional credentials. This certificate attests to an assessed result on the named
             content; it is not an accredited academic qualification.
           </p>

@@ -23,7 +23,7 @@ export default async function DashboardHeaderProfileDropdown() {
     try {
       billingPortalURL = await generateStripeBillingPortalLink(user.email);
     } catch {
-      // Stripe unavailable — degrade to a disabled hint instead of a dead link.
+      // Stripe unavailable - degrade to a disabled hint instead of a dead link.
       billingPortalURL = null;
     }
   }
@@ -54,7 +54,7 @@ export default async function DashboardHeaderProfileDropdown() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator className="my-1 bg-sandline" />
 
-          {/* shadcn pattern: DropdownMenuItem-asChild wrapping Link — avoids the
+          {/* shadcn pattern: DropdownMenuItem-asChild wrapping Link - avoids the
               invalid Link-inside-Link nesting (MEMORY §6.3). */}
           <DropdownMenuItem asChild className="cursor-pointer">
             <Link href="/dashboard" className="rounded-lg px-2.5 py-2 text-sm font-medium text-ink">

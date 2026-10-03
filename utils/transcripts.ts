@@ -16,7 +16,7 @@ const REQUEST_TIMEOUT_MS = 15_000;
 const MAX_TRANSCRIPT_CHARS = 40_000;
 const VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
 
-/** TRANSCRIPTAPI_KEY missing/empty — config problem, not a user error. */
+/** TRANSCRIPTAPI_KEY missing/empty - config problem, not a user error. */
 export class TranscriptNotConfiguredError extends Error {
   constructor() {
     super('TranscriptAPI is not configured (TRANSCRIPTAPI_KEY missing).');
@@ -32,7 +32,7 @@ export class TranscriptNotFoundError extends Error {
   }
 }
 
-/** 429 — upstream busy; user-facing copy says "try again in a moment". */
+/** 429 - upstream busy; user-facing copy says "try again in a moment". */
 export class TranscriptRateLimitError extends Error {
   constructor() {
     super('TranscriptAPI rate limit reached.');
@@ -40,7 +40,7 @@ export class TranscriptRateLimitError extends Error {
   }
 }
 
-/** Request exceeded REQUEST_TIMEOUT_MS — distinct copy from generic failure. */
+/** Request exceeded REQUEST_TIMEOUT_MS - distinct copy from generic failure. */
 export class TranscriptTimeoutError extends Error {
   constructor() {
     super('TranscriptAPI request timed out.');
@@ -87,7 +87,7 @@ export async function getTranscript(youtubeId: string): Promise<TranscriptResult
 
   const url = new URL(`${API_BASE}/youtube/transcript`);
   url.searchParams.set('video_url', youtubeId);
-  // Plain concatenated text, no timestamps — the LLM only needs the prose.
+  // Plain concatenated text, no timestamps - the LLM only needs the prose.
   url.searchParams.set('format', 'text');
   url.searchParams.set('include_timestamp', 'false');
 
@@ -125,7 +125,7 @@ export async function getTranscript(youtubeId: string): Promise<TranscriptResult
   const language = typeof data.language === 'string' ? data.language : null;
 
   // Best-effort cache write: a duplicate-key race just means another request
-  // stored it first — either way the next start is served from the DB.
+  // stored it first - either way the next start is served from the DB.
   try {
     await db
       .insert(transcriptsTable)

@@ -24,7 +24,7 @@ export default function DashboardSidebar() {
         </div>
         <div className="mt-auto">
           <p className="text-xs leading-relaxed text-clay">
-            Learn Today. Go Further. — turning YouTube video minutes into verifiable credentials.
+            Learn Today. Go Further. - turning YouTube video minutes into verifiable credentials.
           </p>
         </div>
       </div>

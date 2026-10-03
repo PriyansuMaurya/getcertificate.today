@@ -83,7 +83,7 @@
 }
 
 /* Honor prefers-reduced-motion: collapse transitions/animations to a single
-   frame (Web Interface Guidelines — Animation). */
+   frame (Web Interface Guidelines - Animation). */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

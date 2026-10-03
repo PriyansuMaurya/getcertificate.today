@@ -60,8 +60,8 @@ const failures = [];
 function check(name, ok, detail = '') {
   if (ok) console.log(`  PASS  ${name}`);
   else {
-    failures.push(`${name}${detail ? ' — ' + detail : ''}`);
-    console.log(`  FAIL  ${name}${detail ? ' — ' + detail : ''}`);
+    failures.push(`${name}${detail ? ' - ' + detail : ''}`);
+    console.log(`  FAIL  ${name}${detail ? ' - ' + detail : ''}`);
   }
 }
 
@@ -355,7 +355,7 @@ const ROLLBACK = new Error('__ROLLBACK__');
         check('authenticated role credential visibility test', false, e.message);
       }
 
-      throw ROLLBACK; // always roll back — nothing persists
+      throw ROLLBACK; // always roll back - nothing persists
     });
   } catch (err) {
     if (err !== ROLLBACK) {
@@ -371,7 +371,7 @@ const ROLLBACK = new Error('__ROLLBACK__');
     for (const n of notices) console.log('  ' + n);
   }
 
-  console.log('\nResult: transaction ROLLED BACK — database untouched.');
+  console.log('\nResult: transaction ROLLED BACK - database untouched.');
   if (failures.length) {
     console.log(`FAIL: ${failures.length} check(s) failed:`);
     for (const f of failures) console.log('  - ' + f);

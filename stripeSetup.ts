@@ -43,19 +43,36 @@ const plans: Plan[] = [
     name: 'Basic',
     price: 900, // $9/mo, price in cents
     description: 'Perfect for beginners',
-    features: ['Access to selected courses', 'Community support', 'Progress tracking', 'Limited AI insights'],
+    features: [
+      'Access to selected courses',
+      'Community support',
+      'Progress tracking',
+      'Limited AI insights',
+    ],
   },
   {
     name: 'Most Popular',
     price: 1900, // $19/mo
     description: 'Best for consistent learners',
-    features: ['Access to all courses', 'Personalized AI learning path', 'Priority support', 'Certificates of completion', 'Weekly progress reports'],
+    features: [
+      'Access to all courses',
+      'Personalized AI learning path',
+      'Priority support',
+      'Certificates of completion',
+      'Weekly progress reports',
+    ],
   },
   {
     name: 'Premium',
     price: 3900, // $39/mo
     description: 'For ambitious learners',
-    features: ['Unlimited course access', '1-on-1 mentor sessions', 'Advanced AI performance analytics', 'Exclusive webinars & resources', 'Lifetime certificate access'],
+    features: [
+      'Unlimited course access',
+      '1-on-1 mentor sessions',
+      'Advanced AI performance analytics',
+      'Exclusive webinars & resources',
+      'Lifetime certificate access',
+    ],
   },
 ];
 

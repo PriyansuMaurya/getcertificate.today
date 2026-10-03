@@ -99,7 +99,7 @@ export async function deleteLearningItem(
     if (msg.includes('foreign key')) {
       return {
         message:
-          'This course has an earned credential and cannot be deleted — credentials stay verifiable.',
+          'This course has an earned credential and cannot be deleted - credentials stay verifiable.',
       };
     }
     return { message: 'Could not delete that course. Please try again.' };

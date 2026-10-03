@@ -16,7 +16,7 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: 'getcertificate.today — Turn YouTube learning into verifiable credentials',
+  title: 'getcertificate.today - Turn YouTube learning into verifiable credentials',
   description:
     'Describe a field of study. Watch educational videos on YouTube. Pass AI-generated assessments tailored to the content, and earn official shareable certificates. Learn Today. Go Further.',
 };

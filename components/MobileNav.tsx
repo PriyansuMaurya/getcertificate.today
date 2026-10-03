@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
 
 // Mobile navigation disclosure for the landing navbar.
-// Desktop (lg+) is unchanged — links render in the header bar per the Figma design.
+// Desktop (lg+) is unchanged - links render in the header bar per the Figma design.
 const LINKS = [
   { label: 'How It Works', href: '#how-it-works' },
   { label: 'Features', href: '#features' },

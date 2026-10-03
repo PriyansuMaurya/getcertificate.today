@@ -1,6 +1,6 @@
 """Generate components/icons.tsx directly from the exported Figma SVGs.
 
-Reading path data programmatically guarantees byte-exact vector fidelity —
+Reading path data programmatically guarantees byte-exact vector fidelity -
 no manual transcription of path data.
 """
 import re

@@ -10,7 +10,7 @@ import { credentialsTable } from '@/utils/db/schema';
 export type CredentialActionState = { message: string; success?: boolean };
 
 /**
- * Owner-initiated revocation (FR-E5). Flips `status` only — hashed fields and
+ * Owner-initiated revocation (FR-E5). Flips `status` only - hashed fields and
  * the record itself are never edited (RULES §18.4).
  */
 export async function revokeCredential(

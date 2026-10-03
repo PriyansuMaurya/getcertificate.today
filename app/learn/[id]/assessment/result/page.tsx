@@ -106,8 +106,8 @@ export default async function AssessmentResultPage({
 
           <p className="mt-6 text-sm text-clay">
             {passed
-              ? 'Great work — your answer sheet was scored on the server and recorded.'
-              : 'Review the course and try again — your progress is saved and the assessment stays unlocked.'}
+              ? 'Great work - your answer sheet was scored on the server and recorded.'
+              : 'Review the course and try again - your progress is saved and the assessment stays unlocked.'}
           </p>
 
           {/* Credential outcome */}
@@ -128,7 +128,7 @@ export default async function AssessmentResultPage({
 
             {passed && !credential && quotaBlocked && (
               <div className="rounded-xl border border-sandline bg-cream p-5 text-left">
-                <p className="text-sm font-semibold text-ink">Passed — credential pending quota</p>
+                <p className="text-sm font-semibold text-ink">Passed - credential pending quota</p>
                 <p className="mt-1.5 text-sm text-clay">
                   Your free plan includes {FREE_CREDENTIALS_PER_MONTH} credential per month and this
                   month&apos;s is already issued. Upgrade to Professional to mint this credential

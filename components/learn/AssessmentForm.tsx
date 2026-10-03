@@ -41,7 +41,7 @@ function SubmitButton({ answered, total }: { answered: number; total: number }) 
       </button>
       <p className="text-center text-xs text-clay" aria-live="polite">
         {ready
-          ? 'All questions answered — submit when ready.'
+          ? 'All questions answered - submit when ready.'
           : `Answer all questions to submit (${answered}/${total} answered).`}
       </p>
     </div>
@@ -53,7 +53,7 @@ function SubmitButton({ answered, total }: { answered: number; total: number }) 
  * disabled submit with explanatory hint until every question is answered.
  *
  * Instant feedback: committing a choice calls the `checkAnswer` server action,
- * which validates server-side and returns correctness + explanations — the
+ * which validates server-side and returns correctness + explanations - the
  * correct answer never reaches the client before a choice is made (FR-D3).
  * Once feedback is shown the question locks (the answer is graded); the final
  * score is still computed server-side on submit (RULES §9.3).
@@ -110,7 +110,7 @@ export default function AssessmentForm({
               <fieldset disabled={isChecking && !locked}>
                 {locked && answers[q.index] !== undefined && (
                   // Locked radios are disabled, and disabled controls are not
-                  // submitted — mirror the committed answer so submitAssessment
+                  // submitted - mirror the committed answer so submitAssessment
                   // still receives `q<index>`.
                   <input type="hidden" name={`q${q.index}`} value={String(answers[q.index])} />
                 )}
@@ -187,7 +187,7 @@ export default function AssessmentForm({
                     {fb.correct ? (
                       <>
                         <CheckCircle2 aria-hidden="true" className="h-4 w-4" />
-                        Correct — that answer is right.
+                        Correct - that answer is right.
                       </>
                     ) : (
                       <>

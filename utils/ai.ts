@@ -2,7 +2,7 @@
 // a swappable internal interface). Uses the OpenAI-compatible Chat Completions
 // API so OPENAI_BASE_URL can point at OpenRouter, Ollama, Azure, etc.
 //
-// SERVER ONLY — contains no secrets itself but must never enter a client graph.
+// SERVER ONLY - contains no secrets itself but must never enter a client graph.
 import OpenAI from 'openai';
 import type { AssessmentQuestion } from '@/utils/db/schema';
 import { ASSESSMENT_QUESTION_COUNT } from '@/utils/assessment-config';
@@ -22,7 +22,7 @@ export class AIUnavailableError extends Error {
   }
 }
 
-/** 429/rate-limit from the LLM provider — distinct copy from generic failure. */
+/** 429/rate-limit from the LLM provider - distinct copy from generic failure. */
 export class AIRateLimitError extends Error {
   constructor() {
     super('AI provider rate limit reached.');
@@ -30,7 +30,7 @@ export class AIRateLimitError extends Error {
   }
 }
 
-/** Generation exceeded REQUEST_TIMEOUT_MS — the action maps this to copy. */
+/** Generation exceeded REQUEST_TIMEOUT_MS - the action maps this to copy. */
 export class AITimeoutError extends Error {
   constructor() {
     super('AI generation timed out.');
@@ -82,7 +82,7 @@ Respond with JSON only, matching this schema:
 "correct" is the 0-based index of the correct choice.`;
 }
 
-/** Strip control chars and collapse whitespace — sanitization before parsing. */
+/** Strip control chars and collapse whitespace - sanitization before parsing. */
 function cleanText(raw: string, maxLength: number): string {
   return raw
     .replace(/[\u0000-\u001F\u007F]/g, ' ')
@@ -157,7 +157,7 @@ async function sleep(ms: number): Promise<void> {
 /**
  * Generate a grounded assessment for one video from its transcript. Throws
  * AIUnavailableError when no key is configured, AIRateLimitError /
- * AITimeoutError for those failure modes, or Error on malformed generations —
+ * AITimeoutError for those failure modes, or Error on malformed generations -
  * callers map these to a `{ message }` and must not persist partial data
  * (FR-D2 AC4). Retries transient 429/5xx with backoff; never hangs past
  * REQUEST_TIMEOUT_MS per attempt.
@@ -207,7 +207,7 @@ export async function generateAssessment(
     const raw = response.choices[0]?.message?.content;
     if (!raw) {
       lastError = new Error('AI returned an empty response');
-      continue; // transient malformed output — retry within budget
+      continue; // transient malformed output - retry within budget
     }
     try {
       return {
@@ -215,7 +215,7 @@ export async function generateAssessment(
         source: 'transcriptapi',
       };
     } catch (err) {
-      lastError = err; // invalid JSON/short list — retry within budget
+      lastError = err; // invalid JSON/short list - retry within budget
     }
   }
 

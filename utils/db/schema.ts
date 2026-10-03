@@ -26,7 +26,7 @@ export type SelectUser = typeof usersTable.$inferSelect;
 
 // One row per (user, source video). Progress columns are denormalized onto the
 // item because a learning item belongs to exactly one user (no separate
-// learning_progress table needed — TASK.md 2.2 allows "or column set").
+// learning_progress table needed - TASK.md 2.2 allows "or column set").
 export const learningItemsTable = pgTable(
   'learning_items',
   {
@@ -54,7 +54,7 @@ export type InsertLearningItem = typeof learningItemsTable.$inferInsert;
 
 // Question text + choices are stored with the correct index server-side and
 // stripped before any pre-submission render (RULES §9.3). Explanations stay
-// server-side too — they are revealed only through the checkAnswer action
+// server-side too - they are revealed only through the checkAnswer action
 // after the learner commits to a choice (instant-feedback flow).
 export type AssessmentQuestion = {
   prompt: string;

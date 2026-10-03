@@ -13,7 +13,7 @@ const PUBLIC_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || 'http://localhost:3000
 
 // Profile is complete once every onboarding field is filled in. Username and
 // names may be pre-filled from the OAuth provider profile at bootstrap, but DOB
-// is never provided by Google/GitHub — so a non-null dob (plus the other
+// is never provided by Google/GitHub - so a non-null dob (plus the other
 // required fields) is what proves onboarding actually finished.
 export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
   const rows = await db
@@ -276,7 +276,11 @@ export async function signInWithGoogle() {
     },
   });
 
-  logAuth('signInWithGoogle', { error: error?.message ?? null, hasUrl: !!data.url, url: data.url ?? null });
+  logAuth('signInWithGoogle', {
+    error: error?.message ?? null,
+    hasUrl: !!data.url,
+    url: data.url ?? null,
+  });
 
   if (error) {
     redirect('/auth/auth-code-error');
@@ -298,7 +302,11 @@ export async function signInWithGithub() {
     },
   });
 
-  logAuth('signInWithGithub', { error: error?.message ?? null, hasUrl: !!data.url, url: data.url ?? null });
+  logAuth('signInWithGithub', {
+    error: error?.message ?? null,
+    hasUrl: !!data.url,
+    url: data.url ?? null,
+  });
 
   if (error) {
     redirect('/auth/auth-code-error');

@@ -1,5 +1,5 @@
 -- =============================================================================
--- getcertificate.today — Production schema for Supabase (Postgres)
+-- getcertificate.today - Production schema for Supabase (Postgres)
 --
 -- Generated from the codebase source of truth:
 --   utils/db/schema.ts          (tables, columns, FKs, unique indexes)
@@ -12,7 +12,7 @@
 -- partially provisioned (drizzle db:push era, missing 0001 columns), or
 -- fully migrated. No manual fixes required.
 --
--- Design decisions (all grounded in existing code — no invented structure):
+-- Design decisions (all grounded in existing code - no invented structure):
 --   * Status/kind/source columns use `text` + guarded CHECK constraints, NOT
 --     Postgres enums: utils/db/schema.ts declares them as text, and pg enums
 --     would diverge from the Drizzle schema. CHECKs are only added when no
@@ -23,7 +23,7 @@
 --   * No auth trigger on auth.users: app code inserts users_table itself
 --     (app/auth/actions.ts:182, app/auth/callback/route.ts:38). A
 --     handle_new_user trigger would double-insert.
---   * users_table.id is linked to auth.users.id BY CONVENTION only (no FK) —
+--   * users_table.id is linked to auth.users.id BY CONVENTION only (no FK) -
 --     documented in docs/ARCHITECTURE.md §5 and docs/RULES.md §18.5. This
 --     script preserves that decision; it does not add an unsupported FK.
 --   * RLS: policies are written for the `authenticated` role (owner-scoped).
@@ -35,14 +35,14 @@
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
--- SECTION 1 — Extensions (Supabase ships pgcrypto; needed by 02_seed for
+-- SECTION 1 - Extensions (Supabase ships pgcrypto; needed by 02_seed for
 -- auth password hashing via extensions.crypt/gen_salt).
 -- -----------------------------------------------------------------------------
 CREATE SCHEMA IF NOT EXISTS extensions;
 CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
 
 -- -----------------------------------------------------------------------------
--- SECTION 2 — Drizzle migration tracking (must exist before bootstrapping
+-- SECTION 2 - Drizzle migration tracking (must exist before bootstrapping
 -- applied-migration rows in Section 9). Matches drizzle-orm's migrator DDL:
 --   create table if not exists <schema>.<table> (
 --     id serial primary key, hash text not null, created_at bigint
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS drizzle.__drizzle_migrations (
 );
 
 -- -----------------------------------------------------------------------------
--- SECTION 3 — Tables, in FK dependency order.
+-- SECTION 3 - Tables, in FK dependency order.
 -- Exact mirror of utils/db/schema.ts. ON DELETE behaviour matches the
 -- Drizzle .references() clauses byte for byte:
 --   learning_items.user_id          -> users_table.id     ON DELETE CASCADE
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS drizzle.__drizzle_migrations (
 --   attempts.user_id                -> users_table.id     (no action)
 --   attempts.learning_item_id       -> learning_items.id  ON DELETE CASCADE
 --   credentials.user_id             -> users_table.id     (no action)
---   credentials.learning_item_id    -> learning_items.id  (no action — this is
+--   credentials.learning_item_id    -> learning_items.id  (no action - this is
 --       what makes deleteLearningItem's "credential attests to this item"
 --       guard work: app/dashboard/actions.ts catches the FK violation)
 --   credentials.attempt_id          -> attempts.id        (no action)
@@ -151,7 +151,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS learning_items_user_youtube_unique
   ON public.learning_items (user_id, youtube_id);
 
 -- 3.3 assessments (one per learning item; questions JSONB holds
--- {prompt, choices[], correct} — utils/db/schema.ts AssessmentQuestion)
+-- {prompt, choices[], correct} - utils/db/schema.ts AssessmentQuestion)
 CREATE TABLE IF NOT EXISTS public.assessments (
   id text PRIMARY KEY,
   learning_item_id text NOT NULL
@@ -179,7 +179,7 @@ BEGIN
   END IF;
 END $$;
 
--- 3.4 transcripts (per-video TranscriptAPI cache — utils/transcripts.ts;
+-- 3.4 transcripts (per-video TranscriptAPI cache - utils/transcripts.ts;
 -- fetched once per YouTube video ID, reused by every later assessment start)
 CREATE TABLE IF NOT EXISTS public.transcripts (
   id text PRIMARY KEY,
@@ -192,7 +192,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS transcripts_youtube_id_unique
   ON public.transcripts (youtube_id);
 
 -- 3.5 attempts (answers JSONB = number[] of chosen indices; score 0-100;
--- server-scored only — app/learn/actions.ts submitAssessment)
+-- server-scored only - app/learn/actions.ts submitAssessment)
 CREATE TABLE IF NOT EXISTS public.attempts (
   id text PRIMARY KEY,
   assessment_id text NOT NULL REFERENCES public.assessments (id) ON DELETE CASCADE,
@@ -204,7 +204,7 @@ CREATE TABLE IF NOT EXISTS public.attempts (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- 3.6 credentials (immutable credential record, sha256-v1 hash —
+-- 3.6 credentials (immutable credential record, sha256-v1 hash -
 -- utils/credentials.ts; revocation flips status only, RULES §18.4)
 CREATE TABLE IF NOT EXISTS public.credentials (
   id text PRIMARY KEY,
@@ -223,10 +223,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS credentials_user_item_unique
   ON public.credentials (user_id, learning_item_id);
 
 -- -----------------------------------------------------------------------------
--- SECTION 4 — CHECK constraints.
+-- SECTION 4 - CHECK constraints.
 -- Every allowed value below is enumerated by existing code; nothing is
 -- invented. Each CHECK is added only if (a) it does not already exist and
--- (b) no existing row violates it — a NOTICE is raised instead of an error,
+-- (b) no existing row violates it - a NOTICE is raised instead of an error,
 -- keeping the script directly executable on any data state.
 -- -----------------------------------------------------------------------------
 
@@ -246,7 +246,7 @@ BEGIN
   END IF;
 END $$;
 
--- credentials.score: score = Math.round((correct/total)*100) — always 0..100
+-- credentials.score: score = Math.round((correct/total)*100) - always 0..100
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint
@@ -305,7 +305,7 @@ BEGIN
 END $$;
 
 -- learning_items.kind: only 'video' exists today (default in schema; no other
--- value is ever written). Intentionally strict — widen with a migration if a
+-- value is ever written). Intentionally strict - widen with a migration if a
 -- second content kind ships.
 DO $$
 BEGIN
@@ -355,7 +355,7 @@ BEGIN
 END $$;
 
 -- learning_items position/duration: saveProgress clamps both to >= 0.
--- NOTE: position_seconds > duration_seconds is deliberately NOT forbidden —
+-- NOTE: position_seconds > duration_seconds is deliberately NOT forbidden -
 -- saveProgress allows a position while duration is still 0 (unknown).
 DO $$
 BEGIN
@@ -374,7 +374,7 @@ BEGIN
 END $$;
 
 -- -----------------------------------------------------------------------------
--- SECTION 5 — updated_at maintenance trigger (functions + triggers).
+-- SECTION 5 - updated_at maintenance trigger (functions + triggers).
 -- App code sets updated_at explicitly on update (app/dashboard/actions.ts:158);
 -- this trigger makes the database clock authoritative so a client clock can
 -- never skew the dashboard's "recently watched" ordering. Same column
@@ -398,7 +398,7 @@ CREATE TRIGGER learning_items_set_updated_at
   EXECUTE FUNCTION public.set_updated_at();
 
 -- -----------------------------------------------------------------------------
--- SECTION 6 — Row Level Security.
+-- SECTION 6 - Row Level Security.
 --
 -- Ownership guard first: the app connects as `postgres` (DATABASE_URL user).
 -- Table owners bypass RLS, so enabling it cannot affect the application as
@@ -417,7 +417,7 @@ BEGIN
       JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE n.nspname = 'public' AND c.relname = t AND c.relkind = 'r';
     IF owner_name IS NULL THEN
-      RAISE EXCEPTION 'Table public.% does not exist — run Sections 1-3 first.', t;
+      RAISE EXCEPTION 'Table public.% does not exist - run Sections 1-3 first.', t;
     END IF;
     -- Safe iff the app role (postgres) bypasses RLS: it owns the tables, or
     -- the postgres role is superuser/BYPASSRLS.
@@ -443,7 +443,7 @@ ALTER TABLE public.credentials ENABLE ROW LEVEL SECURITY;
 --
 -- Policy matrix (role `authenticated` only; `anon` gets no policy = zero rows;
 -- writes to assessments/attempts/credentials have NO authenticated policy so
--- question content, scoring and minting stay server-authoritative — RULES §9):
+-- question content, scoring and minting stay server-authoritative - RULES §9):
 --
 --   users_table     SELECT/INSERT/UPDATE own row (id = auth.uid)   no DELETE
 --   learning_items  SELECT/INSERT/UPDATE/DELETE own rows           (user_id)
@@ -509,7 +509,7 @@ CREATE POLICY credentials_select_own ON public.credentials
   USING (user_id = (auth.uid())::text);
 
 -- -----------------------------------------------------------------------------
--- SECTION 7 — Performance indexes for the queries the app actually runs.
+-- SECTION 7 - Performance indexes for the queries the app actually runs.
 -- (Unique indexes from Section 3 are not repeated here.)
 -- -----------------------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS learning_items_user_updated_idx
@@ -532,23 +532,23 @@ CREATE INDEX IF NOT EXISTS users_table_stripe_id_idx
   ON public.users_table (stripe_id);
 
 -- -----------------------------------------------------------------------------
--- SECTION 8 — Storage buckets: NONE.
+-- SECTION 8 - Storage buckets: NONE.
 -- Verified: zero references to supabase.storage / storage.from /
 -- upload in app/, components/, utils/. Creating a bucket here would be an
 -- unsupported assumption, so none is created.
 -- -----------------------------------------------------------------------------
 
 -- -----------------------------------------------------------------------------
--- SECTION 9 — Drizzle migration bootstrap.
+-- SECTION 9 - Drizzle migration bootstrap.
 --
--- Why: the committed migration chain cannot run cleanly on a fresh database —
+-- Why: the committed migration chain cannot run cleanly on a fresh database -
 -- migration 0002_striped_misty_knight.sql only does
 --   ALTER TABLE users_table DROP CONSTRAINT users_table_stripe_id_unique;
 --   ALTER TABLE users_table ALTER COLUMN dob SET DATA TYPE date;
 -- (the four core tables were provisioned outside the chain), and it would
 -- error on a database where the dropped constraint never existed. Meanwhile
 -- migration 0001 would fail on any database that already has the profile
--- columns. (0003 creates the `transcripts` cache table — see utils/transcripts.ts.)
+-- columns. (0003 creates the `transcripts` cache table - see utils/transcripts.ts.)
 -- Marking all four journal entries as applied (hash = sha256 of the
 -- exact file bytes, created_at = journal `when`, matching drizzle-orm's
 -- migrator: SELECT ... ORDER BY created_at DESC LIMIT 1) makes
@@ -572,7 +572,7 @@ SELECT '77d3c91110d6dd1832cccc1f7e9c51f212b1fc93e05d58510d804aeeca391f7e', 17907
 WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at = 1790784869180);
 
 -- -----------------------------------------------------------------------------
--- SECTION 10 — Post-run verification queries (read-only, for manual check).
+-- SECTION 10 - Post-run verification queries (read-only, for manual check).
 -- -----------------------------------------------------------------------------
 -- SELECT relname, relrowsecurity FROM pg_class
 --   WHERE relname IN ('users_table','learning_items','assessments','attempts','credentials')

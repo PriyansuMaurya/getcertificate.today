@@ -39,7 +39,7 @@ function toUsernameCandidate(raw: string | undefined): string | null {
 /**
  * Find an unused username for this new user, trying numeric suffixes when the
  * preferred candidate is already taken (usernames are globally unique).
- * Returns null when nothing in the bounded search is free — the onboarding
+ * Returns null when nothing in the bounded search is free - the onboarding
  * form then asks the user to pick one, same as before.
  */
 async function pickAvailableUsername(candidate: string | null): Promise<string | null> {
@@ -67,7 +67,7 @@ async function pickAvailableUsername(candidate: string | null): Promise<string |
  *   (`user_name`), so the display name is split with the last word as surname.
  *
  * DOB is never returned by either provider's standard sign-in scopes, so it
- * is deliberately left unset — users still pass through onboarding to enter
+ * is deliberately left unset - users still pass through onboarding to enter
  * it (see hasCompletedOnboarding).
  */
 function deriveProfileDefaults(user: User): ProfileDefaults {
@@ -82,7 +82,7 @@ function deriveProfileDefaults(user: User): ProfileDefaults {
     if (!firstName) firstName = parts[0];
     if (!lastName && parts.length > 1) lastName = parts.slice(1).join(' ');
   }
-  // GitHub profiles often have no display name at all — fall back to the
+  // GitHub profiles often have no display name at all - fall back to the
   // provider login so first name still arrives pre-filled.
   if (!firstName) {
     firstName = metaString(meta, 'user_name', 'login');
@@ -111,7 +111,7 @@ function deriveProfileDefaults(user: User): ProfileDefaults {
  *
  * Returns `{ ok: false }` on any failure so callers can route the user to the
  * designed error page instead of surfacing a raw 500. This function must never
- * call `redirect()` itself — callers own the navigation.
+ * call `redirect()` itself - callers own the navigation.
  */
 export async function bootstrapOAuthUser(user: User): Promise<{ ok: boolean }> {
   const email = user.email;

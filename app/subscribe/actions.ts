@@ -56,10 +56,7 @@ export async function startCheckout(planKey: string) {
   } catch (err) {
     // Stripe failure (bad price, config, network) must reach the designed
     // fallback banner, not surface as a raw 500.
-    console.error(
-      'startCheckout failed:',
-      err instanceof Error ? err.message : 'unknown error'
-    );
+    console.error('startCheckout failed:', err instanceof Error ? err.message : 'unknown error');
   }
 
   if (!sessionUrl) {

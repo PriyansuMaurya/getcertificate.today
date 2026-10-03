@@ -10,11 +10,11 @@ export const metadata = {
   description: 'Public verification of a getcertificate.today credential.',
 };
 
-// Verification must reflect live revocation/hash state — never cached.
+// Verification must reflect live revocation/hash state - never cached.
 export const dynamic = 'force-dynamic';
 
 /**
- * Public verification (FR-F1) — no account needed. Shows the minimal data set
+ * Public verification (FR-F1) - no account needed. Shows the minimal data set
  * (holder, course, score, date, ID, validity) and never any assessment
  * internals. Hash is recomputed server-side before declaring "valid".
  */
@@ -54,7 +54,7 @@ export default async function VerifyPage({ params }: { params: Promise<{ id: str
       icon: ShieldX,
       heading: 'Integrity check failed',
       detail:
-        'A credential with this ID exists, but its stored data does not match its integrity hash. The record may have been altered — do not trust it.',
+        'A credential with this ID exists, but its stored data does not match its integrity hash. The record may have been altered - do not trust it.',
       badge: 'bg-red-700 text-white',
       iconCls: 'text-red-700',
     },
@@ -62,7 +62,7 @@ export default async function VerifyPage({ params }: { params: Promise<{ id: str
       icon: SearchX,
       heading: 'Credential not found',
       detail:
-        'No credential with this ID exists. Check the link or QR code — credential IDs are case-sensitive.',
+        'No credential with this ID exists. Check the link or QR code - credential IDs are case-sensitive.',
       badge: 'bg-linen text-clay',
       iconCls: 'text-clay',
     },
@@ -107,7 +107,7 @@ export default async function VerifyPage({ params }: { params: Promise<{ id: str
             <p className="mt-2 text-sm leading-relaxed text-clay">{statePresentation.detail}</p>
           </div>
 
-          {/* For a hash mismatch, show only the ID — repeating the claimed data
+          {/* For a hash mismatch, show only the ID - repeating the claimed data
               would lend credibility to a tampered record. */}
           {cred && validity !== 'not-found' && validity !== 'invalid' && (
             <dl className="mt-8 flex flex-col gap-4 border-t border-sandline pt-6">

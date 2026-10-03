@@ -59,7 +59,7 @@ export default async function AssessmentPage({ params }: { params: Promise<{ id:
 
   const remainingAttempts = Math.max(0, MAX_ATTEMPTS_PER_WINDOW - windowAttempts.length);
 
-  // Strip correct answers — only prompt + choices reach the client (FR-D3 AC2).
+  // Strip correct answers - only prompt + choices reach the client (FR-D3 AC2).
   const questions: PublicQuestion[] = assessment.questions.map((q, index) => ({
     index,
     prompt: q.prompt,

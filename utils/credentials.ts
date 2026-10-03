@@ -16,7 +16,7 @@ export const FREE_CREDENTIALS_PER_MONTH = 1; // FR-B6
 
 /**
  * Canonical serialization of the credential's immutable fields.
- * Field order and separators are part of the scheme — changing them requires
+ * Field order and separators are part of the scheme - changing them requires
  * a new HASH_VERSION (RULES §18.6).
  */
 export function canonicalizeCredential(cred: {

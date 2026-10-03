@@ -51,7 +51,7 @@ try {
   try {
     await sql.end({ timeout: 5 });
   } catch {
-    // ignore — process is exiting anyway
+    // ignore - process is exiting anyway
   }
 }
 if (failed) process.exit(1);

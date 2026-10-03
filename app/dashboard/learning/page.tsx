@@ -70,7 +70,7 @@ export default async function MyLearningPage() {
               </span>
               <h2 className="font-fraunces text-xl font-bold text-ink">No courses yet</h2>
               <p className="max-w-md text-sm text-clay">
-                Paste your first YouTube link above — it will show up here with your progress.
+                Paste your first YouTube link above - it will show up here with your progress.
               </p>
             </div>
           ) : (

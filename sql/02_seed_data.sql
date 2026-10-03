@@ -1,5 +1,5 @@
 -- =============================================================================
--- getcertificate.today — Seed data for Supabase (Postgres)
+-- getcertificate.today - Seed data for Supabase (Postgres)
 --
 -- Run AFTER sql/01_production_schema.sql. Idempotent: this file first deletes
 -- only the fixed seed IDs below (reverse FK order, incl. auth.users rows),
@@ -9,18 +9,18 @@
 --   (auth.users.encrypted_password = extensions.crypt(..., extensions.gen_salt('bf')))
 --
 -- Journey matrix (every state the app can render):
---   ada  — COMPLETED: two finished courses; one active credential (this month,
+--   ada  - COMPLETED: two finished courses; one active credential (this month,
 --          Professional plan), one REVOKED credential (previous month),
 --          one in-progress course (45%).
---   ben  — FREE/quota: passed attempt with credential minted this month (free
+--   ben  - FREE/quota: passed attempt with credential minted this month (free
 --          monthly quota now used), one course parked at 79% (assessment gate
 --          not yet passed), one course with two FAILED attempts inside the
 --          7-day window (cooldown state).
---   cara  — NEW/EMPTY/PENDING: signed up but onboarding incomplete
+--   cara  - NEW/EMPTY/PENDING: signed up but onboarding incomplete
 --          (username/first_name/last_name/dob all NULL), zero learning items
 --          (empty dashboard, empty certificates).
---   dev  — EDGE: passed attempt from a previous month with NO credential
---          (quota was exhausted when he passed — exercises mintFromAttempt),
+--   dev  - EDGE: passed attempt from a previous month with NO credential
+--          (quota was exhausted when he passed - exercises mintFromAttempt),
 --          plus a brand-new untouched course (0%).
 --
 -- Timestamps are anchored to date_trunc('month', now()) (= M) so ordering is
@@ -45,7 +45,7 @@
 -- =============================================================================
 
 -- -----------------------------------------------------------------------------
--- SECTION 1 — Clear previous seed runs (reverse FK order; seed IDs only).
+-- SECTION 1 - Clear previous seed runs (reverse FK order; seed IDs only).
 -- -----------------------------------------------------------------------------
 DELETE FROM public.credentials WHERE user_id IN (
   'a0000000-0000-4000-8000-000000000001',
@@ -91,8 +91,8 @@ DELETE FROM auth.users WHERE id IN (
 );
 
 -- -----------------------------------------------------------------------------
--- SECTION 2 — auth.users + auth.identities (Supabase GoTrue rows).
--- users_table.id mirrors auth.users.id (RULES §18.5 — join by convention).
+-- SECTION 2 - auth.users + auth.identities (Supabase GoTrue rows).
+-- users_table.id mirrors auth.users.id (RULES §18.5 - join by convention).
 -- -----------------------------------------------------------------------------
 INSERT INTO auth.users (
   instance_id, id, aud, role, email, encrypted_password,
@@ -158,9 +158,9 @@ WHERE u.id IN (
 ON CONFLICT DO NOTHING;
 
 -- -----------------------------------------------------------------------------
--- SECTION 3 — users_table profiles.
+-- SECTION 3 - users_table profiles.
 --   ada  Professional: plan stores a Stripe subscription id (any value other
---        than the 'none' sentinel = Professional — utils/credentials.ts:90,
+--        than the 'none' sentinel = Professional - utils/credentials.ts:90,
 --        app/webhook/stripe/route.ts:51). Settings page tolerates the fake id
 --        (getStripePlan is wrapped in try/catch -> 'Plan unavailable').
 --   cara Onboarding PENDING: username/first_name/last_name/dob NULL -> the
@@ -179,7 +179,7 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- -----------------------------------------------------------------------------
--- SECTION 4 — learning_items (8 rows, one per journey state).
+-- SECTION 4 - learning_items (8 rows, one per journey state).
 -- progress/position/duration are consistent: completed items have
 -- position = duration and progress = 100; 79% item = floor(0.79 * 1200) etc.
 -- -----------------------------------------------------------------------------
@@ -247,8 +247,8 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- -----------------------------------------------------------------------------
--- SECTION 5 — assessments (5 rows; every gated course except ben's 79% and
--- dev's 0%, plus ada's 45% course — those are the "not generated yet" pending
+-- SECTION 5 - assessments (5 rows; every gated course except ben's 79% and
+-- dev's 0%, plus ada's 45% course - those are the "not generated yet" pending
 -- states). questions = AssessmentQuestion[] {prompt, choices[], correct}.
 -- -----------------------------------------------------------------------------
 INSERT INTO public.assessments (id, learning_item_id, schema_version, source, questions, created_at)
@@ -296,11 +296,11 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- -----------------------------------------------------------------------------
--- SECTION 6 — attempts (server-scored: score = round(correct/total*100),
+-- SECTION 6 - attempts (server-scored: score = round(correct/total*100),
 -- passed = score >= 70 / PASS_SCORE).
 --   att1 ada 100% pass | att2 ada 80% pass | att3 ben 80% pass
 --   att4 ben 40% FAIL | att5 ben 60% FAIL (2 attempts inside 7-day window
---        -> 1 more allowed, then cooldown — submitAssessment's window check)
+--        -> 1 more allowed, then cooldown - submitAssessment's window check)
 --   att6 dev 80% pass, last month, no credential minted (quota was exhausted)
 -- -----------------------------------------------------------------------------
 INSERT INTO public.attempts (id, assessment_id, user_id, learning_item_id, answers, score, passed, created_at)
@@ -332,7 +332,7 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- -----------------------------------------------------------------------------
--- SECTION 7 — credentials (3 rows) with hashes computed by the exact
+-- SECTION 7 - credentials (3 rows) with hashes computed by the exact
 -- canonicalization from utils/credentials.ts:
 --   id=<id>|user=<user_id>|item=<learning_item_id>|attempt=<attempt_id>|
 --   holder=<holder_name>|title=<item_title>|score=<score>|
@@ -393,7 +393,7 @@ FROM seed s
 ON CONFLICT (id) DO NOTHING;
 
 -- -----------------------------------------------------------------------------
--- SECTION 8 — Post-seed verification queries (read-only).
+-- SECTION 8 - Post-seed verification queries (read-only).
 -- -----------------------------------------------------------------------------
 -- SELECT count(*) FROM auth.users WHERE email LIKE '%example.com';   -- 4
 -- SELECT (SELECT count(*) FROM public.users_table),      -- 4

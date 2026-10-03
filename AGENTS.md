@@ -1,6 +1,6 @@
-# AGENTS.md — Agent workflow for getcertificate.today
+# AGENTS.md - Agent workflow for getcertificate.today
 
-Instructions for AI coding agents working in this repository. This file governs **how agents work**. It does not define the product, architecture, standards, or roadmap — those live in `/docs` and always take precedence there.
+Instructions for AI coding agents working in this repository. This file governs **how agents work**. It does not define the product, architecture, standards, or roadmap - those live in `/docs` and always take precedence there.
 
 ## 1. Documentation authority
 
@@ -59,17 +59,17 @@ Before starting a task, identify and load the most relevant available skills, to
 
 ## 6. Design implementation
 
-For Figma or provided designs, treat the design as visual source of truth alongside `/docs/DESIGN.md`. Preserve typography, spacing, dimensions, colours, borders, shadows, radii, assets, states, interactions, and responsive behaviour. Compare implementation against the source and iterate until accurate. The landing page (`app/page.tsx`) implements Figma frame `6:9` (file `ifCw9JuE00PMiaOHgtBxRp`) 1:1 — see `DESIGN.md` §15 consistency rules; `components/icons.tsx` is generated (`scripts/figma-icons-gen.py`), never hand-edited.
+For Figma or provided designs, treat the design as visual source of truth alongside `/docs/DESIGN.md`. Preserve typography, spacing, dimensions, colours, borders, shadows, radii, assets, states, interactions, and responsive behaviour. Compare implementation against the source and iterate until accurate. The landing page (`app/page.tsx`) implements Figma frame `6:9` (file `ifCw9JuE00PMiaOHgtBxRp`) 1:1 - see `DESIGN.md` §15 consistency rules; `components/icons.tsx` is generated (`scripts/figma-icons-gen.py`), never hand-edited.
 
 ## 7. Verification
 
-Verify every change with the applicable checks — real `package.json` scripts:
+Verify every change with the applicable checks - real `package.json` scripts:
 
 ```bash
 npm run lint          # ESLint 9 flat config
 npm run format:check  # Prettier (run `npm run format` to fix)
 npx tsc --noEmit      # no "typecheck" script exists; run directly
-npm run build         # db-preflight && drizzle-kit migrate && next build — requires reachable DATABASE_URL
+npm run build         # db-preflight && drizzle-kit migrate && next build - requires reachable DATABASE_URL
 ```
 
 - No test framework is installed. When one is added (Phase 0.6 in `TASK.md`), run it as part of verification.

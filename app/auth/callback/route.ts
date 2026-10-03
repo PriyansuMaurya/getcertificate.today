@@ -12,12 +12,16 @@ export async function GET(request: Request) {
   const next = searchParams.get('next') ?? '/';
 
   logAuth('callback.hit', {
-    // Never log the one-time `code` value itself — only its presence.
+    // Never log the one-time `code` value itself - only its presence.
     hasCode: !!code,
     error: searchParams.get('error'),
     errorDescription: searchParams.get('error_description'),
     next,
-    cookieNames: request.headers.get('cookie')?.split(';').map((c) => c.trim().split('=')[0]) ?? [],
+    cookieNames:
+      request.headers
+        .get('cookie')
+        ?.split(';')
+        .map((c) => c.trim().split('=')[0]) ?? [],
   });
 
   if (code) {

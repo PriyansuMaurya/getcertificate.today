@@ -1,6 +1,6 @@
 // Server-side YouTube helpers (FR-C1 URL validation, FR-D1 content grounding).
 // Caption fetch is best-effort: publicly served caption tracks only, falling
-// back to oEmbed metadata when unavailable (PRD §14.2 — ToS review still open).
+// back to oEmbed metadata when unavailable (PRD §14.2 - ToS review still open).
 
 const VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
 
@@ -45,7 +45,7 @@ export function parseYouTubeVideoId(rawUrl: string): string | null {
 
 /**
  * Fetch title/channel via YouTube oEmbed (public, no API key required).
- * Returns nulls on any failure — callers treat metadata as optional.
+ * Returns nulls on any failure - callers treat metadata as optional.
  */
 async function fetchOEmbed(
   youtubeId: string
@@ -67,7 +67,7 @@ async function fetchOEmbed(
 /**
  * Best-effort caption fetch: try the public timedtext endpoint for English
  * tracks (manual then auto-generated). Returns null when no track is served
- * or the payload is empty — never throws. (ToS review tracked in MEMORY.md.)
+ * or the payload is empty - never throws. (ToS review tracked in MEMORY.md.)
  */
 async function fetchCaptions(youtubeId: string): Promise<string | null> {
   const attempts = [

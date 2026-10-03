@@ -1,5 +1,5 @@
 // QR rendering for certificate/verification URLs (FR-E4). Uses the `qrcode`
-// lib's SVG output — monochrome `ink` on `paper`, quiet zone preserved, per
+// lib's SVG output - monochrome `ink` on `paper`, quiet zone preserved, per
 // DESIGN.md §12.3. The SVG string is built server-side from a URL we construct
 // (no user HTML), then rendered by the sync component below.
 import QRCode from 'qrcode';

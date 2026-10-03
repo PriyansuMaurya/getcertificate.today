@@ -127,7 +127,7 @@ export async function startAssessment(
   let generated: Awaited<ReturnType<typeof generateAssessment>>;
   try {
     // Cache-first TranscriptAPI fetch (DB → API → DB). Title/author come from
-    // the learning item row — both were stored when the video was added, so no
+    // the learning item row - both were stored when the video was added, so no
     // extra oEmbed/captions round-trip is needed here.
     const { transcript } = await getTranscript(item.youtube_id);
     generated = await generateAssessment(title, item.author, transcript);
@@ -199,7 +199,7 @@ export async function startAssessment(
       questions: generated.questions,
     });
   } catch (err) {
-    // Concurrent start: another request inserted first — reuse it. Detect the
+    // Concurrent start: another request inserted first - reuse it. Detect the
     // unique violation by SQLSTATE (23505): drizzle's message only contains
     // the SQL + params, while the Postgres details live on the error itself
     // (or its `cause` when the driver error is wrapped).
@@ -217,7 +217,7 @@ export async function startAssessment(
 
 /**
  * Validate one committed answer server-side and return instant feedback:
- * correctness, the correct choice, and both explanations (FR-D3 — answers and
+ * correctness, the correct choice, and both explanations (FR-D3 - answers and
  * explanations never ship in the page payload; they cross the wire only after
  * the learner selects a choice). Ownership + 80% gate re-checked every call.
  */
@@ -248,7 +248,7 @@ export async function checkAnswer(
     return { message: 'That answer is not a valid choice.' };
   }
 
-  // Same attempt-window gate as submitAssessment — no feedback after the
+  // Same attempt-window gate as submitAssessment - no feedback after the
   // weekly attempt limit is exhausted.
   const windowAttempts = await attemptsInWindow(assessment.id, user.id);
   if (windowAttempts.length >= MAX_ATTEMPTS_PER_WINDOW) {
@@ -408,7 +408,7 @@ export async function submitAssessment(
 }
 
 /**
- * Mint a credential from an already-passing attempt — used when quota was
+ * Mint a credential from an already-passing attempt - used when quota was
  * exhausted at pass time (e.g. the user upgraded afterwards).
  */
 export async function mintFromAttempt(
@@ -494,7 +494,7 @@ export async function mintFromAttempt(
       mintedId = id;
     });
   } catch (err) {
-    // NEXT_REDIRECT from a nested redirect would be rethrown — none occurs here.
+    // NEXT_REDIRECT from a nested redirect would be rethrown - none occurs here.
     console.error('[credential] mint failed:', err instanceof Error ? err.message : 'unknown');
     return { message: 'Could not mint the credential. Please try again.' };
   }

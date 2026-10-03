@@ -89,7 +89,7 @@ export default function YouTubePlayer({
                   const duration = player.getDuration();
                   if (duration > 0) onSampleRef.current(position, duration);
                 } catch {
-                  // Player torn down mid-sample — ignore.
+                  // Player torn down mid-sample - ignore.
                 }
               }, 5000);
             },

@@ -25,7 +25,7 @@ export default async function Subscribe({
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Was: `user!.email!` — crashed with a TypeError for signed-out visitors.
+  // Was: `user!.email!` - crashed with a TypeError for signed-out visitors.
   if (!user) {
     redirect('/login');
   }
@@ -41,7 +41,7 @@ export default async function Subscribe({
     try {
       billingUrl = await generateStripeBillingPortalLink(user.email!);
     } catch (err) {
-      // Customer portal disabled in Stripe settings or no Stripe customer yet —
+      // Customer portal disabled in Stripe settings or no Stripe customer yet -
       // fall back to the default Get Started buttons rather than a dead link.
       console.error(
         'subscribe: billing portal link failed:',
@@ -96,7 +96,7 @@ export default async function Subscribe({
             }
           >
             {checkout === 'success'
-              ? 'Subscription active — welcome aboard!'
+              ? 'Subscription active - welcome aboard!'
               : checkout === 'canceled'
                 ? 'Checkout canceled. No charge was made.'
                 : 'Checkout is temporarily unavailable. Please try again later.'}
