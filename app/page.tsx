@@ -13,7 +13,7 @@ import { PLANS } from '@/components/SubscribePricingCards';
 
 // Implemented 1:1 from the Figma design (getcertificate.today, landing-page frame 6:9, 1440x4477).
 // All colors, typography, spacing, radii, borders, shadows and assets are taken from the
-// Figma node tree — the design is the visual source of truth.
+// Figma node tree - the design is the visual source of truth.
 
 const NAV_LINKS = [
   { label: 'How It Works', href: '#how-it-works' },
@@ -72,8 +72,33 @@ const TESTIMONIALS = [
   },
 ];
 
-const FOOTER_COLUMNS = ['Product', 'Company', 'Legal'];
-const FOOTER_LINKS = ['Overview', 'Features', 'Security'];
+// Footer links point only at real destinations (sections, live pages, or
+// generated legal pages) - no dead href="#" items.
+const FOOTER_COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
+  {
+    title: 'Product',
+    links: [
+      { label: 'How It Works', href: '#how-it-works' },
+      { label: 'Features', href: '#features' },
+      { label: 'Pricing', href: '#pricing' },
+    ],
+  },
+  {
+    title: 'Get Started',
+    links: [
+      { label: 'Sign In', href: '/login' },
+      { label: 'Create Account', href: '/signup' },
+      { label: 'Subscribe', href: '/subscribe' },
+    ],
+  },
+  {
+    title: 'Legal',
+    links: [
+      { label: 'Privacy Policy', href: '/privacy' },
+      { label: 'Terms of Service', href: '/terms' },
+    ],
+  },
+];
 
 export const revalidate = 3600;
 
@@ -414,15 +439,15 @@ export default function LandingPage() {
             </div>
             <div className="flex flex-wrap gap-x-12 gap-y-8 sm:gap-x-16 md:gap-x-20">
               {FOOTER_COLUMNS.map((col) => (
-                <div key={col} className="flex flex-col gap-4">
-                  <p className="text-sm font-bold leading-[1.366] text-ink">{col}</p>
-                  {FOOTER_LINKS.map((link) => (
+                <div key={col.title} className="flex flex-col gap-4">
+                  <p className="text-sm font-bold leading-[1.366] text-ink">{col.title}</p>
+                  {col.links.map((link) => (
                     <Link
-                      key={link}
-                      href="#"
+                      key={link.label}
+                      href={link.href}
                       className="text-[13px] leading-[1.366] text-clay transition-colors hover:text-ink"
                     >
-                      {link}
+                      {link.label}
                     </Link>
                   ))}
                 </div>
