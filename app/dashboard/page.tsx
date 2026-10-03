@@ -107,7 +107,9 @@ export default async function Dashboard() {
           className="mt-8 rounded-2xl border border-sandline bg-paper p-5 sm:p-8"
         >
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-linen text-ink">
+            {/* Decorative icon tile dropped on phones - it crowds the heading
+                once the section falls back to p-5 padding. */}
+            <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-linen text-ink sm:flex">
               <Play aria-hidden="true" className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
@@ -143,7 +145,10 @@ export default async function Dashboard() {
           ))}
         </section>
 
-        <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+        {/* Two columns from tablet portrait up; the asymmetric 60/40 split only
+            returns at xl, where the 280px sidebar leaves enough width for it.
+            Titles clamp to two lines from sm up (single-line below sm). */}
+        <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[1.2fr_0.8fr]">
           <section
             aria-labelledby="recent-activity-heading"
             className="rounded-2xl border border-sandline bg-paper p-5 sm:p-6"
@@ -176,7 +181,10 @@ export default async function Dashboard() {
                         <BadgeCheck aria-hidden="true" className="h-4 w-4" />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-semibold text-ink">
+                        <span
+                          title={`Certificate earned - ${cred.item_title}`}
+                          className="block truncate text-sm font-semibold text-ink sm:line-clamp-2 sm:whitespace-normal"
+                        >
                           Certificate earned - {cred.item_title}
                         </span>
                         <span className="block text-xs text-clay">
@@ -201,7 +209,10 @@ export default async function Dashboard() {
                         <BookOpen aria-hidden="true" className="h-4 w-4" />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-semibold text-ink">
+                        <span
+                          title={item.title ?? 'YouTube video'}
+                          className="block truncate text-sm font-semibold text-ink sm:line-clamp-2 sm:whitespace-normal"
+                        >
                           {item.title ?? 'YouTube video'}
                         </span>
                         <span className="block text-xs text-clay">
@@ -230,7 +241,10 @@ export default async function Dashboard() {
                 <div className="flex items-start gap-3 rounded-xl bg-cream p-4">
                   <Play aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-clay" />
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-ink">
+                    <p
+                      title={nextUp.title ?? 'YouTube video'}
+                      className="truncate text-sm font-semibold text-ink sm:line-clamp-2 sm:whitespace-normal"
+                    >
                       {nextUp.title ?? 'YouTube video'}
                     </p>
                     <p className="mt-1 text-xs leading-relaxed text-clay">

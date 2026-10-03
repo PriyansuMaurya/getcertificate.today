@@ -28,6 +28,9 @@ export default function AddLearningForm() {
       <label htmlFor="youtube-url" className="sr-only">
         YouTube course link
       </label>
+      {/* Below sm the container stacks vertically, so `flex-1` must not apply -
+          its flex-basis would collapse the input's height to ~21px instead of
+          h-12. Cross-axis stretch already makes it full width when stacked. */}
       <div className="flex flex-col gap-3 sm:flex-row">
         <input
           id="youtube-url"
@@ -35,7 +38,7 @@ export default function AddLearningForm() {
           type="url"
           required
           placeholder="https://www.youtube.com/watch?v=…"
-          className="h-12 min-w-0 flex-1 rounded-lg border border-sandline bg-cream px-4 text-sm text-ink placeholder:text-clay/70 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
+          className="h-12 w-full min-w-0 rounded-lg border border-sandline bg-cream px-4 text-sm text-ink placeholder:text-clay/70 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink sm:flex-1"
         />
         <SubmitButton />
       </div>

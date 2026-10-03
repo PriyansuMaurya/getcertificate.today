@@ -86,7 +86,10 @@ export default async function MyLearningPage() {
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-fraunces text-lg font-bold text-ink">
+                          <h3
+                            title={item.title ?? 'YouTube video'}
+                            className="min-w-0 truncate font-fraunces text-lg font-bold text-ink"
+                          >
                             {item.title ?? 'YouTube video'}
                           </h3>
                           <span
@@ -122,24 +125,35 @@ export default async function MyLearningPage() {
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-3">
+                      {/* Phones: all three actions on one row (3 equal cells).
+                          sm+: Continue spans both columns, Source + Delete below.
+                          min-w keeps the grid at its rest-state width (175px) so
+                          flex can still shrink it when the delete-error message
+                          inflates its max-content - shrink-0 caused page-wide
+                          overflow instead. */}
+                      <div className="grid min-w-0 grid-cols-3 gap-2 sm:min-w-[175px] sm:grid-cols-2 sm:gap-3">
                         <Link
                           href={`/learn/${item.id}`}
-                          className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-ink px-5 text-sm font-bold text-cream transition-colors hover:bg-ink/90"
+                          className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-ink px-2 text-xs font-bold text-cream transition-colors hover:bg-ink/90 sm:col-span-2 sm:px-5 sm:text-sm"
                         >
                           {item.progress_percent > 0 && item.progress_percent < 100
                             ? 'Continue'
                             : 'Open'}
-                          <ArrowRight aria-hidden="true" className="h-4 w-4" />
+                          <ArrowRight
+                            aria-hidden="true"
+                            className="hidden h-4 w-4 shrink-0 sm:block"
+                          />
                         </Link>
                         <a
                           href={item.source_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border border-sandline px-4 text-sm font-semibold text-clay transition-colors hover:border-ink hover:text-ink"
+                          aria-label="Open source on YouTube"
+                          className="inline-flex h-11 items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-sandline px-1.5 text-xs font-semibold text-clay transition-colors hover:border-ink hover:text-ink sm:gap-1.5 sm:px-4 sm:text-sm"
                         >
-                          Source
-                          <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
+                          <ExternalLink aria-hidden="true" className="h-4 w-4 shrink-0" />
+                          {/* Icon-only below 315px to fit three cells in one row. */}
+                          <span className="max-[314px]:hidden">Source</span>
                         </a>
                         <DeleteLearningItemButton
                           itemId={item.id}

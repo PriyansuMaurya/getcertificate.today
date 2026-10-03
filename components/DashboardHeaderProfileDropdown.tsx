@@ -6,7 +6,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ReceiptText, User, LogOut, ExternalLink, Settings, BadgeCheck } from 'lucide-react';
+import {
+  ReceiptText,
+  User,
+  LogOut,
+  ExternalLink,
+  Settings,
+  BadgeCheck,
+  BookOpen,
+} from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 import { logout } from '@/app/auth/actions';
@@ -60,6 +68,16 @@ export default async function DashboardHeaderProfileDropdown() {
             <Link href="/dashboard" className="rounded-lg px-2.5 py-2 text-sm font-medium text-ink">
               <User className="mr-2.5 h-4 w-4 text-clay" />
               <span>Dashboard</span>
+            </Link>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem asChild className="cursor-pointer">
+            <Link
+              href="/dashboard/learning"
+              className="rounded-lg px-2.5 py-2 text-sm font-medium text-ink"
+            >
+              <BookOpen className="mr-2.5 h-4 w-4 text-clay" />
+              <span>My Learning</span>
             </Link>
           </DropdownMenuItem>
 
