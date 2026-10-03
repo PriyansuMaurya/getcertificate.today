@@ -41,8 +41,13 @@ export async function updateSession(request: NextRequest) {
 
   // Public, no-auth routes (FR-F1 verification, FR-E3 certificate sharing).
   // Kept as exact prefixes per RULES §9.5 - add new ones narrowly.
+  // robots.txt and sitemap.xml are served by app/robots.ts and app/sitemap.ts;
+  // redirecting them to /login would hide crawler directives from Google.
   const PUBLIC_PREFIXES = ['/verify', '/certificates', '/privacy', '/terms'];
-  const isPublicPath = PUBLIC_PREFIXES.some((p) => request.nextUrl.pathname.startsWith(p));
+  const CRAWLER_FILES = ['/robots.txt', '/sitemap.xml'];
+  const isPublicPath =
+    PUBLIC_PREFIXES.some((p) => request.nextUrl.pathname.startsWith(p)) ||
+    CRAWLER_FILES.includes(request.nextUrl.pathname);
 
   if (
     !user &&

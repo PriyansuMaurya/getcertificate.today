@@ -1,17 +1,80 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { eq } from 'drizzle-orm';
 import { db } from '@/utils/db/db';
 import { credentialsTable } from '@/utils/db/schema';
 import { verifyCredentialHash, PASS_SCORE } from '@/utils/credentials';
 import { BadgeCheck, ShieldCheck, ShieldX, SearchX } from 'lucide-react';
 
-export const metadata = {
-  title: 'Verify credential | getcertificate.today',
-  description: 'Public verification of a getcertificate.today credential.',
-};
+// Metadata is generated per credential in generateMetadata below.
 
 // Verification must reflect live revocation/hash state - never cached.
 export const dynamic = 'force-dynamic';
+
+/** Truncate at a word boundary and append an ellipsis when over `max` chars. */
+function clamp(value: string, max: number): string {
+  if (value.length <= max) return value;
+  const cut = value.slice(0, max - 1);
+  return `${cut.slice(0, cut.lastIndexOf(' '))}…`;
+}
+
+// Holder/course-specific social card for shared verification links. Not-found
+// states are noindexed (soft-404 URLs); found states stay indexable so an
+// employer searching the holder/course can reach the verification.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const rows = await db.select().from(credentialsTable).where(eq(credentialsTable.id, id));
+  const cred = rows[0];
+
+  if (!cred) {
+    return {
+      title: 'Credential not found | getcertificate.today',
+      description: 'No credential with this ID exists.',
+      alternates: { canonical: `/verify/${id}` },
+      robots: { index: false },
+    };
+  }
+
+  // Compose with clamps: holder_name/item_title are user-controlled and can
+  // overflow SERP limits, and a revoked credential must not advertise as valid.
+  const title = clamp(`Verify: ${cred.item_title} - ${cred.holder_name}`, 60);
+  const description = clamp(
+    cred.status === 'revoked'
+      ? `Credential issued to ${cred.holder_name} for ${cred.item_title} - REVOKED and no longer valid.`
+      : `Public verification of the credential issued to ${cred.holder_name} for ${cred.item_title} (${cred.score}% score) by getcertificate.today.`,
+    160
+  );
+  return {
+    title,
+    description,
+    alternates: { canonical: `/verify/${id}` },
+    openGraph: {
+      type: 'website',
+      siteName: 'getcertificate.today',
+      title,
+      description,
+      url: `/verify/${id}`,
+      images: [
+        {
+          url: '/figma/hero.png',
+          width: 1536,
+          height: 1024,
+          alt: 'getcertificate.today credential preview',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: ['/figma/hero.png'],
+    },
+  };
+}
 
 /**
  * Public verification (FR-F1) - no account needed. Shows the minimal data set

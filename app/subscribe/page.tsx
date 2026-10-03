@@ -12,6 +12,7 @@ import { generateStripeBillingPortalLink } from '@/utils/stripe/api';
 export const metadata = {
   title: 'Pricing & Plans | getcertificate.today',
   description: 'Upgrade your learning with unlimited certificates and deep-syllabus assessments',
+  alternates: { canonical: '/subscribe' },
 };
 
 export default async function Subscribe({

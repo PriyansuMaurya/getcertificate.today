@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 import { db } from '@/utils/db/db';
@@ -12,10 +13,71 @@ import { BadgeCheck, QrCode } from 'lucide-react';
 // static caching of DB reads.
 export const dynamic = 'force-dynamic';
 
-export const metadata = {
-  title: 'Certificate | getcertificate.today',
-  description: 'A verifiable credential issued by getcertificate.today.',
-};
+/** Truncate at a word boundary and append an ellipsis when over `max` chars. */
+function clamp(value: string, max: number): string {
+  if (value.length <= max) return value;
+  const cut = value.slice(0, max - 1);
+  return `${cut.slice(0, cut.lastIndexOf(' '))}…`;
+}
+
+// Holder/course-specific social card: these pages are the artifact shared to
+// LinkedIn, so the OG title/description must describe THIS certificate, not
+// inherit the homepage card. The page body re-queries below (force-dynamic,
+// so no stale-cache risk; the extra read is one indexed primary-key lookup).
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const rows = await db.select().from(credentialsTable).where(eq(credentialsTable.id, id));
+  const cred = rows[0];
+
+  if (!cred) {
+    return {
+      title: 'Certificate not found | getcertificate.today',
+      description: 'This certificate could not be found.',
+      alternates: { canonical: `/certificates/${id}` },
+      robots: { index: false },
+    };
+  }
+
+  // holder_name and item_title are user-controlled and unbounded - clamp the
+  // composed strings so SERPs/social cards don't truncate mid-word.
+  const title = clamp(`${cred.item_title} - ${cred.holder_name} | getcertificate.today`, 60);
+  const description = clamp(
+    cred.status === 'revoked'
+      ? `Credential issued to ${cred.holder_name} for ${cred.item_title} (${cred.score}% score) - REVOKED and no longer valid.`
+      : `${cred.holder_name} scored ${cred.score}% on the ${cred.item_title} assessment. Verifiable credential issued by getcertificate.today.`,
+    160
+  );
+  return {
+    title,
+    description,
+    alternates: { canonical: `/certificates/${id}` },
+    openGraph: {
+      type: 'article',
+      siteName: 'getcertificate.today',
+      title,
+      description,
+      url: `/certificates/${id}`,
+      images: [
+        {
+          url: '/figma/hero.png',
+          width: 1536,
+          height: 1024,
+          alt: 'getcertificate.today certificate preview',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: ['/figma/hero.png'],
+    },
+  };
+}
 
 const PUBLIC_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || 'http://localhost:3000';
 

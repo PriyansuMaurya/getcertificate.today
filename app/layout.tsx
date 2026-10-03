@@ -17,10 +17,60 @@ const fraunces = Fraunces({
   variable: '--font-fraunces',
 });
 
+const SITE_URL = 'https://getcertificate.today';
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: 'getcertificate.today - Turn YouTube learning into verifiable credentials',
   description:
     'Paste any YouTube video. Watch it in the learning player, pass an AI-generated assessment, and earn a shareable verified certificate. Learn Today. Go Further.',
+  // Canonical is set per page, NOT here: a layout-level `alternates` leaks
+  // `canonical: '/'` onto every child page that omits its own. Social defaults
+  // below are safe to inherit except `url`, which would mislabel every child
+  // page as the homepage - so og:url is set per page instead.
+  openGraph: {
+    type: 'website',
+    siteName: 'getcertificate.today',
+    title: 'getcertificate.today - Turn YouTube learning into verifiable credentials',
+    description:
+      'Paste any YouTube video. Watch it in the learning player, pass an AI-generated assessment, and earn a shareable verified certificate.',
+    images: [
+      {
+        url: '/figma/hero.png',
+        width: 1536,
+        height: 1024,
+        alt: 'getcertificate.today product preview',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'getcertificate.today - Turn YouTube learning into verifiable credentials',
+    description:
+      'Paste any YouTube video, pass an AI-generated assessment, and earn a shareable verified certificate.',
+    images: ['/figma/hero.png'],
+  },
+};
+
+// Organization + WebSite JSON-LD (entity clarity for Google and AI search).
+const JSON_LD = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': `${SITE_URL}/#organization`,
+      name: 'getcertificate.today',
+      url: SITE_URL,
+      logo: `${SITE_URL}/figma/logo.png`,
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${SITE_URL}/#website`,
+      name: 'getcertificate.today',
+      url: SITE_URL,
+      publisher: { '@id': `${SITE_URL}/#organization` },
+    },
+  ],
 };
 
 export default function RootLayout({
@@ -45,6 +95,13 @@ export default function RootLayout({
             />
           </noscript>
         ) : null}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            // Escape '<' so no static value can ever close the script element.
+            __html: JSON.stringify(JSON_LD).replace(/</g, '\\u003c'),
+          }}
+        />
         {children}
         <Suspense>
           <AnalyticsComponents />
