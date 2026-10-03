@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { Manrope, Fraunces } from 'next/font/google';
+import { Suspense } from 'react';
+import { AnalyticsComponents } from '@/components/analytics';
 import './globals.css';
 
 // Fonts imported from the Figma design (getcertificate.today, landing-page 6:9)
@@ -18,7 +20,7 @@ const fraunces = Fraunces({
 export const metadata: Metadata = {
   title: 'getcertificate.today - Turn YouTube learning into verifiable credentials',
   description:
-    'Describe a field of study. Watch educational videos on YouTube. Pass AI-generated assessments tailored to the content, and earn official shareable certificates. Learn Today. Go Further.',
+    'Paste any YouTube video. Watch it in the learning player, pass an AI-generated assessment, and earn a shareable verified certificate. Learn Today. Go Further.',
 };
 
 export default function RootLayout({
@@ -26,10 +28,27 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
+
   return (
     <html lang="en">
       <body className={`${manrope.variable} ${fraunces.variable} font-manrope antialiased`}>
+        {/* Google Tag Manager noscript fallback (the GoogleTagManager component
+            only injects the head script). Renders nothing when unset. */}
+        {gtmId ? (
+          <noscript>
+            <iframe
+              src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
+              height="0"
+              width="0"
+              style={{ display: 'none', visibility: 'hidden' }}
+            />
+          </noscript>
+        ) : null}
         {children}
+        <Suspense>
+          <AnalyticsComponents />
+        </Suspense>
       </body>
     </html>
   );
