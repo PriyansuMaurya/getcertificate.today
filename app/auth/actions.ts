@@ -7,6 +7,7 @@ import { createStripeCustomer } from '@/utils/stripe/api';
 import { db } from '@/utils/db/db';
 import { usersTable } from '@/utils/db/schema';
 import { eq, or } from 'drizzle-orm';
+import { logAuth } from '@/lib/auth-debug';
 
 const PUBLIC_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || 'http://localhost:3000';
 
@@ -245,11 +246,14 @@ export async function finishGoogleSignIn() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  logAuth('finishGoogleSignIn', { hasUser: !!user, email: user?.email ?? null });
+
   if (!user) {
     redirect('/auth/auth-code-error');
   }
 
   const bootstrapped = await bootstrapOAuthUser(user!);
+  logAuth('finishGoogleSignIn.bootstrap', { ok: bootstrapped.ok });
   if (!bootstrapped.ok) {
     redirect('/auth/auth-code-error');
   }
@@ -272,6 +276,8 @@ export async function signInWithGoogle() {
     },
   });
 
+  logAuth('signInWithGoogle', { error: error?.message ?? null, hasUrl: !!data.url, url: data.url ?? null });
+
   if (error) {
     redirect('/auth/auth-code-error');
   }
@@ -291,6 +297,8 @@ export async function signInWithGithub() {
       redirectTo: `${PUBLIC_URL}/auth/callback`,
     },
   });
+
+  logAuth('signInWithGithub', { error: error?.message ?? null, hasUrl: !!data.url, url: data.url ?? null });
 
   if (error) {
     redirect('/auth/auth-code-error');

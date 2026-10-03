@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { hasCompletedOnboarding } from '@/app/auth/actions';
 import { bootstrapOAuthUser } from '@/app/auth/user-bootstrap';
+import { logAuth } from '@/lib/auth-debug';
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -10,9 +11,19 @@ export async function GET(request: Request) {
   // if "next" is in param, use it as the redirect URL
   const next = searchParams.get('next') ?? '/';
 
+  logAuth('callback.hit', {
+    // Never log the one-time `code` value itself — only its presence.
+    hasCode: !!code,
+    error: searchParams.get('error'),
+    errorDescription: searchParams.get('error_description'),
+    next,
+    cookieNames: request.headers.get('cookie')?.split(';').map((c) => c.trim().split('=')[0]) ?? [],
+  });
+
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
+    logAuth('callback.exchange', { error: error?.message ?? null });
     if (!error) {
       const {
         data: { user },
@@ -21,6 +32,7 @@ export async function GET(request: Request) {
       // Create the local user row (Stripe customer + DB record) when this is
       // the user's first sign-in through any OAuth provider.
       const bootstrapped = await bootstrapOAuthUser(user!);
+      logAuth('callback.bootstrap', { ok: bootstrapped.ok, email: user!.email });
       if (!bootstrapped.ok) {
         return NextResponse.redirect(`${origin}/auth/auth-code-error`);
       }
@@ -45,5 +57,10 @@ export async function GET(request: Request) {
   }
 
   // return the user to an error page with instructions
+  logAuth('callback.fallback', {
+    hasCode: !!code,
+    error: searchParams.get('error'),
+    errorDescription: searchParams.get('error_description'),
+  });
   return NextResponse.redirect(`${origin}/auth/auth-code-error`);
 }
