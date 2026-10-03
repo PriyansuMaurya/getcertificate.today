@@ -10,13 +10,23 @@ import { eq, or } from 'drizzle-orm';
 
 const PUBLIC_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || 'http://localhost:3000';
 
-// Profile is complete once onboarding has been filled in (username is required there).
+// Profile is complete once every onboarding field is filled in. Username and
+// names may be pre-filled from the OAuth provider profile at bootstrap, but DOB
+// is never provided by Google/GitHub — so a non-null dob (plus the other
+// required fields) is what proves onboarding actually finished.
 export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
   const rows = await db
-    .select({ username: usersTable.username })
+    .select({
+      username: usersTable.username,
+      firstName: usersTable.first_name,
+      lastName: usersTable.last_name,
+      dob: usersTable.dob,
+    })
     .from(usersTable)
     .where(eq(usersTable.id, userId));
-  return rows.length > 0 && rows[0].username !== null;
+  if (rows.length === 0) return false;
+  const r = rows[0];
+  return r.username !== null && r.firstName !== null && r.lastName !== null && r.dob !== null;
 }
 
 export async function completeOnboarding(currentState: { message: string }, formData: FormData) {
