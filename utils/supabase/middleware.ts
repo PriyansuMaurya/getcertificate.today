@@ -40,8 +40,8 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Public, no-auth routes (FR-F1 verification, FR-E3 certificate sharing).
-  // Kept as exact prefixes per RULES §9.5 — add new ones narrowly.
-  const PUBLIC_PREFIXES = ['/verify', '/certificates'];
+  // Kept as exact prefixes per RULES §9.5 - add new ones narrowly.
+  const PUBLIC_PREFIXES = ['/verify', '/certificates', '/privacy', '/terms'];
   const isPublicPath = PUBLIC_PREFIXES.some((p) => request.nextUrl.pathname.startsWith(p));
 
   if (
