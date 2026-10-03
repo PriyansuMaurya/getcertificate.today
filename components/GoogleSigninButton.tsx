@@ -50,6 +50,11 @@ const GSI_SCRIPT_SRC = 'https://accounts.google.com/gsi/client';
 const SCRIPT_TIMEOUT_MS = 8000;
 const RESIZE_DEBOUNCE_MS = 200;
 const RESIZE_THRESHOLD_PX = 8;
+// GIS renders a 0x0 iframe when the origin is rejected for the client ID
+// (403 "given origin is not allowed") — poll for real size before trusting it.
+const GIS_SIZE_POLL_MS = 100;
+const GIS_RENDER_TIMEOUT_MS = 2000;
+const GIS_MIN_SIZE_PX = 10;
 
 function loadGsiScript(): Promise<void> {
   if (window.google?.accounts?.id) {
@@ -185,15 +190,13 @@ export default function GoogleSigninButton({ actionLabel, clientId }: GoogleSign
     };
 
     // MutationObserver instead of a fixed poll: iframe can render at any time
-    // (slow network) — mode must flip whenever it appears, not within 2.4s.
+    // (slow network) — start size-watching whenever it appears.
     const watchForIframe = () => {
       if (cancelled) return;
       if (container.querySelector('iframe')) {
-        // GIS is live: disable the styled button so no click/Enter reaches
-        // the legacy redirect flow.
-        setMode('gis');
         iframeObserver?.disconnect();
         iframeObserver = undefined;
+        armGisSizeCheck();
         if (!observer) {
           observer = new ResizeObserver(() => {
             if (cancelled) return;
@@ -215,8 +218,43 @@ export default function GoogleSigninButton({ actionLabel, clientId }: GoogleSign
       }
     };
 
+    // Only switch to 'gis' mode (styled button disabled, clicks owned by the
+    // Google overlay) once the iframe actually has size. A 0x0 iframe means
+    // Google rejected the origin — drop GIS entirely and keep the styled
+    // button on the legacy redirect flow instead of leaving it dead.
+    const armGisSizeCheck = () => {
+      if (gisLive || gisAbandoned || sizeCheckTimer) return;
+      const startedAt = Date.now();
+      const tick = () => {
+        sizeCheckTimer = undefined;
+        if (cancelled || gisLive || gisAbandoned) return;
+        const frame = container.querySelector('iframe');
+        const rect = frame?.getBoundingClientRect();
+        if (rect && rect.width >= GIS_MIN_SIZE_PX && rect.height >= GIS_MIN_SIZE_PX) {
+          gisLive = true;
+          setMode('gis');
+          return;
+        }
+        if (Date.now() - startedAt >= GIS_RENDER_TIMEOUT_MS) {
+          // Give up for good: ResizeObserver must not re-enter polling.
+          gisAbandoned = true;
+          observer?.disconnect();
+          observer = undefined;
+          container.innerHTML = '';
+          return;
+        }
+        sizeCheckTimer = setTimeout(tick, GIS_SIZE_POLL_MS);
+      };
+      // First check synchronous: shrink the window where both the sized GIS
+      // iframe and the enabled styled button are interactive.
+      tick();
+    };
+
     let hashedNonce = '';
     let initialized = false;
+    let gisLive = false;
+    let gisAbandoned = false;
+    let sizeCheckTimer: ReturnType<typeof setTimeout> | undefined;
     let iframeObserver: MutationObserver | undefined;
 
     const start = async () => {
@@ -250,6 +288,7 @@ export default function GoogleSigninButton({ actionLabel, clientId }: GoogleSign
     return () => {
       cancelled = true;
       clearTimeout(resizeTimer);
+      clearTimeout(sizeCheckTimer);
       observer?.disconnect();
       iframeObserver?.disconnect();
       container.innerHTML = '';
@@ -265,7 +304,12 @@ export default function GoogleSigninButton({ actionLabel, clientId }: GoogleSign
             type="submit"
             aria-label={`${actionLabel} with Google`}
             disabled={pending || mode === 'gis'}
-            className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-sandline bg-cream text-sm font-semibold text-ink transition-colors hover:border-ink hover:bg-paper disabled:opacity-50 group-hover:border-ink group-hover:bg-paper"
+            className={`flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-sandline bg-cream text-sm font-semibold text-ink transition-colors hover:border-ink hover:bg-paper group-hover:border-ink group-hover:bg-paper ${
+              // Dim only while actually signing in; in gis mode the button is
+              // disabled (clicks belong to Google's overlay) but must keep
+              // full opacity + pointer cursor so it never looks dead.
+              pending ? 'cursor-wait opacity-50' : mode === 'gis' ? 'cursor-pointer' : ''
+            }`}
           >
             <FaGoogle aria-hidden="true" className="h-4 w-4" />
             <span>{pending ? 'Signing in…' : `${actionLabel} with Google`}</span>
