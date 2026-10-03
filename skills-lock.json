@@ -49,6 +49,12 @@
       "skillPath": ".agents/skills/edit-the-docs/SKILL.md",
       "computedHash": "27a71fd8a92be602cc7b3c81c23257421b95fc6ab4a066ad580f573cede7b2fe"
     },
+    "enable-analytics": {
+      "source": "vercel/shop",
+      "sourceType": "github",
+      "skillPath": "packages/plugin/skills/enable-analytics/SKILL.md",
+      "computedHash": "889309c823ca9281e7bd2abc498a86d58ad3d54be562d16a6c207d7799294c1f"
+    },
     "frontend-design": {
       "source": "anthropics/skills",
       "sourceType": "github",
