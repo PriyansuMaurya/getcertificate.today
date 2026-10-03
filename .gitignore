@@ -1,5 +1,16 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# per-agent skill mirrors (copies of skills/, not source of truth)
+.bob/skills/
+.claude/skills/
+.openhands/skills/
+.pochi/skills/
+.qwen/skills/
+.rovodev/skills/
+
+# auth flow debug log (temporary diagnostics)
+.auth-debug.log
+
 # dependencies
 /node_modules
 /.pnp
