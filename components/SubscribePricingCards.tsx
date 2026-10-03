@@ -4,7 +4,7 @@ import { startCheckout } from '@/app/subscribe/actions';
 // Copy + tier order taken from the supplied design screenshot; colors follow
 // the site Figma tokens (ink highlight instead of the screenshot's purple,
 // per product decision).
-const PLANS = [
+export const PLANS = [
   {
     key: 'basic',
     name: 'Basic Plan',

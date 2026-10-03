@@ -9,6 +9,7 @@ import {
   CheckIcon,
 } from '@/components/icons';
 import MobileNav from '@/components/MobileNav';
+import { PLANS } from '@/components/SubscribePricingCards';
 
 // Implemented 1:1 from the Figma design (getcertificate.today, landing-page frame 6:9, 1440x4477).
 // All colors, typography, spacing, radii, borders, shadows and assets are taken from the
@@ -69,21 +70,6 @@ const TESTIMONIALS = [
     name: 'Sarah Chen',
     role: 'VP of Engineering',
   },
-];
-
-const FREE_FEATURES = [
-  '1 Certified Credential / mo',
-  'Basic AI Assessments',
-  'Chrome Extension integration',
-  'Standard public verification page',
-];
-
-const PRO_FEATURES = [
-  'Unlimited credentials',
-  'Deep-syllabus AI assessments',
-  'Ad-free custom learning player',
-  'Priority 24/7 Verification assistance',
-  'PDF/LinkedIn resume generator export',
 ];
 
 const FOOTER_COLUMNS = ['Product', 'Company', 'Legal'];
@@ -294,71 +280,90 @@ export default function LandingPage() {
                 Simple, honest tiers.
               </h2>
             </div>
-            {/* Figma: cards top-aligned (counter MIN), natural heights (475 / 510) */}
+            {/* Tiers shared with /subscribe (PLANS in SubscribePricingCards). Card shell
+                keeps the Figma landing styles: paper card, ink card for the popular tier. */}
             <div className="flex flex-col items-center gap-6 md:gap-8 lg:flex-row lg:items-start lg:justify-center">
-              {/* Free card (Figma: 400px wide, bg #FAF8F5, border #E3DCD5, r16, pad 48) */}
-              <div className="flex w-full max-w-[400px] flex-col gap-8 rounded-2xl border border-sandline bg-paper p-6 sm:p-8 md:p-12">
-                <div className="flex flex-col gap-2">
-                  <h3 className="text-lg font-bold leading-[1.366] text-ink">Free Explorer</h3>
-                  <p className="text-sm leading-[1.366] text-clay">
-                    Begin validating your YouTube sessions.
-                  </p>
-                </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="font-fraunces text-[48px] font-black leading-[1.233] text-ink">
-                    $0
-                  </span>
-                  <span className="text-[15px] leading-[1.366] text-clay">/ month</span>
-                </div>
-                <ul className="flex flex-col gap-4">
-                  {FREE_FEATURES.map((feat) => (
-                    <li key={feat} className="flex items-center gap-3">
-                      <CheckIcon className="h-4 w-4 shrink-0 text-sand" />
-                      <span className="text-sm leading-[1.366] text-ink">{feat}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href="/signup"
-                  className="flex h-12 items-center justify-center rounded-lg border-[1.5px] border-ink px-6 py-3.5 text-[15px] font-bold leading-[1.366] text-ink transition-colors hover:bg-ink/5"
+              {PLANS.map((plan) => (
+                <div
+                  key={plan.key}
+                  className={[
+                    'flex w-full flex-col gap-8 rounded-2xl p-6 sm:p-8 md:p-12',
+                    plan.popular
+                      ? 'max-w-[420px] bg-ink shadow-figma-pro'
+                      : 'max-w-[400px] border border-sandline bg-paper',
+                  ].join(' ')}
                 >
-                  Get Started Free
-                </Link>
-              </div>
-              {/* Pro card (Figma: 420px wide, bg #1A1A1A, r16, pad 48, shadow 0 8 24 #6B6059@8%) */}
-              <div className="flex w-full max-w-[420px] flex-col gap-8 rounded-2xl bg-ink p-6 shadow-figma-pro sm:p-8 md:p-12">
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-bold leading-[1.366] text-cream">Professional</h3>
-                    <span className="rounded-full bg-sand px-3 py-1 text-[11px] font-bold leading-[1.366] text-ink">
-                      POPULAR
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <h3
+                        className={[
+                          'text-lg font-bold leading-[1.366]',
+                          plan.popular ? 'text-cream' : 'text-ink',
+                        ].join(' ')}
+                      >
+                        {plan.name}
+                      </h3>
+                      {plan.popular && (
+                        <span className="rounded-full bg-sand px-3 py-1 text-[11px] font-bold leading-[1.366] text-ink">
+                          POPULAR
+                        </span>
+                      )}
+                    </div>
+                    <p
+                      className={[
+                        'text-sm leading-[1.366]',
+                        plan.popular ? 'text-sand' : 'text-clay',
+                      ].join(' ')}
+                    >
+                      {plan.tagline}
+                    </p>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span
+                      className={[
+                        'font-fraunces text-[48px] font-black leading-[1.233]',
+                        plan.popular ? 'text-cream' : 'text-ink',
+                      ].join(' ')}
+                    >
+                      ${plan.price}
+                    </span>
+                    <span
+                      className={[
+                        'text-[15px] leading-[1.366]',
+                        plan.popular ? 'text-sand' : 'text-clay',
+                      ].join(' ')}
+                    >
+                      / month
                     </span>
                   </div>
-                  <p className="text-sm leading-[1.366] text-sand">
-                    For serious self-directed learners.
-                  </p>
+                  <ul className="flex flex-col gap-4">
+                    {plan.features.map((feat) => (
+                      <li key={feat} className="flex items-center gap-3">
+                        <CheckIcon className="h-4 w-4 shrink-0 text-sand" />
+                        <span
+                          className={[
+                            'text-sm leading-[1.366]',
+                            plan.popular ? 'text-cream' : 'text-ink',
+                          ].join(' ')}
+                        >
+                          {feat}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="/subscribe"
+                    className={[
+                      'flex h-12 items-center justify-center rounded-lg px-6 py-3.5 text-[15px] font-bold leading-[1.366] transition-colors',
+                      plan.popular
+                        ? 'bg-sand text-cream hover:bg-sand/90'
+                        : 'border-[1.5px] border-ink text-ink hover:bg-ink/5',
+                    ].join(' ')}
+                  >
+                    Get Started
+                  </Link>
                 </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="font-fraunces text-[48px] font-black leading-[1.233] text-cream">
-                    $12
-                  </span>
-                  <span className="text-[15px] leading-[1.366] text-sand">/ month</span>
-                </div>
-                <ul className="flex flex-col gap-4">
-                  {PRO_FEATURES.map((feat) => (
-                    <li key={feat} className="flex items-center gap-3">
-                      <CheckIcon className="h-4 w-4 shrink-0 text-sand" />
-                      <span className="text-sm leading-[1.366] text-cream">{feat}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href="/signup"
-                  className="flex h-12 items-center justify-center rounded-lg bg-sand px-6 py-3.5 text-[15px] font-bold leading-[1.366] text-cream transition-colors hover:bg-sand/90"
-                >
-                  Go Pro Today
-                </Link>
-              </div>
+              ))}
             </div>
           </div>
         </section>
