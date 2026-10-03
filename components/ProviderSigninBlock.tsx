@@ -15,10 +15,10 @@ export default function ProviderSigninBlock({ actionLabel }: ProviderSigninBlock
   }
 
   return (
-    <div className="flex flex-row gap-3">
+    <div className="flex flex-col gap-3 sm:flex-row">
       {googleClientId && <GoogleSigninButton actionLabel={actionLabel} clientId={googleClientId} />}
       {isGithubEnabled && (
-        <form action={signInWithGithub} className="basis-full">
+        <form action={signInWithGithub} className="sm:basis-full">
           <button
             type="submit"
             aria-label={`${actionLabel} with GitHub`}

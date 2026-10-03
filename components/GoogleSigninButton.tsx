@@ -297,7 +297,7 @@ export default function GoogleSigninButton({ actionLabel, clientId }: GoogleSign
   }, [clientId, actionLabel]);
 
   return (
-    <div className="basis-full">
+    <div className="sm:basis-full">
       <div className="group relative">
         <form action={signInWithGoogle}>
           <button
