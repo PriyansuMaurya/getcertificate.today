@@ -164,8 +164,8 @@ export default function LandingPage() {
                   Turn your YouTube learning into verifiable credentials.
                 </h1>
                 <p className="text-base leading-[1.366] text-clay sm:text-lg sm:leading-[1.366]">
-                  Describe a field of study. Watch educational videos on YouTube. Pass AI-generated
-                  assessments tailored to the content, and earn official shareable certificates.
+                  Paste any YouTube video. Watch it in the learning player, pass an AI-generated
+                  assessment tailored to the content, and earn a shareable verified certificate.
                   Learn Today. Go Further.
                 </p>
               </div>
