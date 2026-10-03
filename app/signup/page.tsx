@@ -6,6 +6,7 @@ import ProviderSigninBlock from '@/components/ProviderSigninBlock';
 export const metadata = {
   title: 'Create Account | getcertificate.today',
   description: 'Create your getcertificate.today account',
+  alternates: { canonical: '/signup' },
 };
 
 export default function Signup() {
@@ -15,11 +16,12 @@ export default function Signup() {
         <div className="flex flex-col items-center text-center">
           <Link href="/" className="transition-opacity hover:opacity-80">
             <Image
-              src="/figma/logo.png"
+              src="/figma/logo-no-tagline.svg"
               alt="getcertificate.today"
-              width={180}
-              height={40}
+              width={1339}
+              height={767}
               priority
+              unoptimized
               className="h-10 w-auto"
             />
           </Link>

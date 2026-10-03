@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import {
   ArrowRightIcon,
   SparklesIcon,
@@ -102,6 +103,30 @@ const FOOTER_COLUMNS: { title: string; links: { label: string; href: string }[] 
 
 export const revalidate = 3600;
 
+// Title/description are inherited from the root layout; only the self-
+// referencing canonical is page-specific.
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+  // Full object: page-level openGraph replaces the layout's wholesale
+  // (Next.js merges metadata fields shallowly), so restate image/siteName.
+  openGraph: {
+    type: 'website',
+    siteName: 'getcertificate.today',
+    title: 'getcertificate.today - Turn YouTube learning into verifiable credentials',
+    description:
+      'Paste any YouTube video. Watch it in the learning player, pass an AI-generated assessment, and earn a shareable verified certificate.',
+    url: '/',
+    images: [
+      {
+        url: '/figma/hero.png',
+        width: 1536,
+        height: 1024,
+        alt: 'getcertificate.today product preview',
+      },
+    ],
+  },
+};
+
 export default function LandingPage() {
   return (
     <div className="min-h-dvh bg-cream text-ink">
@@ -117,11 +142,12 @@ export default function LandingPage() {
         <div className="mx-auto flex h-full max-w-[1440px] items-center justify-between px-4 sm:px-6 xl:px-20">
           <Link href="/" className="flex shrink-0 items-center">
             <Image
-              src="/figma/logo.png"
+              src="/figma/logo-no-tagline.svg"
               alt="getcertificate.today logo"
-              width={180}
-              height={40}
+              width={1339}
+              height={767}
               priority
+              unoptimized
               className="h-8 w-auto sm:h-10"
             />
           </Link>
@@ -427,10 +453,12 @@ export default function LandingPage() {
           <div className="flex flex-col gap-10 md:gap-12 lg:flex-row lg:justify-between">
             <div className="flex w-full max-w-[300px] flex-col gap-4">
               <Image
-                src="/figma/logo.png"
+                src="/figma/logo-no-tagline.svg"
                 alt="getcertificate.today logo"
-                width={180}
-                height={40}
+                width={1339}
+                height={767}
+                unoptimized
+                className="h-10 w-auto"
               />
               <p className="text-sm leading-[1.366] text-clay">
                 Turning YouTube video minutes into verifiable professional credentials. Learn Today.

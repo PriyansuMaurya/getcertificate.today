@@ -6,6 +6,7 @@ import LoginForm from '@/components/LoginForm';
 export const metadata = {
   title: 'Sign In | getcertificate.today',
   description: 'Sign in to your getcertificate.today account',
+  alternates: { canonical: '/login' },
 };
 
 export default function Login() {
@@ -15,11 +16,12 @@ export default function Login() {
         <div className="flex flex-col items-center text-center">
           <Link href="/" className="transition-opacity hover:opacity-80">
             <Image
-              src="/figma/logo.png"
+              src="/figma/logo-no-tagline.svg"
               alt="getcertificate.today"
-              width={180}
-              height={40}
+              width={1339}
+              height={767}
               priority
+              unoptimized
               className="h-10 w-auto"
             />
           </Link>

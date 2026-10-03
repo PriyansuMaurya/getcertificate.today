@@ -11,12 +11,13 @@ export default function DashboardSidebar() {
       <div className="sticky top-0 flex h-screen flex-col px-8 py-8">
         <Link href="/dashboard" aria-label="getcertificate.today dashboard">
           <Image
-            src="/figma/logo.png"
+            src="/figma/logo-no-tagline.svg"
             alt="getcertificate.today"
-            width={180}
-            height={40}
+            width={1339}
+            height={767}
             priority
-            className="h-10 w-[180px]"
+            unoptimized
+            className="h-10 w-auto"
           />
         </Link>
         <div className="mt-12">

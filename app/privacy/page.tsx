@@ -5,6 +5,15 @@ import Link from 'next/link';
 export const metadata: Metadata = {
   title: 'Privacy Policy | getcertificate.today',
   description: 'How getcertificate.today collects, uses, and protects your data.',
+  alternates: { canonical: '/privacy' },
+  openGraph: {
+    type: 'website',
+    siteName: 'getcertificate.today',
+    title: 'Privacy Policy | getcertificate.today',
+    description: 'How getcertificate.today collects, uses, and protects your data.',
+    url: '/privacy',
+    images: [{ url: '/figma/hero.png', width: 1536, height: 1024 }],
+  },
 };
 
 const SECTIONS: { heading: string; body: string[] }[] = [
@@ -53,11 +62,12 @@ export default function PrivacyPage() {
         <div className="mx-auto flex h-full max-w-[1440px] items-center px-4 sm:px-6 xl:px-20">
           <Link href="/" className="flex shrink-0 items-center">
             <Image
-              src="/figma/logo.png"
+              src="/figma/logo-no-tagline.svg"
               alt="getcertificate.today logo"
-              width={180}
-              height={40}
+              width={1339}
+              height={767}
               priority
+              unoptimized
               className="h-8 w-auto sm:h-10"
             />
           </Link>
