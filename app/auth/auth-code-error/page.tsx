@@ -25,8 +25,7 @@ export default function AuthCodeErrorPage() {
             Authentication Error
           </h1>
           <p className="mt-2 text-sm text-clay">
-            We were unable to verify your login or authentication code. The link may have expired or
-            already been used.
+            We couldn&apos;t verify your sign-in link. It may have expired or already been used.
           </p>
         </div>
 

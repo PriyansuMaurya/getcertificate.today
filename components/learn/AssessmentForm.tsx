@@ -187,7 +187,7 @@ export default function AssessmentForm({
                     {fb.correct ? (
                       <>
                         <CheckCircle2 aria-hidden="true" className="h-4 w-4" />
-                        Correct - that answer is right.
+                        Correct.
                       </>
                     ) : (
                       <>

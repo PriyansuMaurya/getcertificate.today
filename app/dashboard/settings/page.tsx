@@ -49,7 +49,7 @@ export default async function SettingsPage() {
           <p className="text-[13px] font-bold uppercase tracking-wider text-sand">Account</p>
           <h1 className="font-fraunces text-3xl font-black text-ink sm:text-4xl">Settings</h1>
           <p className="text-sm text-clay sm:text-base">
-            Manage your profile, security, and subscription in one place.
+            Manage your profile, security, and subscription.
           </p>
         </div>
 

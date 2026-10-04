@@ -29,8 +29,7 @@ export default function ForgotPasswordSuccess() {
             Check your email
           </h1>
           <p className="mt-2 text-sm text-clay">
-            Your password reset request has been processed. We sent instructions to your email
-            address.
+            We sent password reset instructions to your email address.
           </p>
         </div>
 

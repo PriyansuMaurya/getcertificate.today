@@ -29,8 +29,7 @@ export default function ResetPasswordSuccess() {
             Password updated!
           </h1>
           <p className="mt-2 text-sm text-clay">
-            Your password has been successfully reset. You can now sign in with your new
-            credentials.
+            Your password is updated. You can sign in with it now.
           </p>
         </div>
 

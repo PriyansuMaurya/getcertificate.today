@@ -12,7 +12,7 @@ import { ArrowLeft, LockKeyhole, Sparkles } from 'lucide-react';
 
 export const metadata = {
   title: 'Course | getcertificate.today',
-  description: 'Watch a course and unlock your AI assessment.',
+  description: 'Watch a course and take the AI assessment it unlocks at 80%.',
 };
 
 export default async function LearnPage({ params }: { params: Promise<{ id: string }> }) {
@@ -128,7 +128,8 @@ export default async function LearnPage({ params }: { params: Promise<{ id: stri
 
               {assessment && (
                 <p className="mt-3 text-xs text-clay">
-                  Questions grounded from:{' '}
+                  {' '}
+                  Questions generated from:{' '}
                   <span className="font-semibold text-ink">
                     {assessment.source === 'transcriptapi'
                       ? 'video transcript'

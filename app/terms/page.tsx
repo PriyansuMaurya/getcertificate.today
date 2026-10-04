@@ -42,7 +42,7 @@ const SECTIONS: { heading: string; body: string[] }[] = [
   {
     heading: 'Certificates and honest use',
     body: [
-      'Certificates represent that you completed our AI assessment over the referenced material. You agree not to game assessments or misrepresent credentials you earn.',
+      'Certificates represent that you completed our AI assessment over the referenced material. You agree not to game the assessments or misrepresent the credentials you earn.',
       'Certificates are completion records only. They are not accredited academic credit, professional licenses, or an endorsement by any employer or institution.',
       'We may revoke a certificate obtained through fraud or misuse.',
     ],

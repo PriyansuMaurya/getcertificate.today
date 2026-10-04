@@ -29,8 +29,8 @@ export default function SubscribeSuccess() {
             Welcome to Professional!
           </h1>
           <p className="mt-2 text-sm text-clay">
-            Thank you for subscribing. Your account is upgraded with unlimited certifications and
-            deep-syllabus features.
+            Your plan is active. Certificates are unlimited now, and every credential gets a public
+            verification page.
           </p>
         </div>
 

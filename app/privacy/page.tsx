@@ -4,13 +4,13 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy | getcertificate.today',
-  description: 'How getcertificate.today collects, uses, and protects your data.',
+  description: 'What getcertificate.today collects, why, and the rights you have over it.',
   alternates: { canonical: '/privacy' },
   openGraph: {
     type: 'website',
     siteName: 'getcertificate.today',
     title: 'Privacy Policy | getcertificate.today',
-    description: 'How getcertificate.today collects, uses, and protects your data.',
+    description: 'What getcertificate.today collects, why, and the rights you have over it.',
     url: '/privacy',
     images: [{ url: '/figma/hero.png', width: 1536, height: 1024 }],
   },
@@ -39,7 +39,7 @@ const SECTIONS: { heading: string; body: string[] }[] = [
     heading: 'How we use it',
     body: [
       'To run your account: sign you in, track progress, generate AI assessments, and issue certificates.',
-      'To improve the product: aggregated, non-identifying usage trends.',
+      'To improve the product: aggregated, non-identifying usage trends (consent).',
       'We do not sell your personal data and we do not use it for advertising.',
     ],
   },

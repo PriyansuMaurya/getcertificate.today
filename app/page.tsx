@@ -26,17 +26,17 @@ const STEPS = [
   {
     num: '01',
     title: 'Paste YouTube Link',
-    body: 'Found an incredible tutorial series or lecture? Just drop the URL into getcertificate.today.',
+    body: 'Spotted a tutorial worth finishing? Paste its URL into getcertificate.today.',
   },
   {
     num: '02',
     title: 'Watch & Learn',
-    body: 'Our system tracks your viewing progress within the customized split-screen player to ensure you grasp the material.',
+    body: 'The split-screen player tracks your progress as you watch, so you can stop and resume at any time.',
   },
   {
     num: '03',
     title: 'Pass AI Assessment & Earn',
-    body: 'Once you cross 80% completion, unlock a highly tailored dynamic assessment to prove your competence and mint your credential.',
+    body: 'At 80% watch time, an AI assessment generated from the video transcript unlocks. Score 70% or higher to earn your credential.',
   },
 ];
 
@@ -193,7 +193,7 @@ export default function LandingPage() {
                   href="#pricing"
                   className="flex h-12 w-full items-center justify-center rounded-lg border-[1.5px] border-ink px-6 py-3.5 text-[15px] font-bold leading-[1.366] text-ink transition-colors hover:bg-ink/5 sm:w-auto"
                 >
-                  Explore Credentials
+                  See Pricing
                 </Link>
               </div>
               <div className="flex items-center gap-4">
@@ -250,16 +250,13 @@ export default function LandingPage() {
             <div className="flex flex-col items-start gap-10 md:gap-16 lg:flex-row lg:items-center">
               <div className="flex flex-1 flex-col gap-6">
                 {' '}
-                <p className="text-[13px] font-bold leading-[1.366] text-sand">
-                  Verifiable records
-                </p>
+                <p className="text-[13px] font-bold leading-[1.366] text-sand">What you get</p>
                 <h2 className="font-fraunces text-[32px] font-bold leading-[1.233] text-ink sm:text-[40px]">
-                  Engineered for credible learning.
+                  Credentials anyone can verify.
                 </h2>
                 <p className="text-base leading-[1.366] text-clay">
-                  YouTube contains the world&apos;s finest educational library. We build the
-                  infrastructure to turn those video minutes into shareable, independently
-                  verifiable credentials.
+                  YouTube holds most of the world&apos;s best how-to content. We turn the minutes
+                  you actually watch into certificates with a public verification link.
                 </p>
               </div>
               <div className="hidden flex-1 lg:block" />
@@ -387,8 +384,8 @@ export default function LandingPage() {
               Ready to certify your curiosity?
             </h2>
             <p className="max-w-[600px] text-center text-base leading-[1.366] text-clay sm:text-lg sm:leading-[1.366]">
-              Unlock real value from the tutorials you&apos;re already watching. Take the first
-              step.
+              You already watch the tutorials. Pass the assessment and get the certificate to show
+              for it.
             </p>
             <div className="flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-center sm:gap-4">
               <Link
@@ -448,7 +445,7 @@ export default function LandingPage() {
               © 2026 getcertificate.today. All rights reserved.
             </p>
             <p className="text-[13px] leading-[1.366] text-clay">
-              Verifiable credentialing platform built for self-directed builders.
+              Every certificate comes with its own public verification link.
             </p>
           </div>
         </div>

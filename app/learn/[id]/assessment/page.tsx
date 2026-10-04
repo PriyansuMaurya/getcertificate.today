@@ -15,7 +15,7 @@ import { ArrowLeft, LockKeyhole } from 'lucide-react';
 
 export const metadata = {
   title: 'Assessment | getcertificate.today',
-  description: 'Take your AI-generated assessment.',
+  description: 'Take the AI assessment generated from your course video.',
 };
 
 export default async function AssessmentPage({ params }: { params: Promise<{ id: string }> }) {

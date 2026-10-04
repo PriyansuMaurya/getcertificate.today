@@ -11,7 +11,8 @@ import { generateStripeBillingPortalLink } from '@/utils/stripe/api';
 
 export const metadata = {
   title: 'Pricing & Plans | getcertificate.today',
-  description: 'Upgrade your learning with unlimited certificates and deep-syllabus assessments',
+  description:
+    'Unlimited certificates, transcript-based AI assessments, and public verification pages.',
   alternates: { canonical: '/subscribe' },
 };
 
@@ -88,10 +89,11 @@ export default async function Subscribe({
         <div className="mx-auto max-w-[1200px] text-center">
           <p className="text-[13px] font-bold uppercase tracking-wider text-sand">Pricing Plans</p>
           <h1 className="mt-2 font-fraunces text-3xl font-black text-ink sm:text-4xl md:text-5xl">
-            Upgrade your learning capacity
+            Pick your plan
           </h1>
           <p className="mt-3 text-base text-clay sm:text-lg">
-            Unlock unlimited credentials, in-depth AI assessments, and verified skill proof.
+            Unlimited certificates, AI assessments generated from each video transcript, and public
+            verification pages.
           </p>
         </div>
 

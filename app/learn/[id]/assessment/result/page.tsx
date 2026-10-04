@@ -15,7 +15,7 @@ import { ArrowRight, BadgeCheck, RotateCcw } from 'lucide-react';
 
 export const metadata = {
   title: 'Assessment result | getcertificate.today',
-  description: 'Your assessment score and credential.',
+  description: 'Your score and the credential you earned.',
 };
 
 export default async function AssessmentResultPage({
@@ -106,7 +106,7 @@ export default async function AssessmentResultPage({
 
           <p className="mt-6 text-sm text-clay">
             {passed
-              ? 'Great work - your answer sheet was scored on the server and recorded.'
+              ? 'Passed. Your answers were scored on the server and saved.'
               : 'Review the course and try again - your progress is saved and the assessment stays unlocked.'}
           </p>
 
