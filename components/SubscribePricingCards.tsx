@@ -1,5 +1,6 @@
 import { CheckIcon } from '@/components/icons';
 import { startCheckout } from '@/app/subscribe/actions';
+import SubscribeCheckoutButton from '@/components/SubscribeCheckoutButton';
 
 // Copy + tier order taken from the supplied design screenshot; colors follow
 // the site Figma tokens (ink highlight instead of the screenshot's purple,
@@ -107,17 +108,7 @@ export default function SubscribePricingCards({
                 </a>
               ) : (
                 <form action={action}>
-                  <button
-                    type="submit"
-                    className={[
-                      'flex h-11 w-full items-center justify-center rounded-lg px-6 text-[15px] font-bold leading-[1.366] transition-colors',
-                      plan.popular
-                        ? 'bg-ink text-cream hover:bg-ink/90'
-                        : 'bg-linen text-ink hover:bg-sandline',
-                    ].join(' ')}
-                  >
-                    Get Started
-                  </button>
+                  <SubscribeCheckoutButton popular={plan.popular} />
                 </form>
               )}
             </div>

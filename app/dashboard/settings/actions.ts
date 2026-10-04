@@ -27,6 +27,9 @@ export async function updateProfile(
   if (!username || !firstName || !lastName) {
     return { message: 'Username and name are required.' };
   }
+  if (firstName.length > 100 || lastName.length > 100) {
+    return { message: 'Name must be 100 characters or fewer.' };
+  }
   if (!/^[a-z0-9_]{3,20}$/.test(username)) {
     return {
       message: 'Username must be 3-20 characters: lowercase letters, numbers, underscores only.',
@@ -71,9 +74,12 @@ export async function changePassword(
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const password = formData.get('password') as string | null;
-  const confirm = formData.get('confirm_password') as string | null;
+  const password = formData.get('password');
+  const confirm = formData.get('confirm_password');
 
+  if (typeof password !== 'string' || typeof confirm !== 'string') {
+    return { message: 'Please fill in both password fields.' };
+  }
   if (!password || !confirm) return { message: 'Please fill in both password fields.' };
   if (password !== confirm) return { message: 'Passwords do not match.' };
   if (password.length < 8) return { message: 'Password must be at least 8 characters.' };

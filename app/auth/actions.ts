@@ -3,32 +3,13 @@ import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { bootstrapOAuthUser } from '@/app/auth/user-bootstrap';
+import { hasCompletedOnboarding } from '@/app/auth/onboarding-status';
 import { createStripeCustomer } from '@/utils/stripe/api';
 import { db } from '@/utils/db/db';
 import { usersTable } from '@/utils/db/schema';
 import { eq, or } from 'drizzle-orm';
-import { logAuth } from '@/lib/auth-debug';
 
 const PUBLIC_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || 'http://localhost:3000';
-
-// Profile is complete once every onboarding field is filled in. Username and
-// names may be pre-filled from the OAuth provider profile at bootstrap, but DOB
-// is never provided by Google/GitHub - so a non-null dob (plus the other
-// required fields) is what proves onboarding actually finished.
-export async function hasCompletedOnboarding(userId: string): Promise<boolean> {
-  const rows = await db
-    .select({
-      username: usersTable.username,
-      firstName: usersTable.first_name,
-      lastName: usersTable.last_name,
-      dob: usersTable.dob,
-    })
-    .from(usersTable)
-    .where(eq(usersTable.id, userId));
-  if (rows.length === 0) return false;
-  const r = rows[0];
-  return r.username !== null && r.firstName !== null && r.lastName !== null && r.dob !== null;
-}
 
 export async function completeOnboarding(currentState: { message: string }, formData: FormData) {
   const supabase = await createClient();
@@ -48,6 +29,14 @@ export async function completeOnboarding(currentState: { message: string }, form
 
   if (!username || !firstName || !lastName || !dob) {
     return { message: 'All fields are required.' };
+  }
+
+  if (firstName.length > 100 || lastName.length > 100) {
+    return { message: 'Name must be 100 characters or fewer.' };
+  }
+
+  if (dob.length > 10) {
+    return { message: 'Please enter a valid date of birth.' };
   }
 
   if (!/^[a-z0-9_]{3,20}$/.test(username)) {
@@ -110,20 +99,33 @@ function calculateAge(dob: string): number | null {
 
 export async function resetPassword(currentState: { message: string }, formData: FormData) {
   const supabase = await createClient();
-  const passwordData = {
-    password: formData.get('password') as string,
-    confirm_password: formData.get('confirm_password') as string,
-    code: formData.get('code') as string,
-  };
-  if (passwordData.password !== passwordData.confirm_password) {
+  const password = formData.get('password');
+  const confirmPassword = formData.get('confirm_password');
+  const code = formData.get('code');
+
+  // Server-side validation mirrors the client (never trust the browser):
+  // fields must be strings, match, and meet the same 8-char floor the
+  // settings password change enforces.
+  if (typeof password !== 'string' || typeof confirmPassword !== 'string') {
+    return { message: 'Please fill in both password fields.' };
+  }
+  if (password !== confirmPassword) {
     return { message: 'Passwords do not match' };
   }
+  if (password.length < 8) {
+    return { message: 'Password must be at least 8 characters.' };
+  }
+  if (typeof code !== 'string' || code.length === 0) {
+    return { message: 'This reset link is invalid or expired. Please request a new one.' };
+  }
 
-  await supabase.auth.exchangeCodeForSession(passwordData.code);
+  const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+  if (exchangeError) {
+    // Expired/used one-time code - never proceed to updateUser on a stale session.
+    return { message: 'This reset link is invalid or expired. Please request a new one.' };
+  }
 
-  const { error } = await supabase.auth.updateUser({
-    password: passwordData.password,
-  });
+  const { error } = await supabase.auth.updateUser({ password });
   if (error) {
     return { message: error.message };
   }
@@ -132,7 +134,11 @@ export async function resetPassword(currentState: { message: string }, formData:
 
 export async function forgotPassword(currentState: { message: string }, formData: FormData) {
   const supabase = await createClient();
-  const email = formData.get('email') as string;
+  const rawEmail = formData.get('email');
+  if (typeof rawEmail !== 'string' || !rawEmail.trim() || rawEmail.length > 254) {
+    return { message: 'Please enter a valid email address.' };
+  }
+  const email = rawEmail.trim();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${PUBLIC_URL}/forgot-password/reset`,
   });
@@ -146,11 +152,32 @@ export async function forgotPassword(currentState: { message: string }, formData
 export async function signup(currentState: { message: string }, formData: FormData) {
   const supabase = await createClient();
 
+  const rawEmail = formData.get('email');
+  const rawPassword = formData.get('password');
+  const rawName = formData.get('name');
+  if (
+    typeof rawEmail !== 'string' ||
+    typeof rawPassword !== 'string' ||
+    typeof rawName !== 'string'
+  ) {
+    return { message: 'Please fill in all fields.' };
+  }
   const data = {
-    email: formData.get('email') as string,
-    password: formData.get('password') as string,
-    name: formData.get('name') as string,
+    email: rawEmail.trim(),
+    password: rawPassword,
+    name: rawName.trim(),
   };
+
+  // Server-side floors: never rely on the client form alone.
+  if (!data.email || data.email.length > 254) {
+    return { message: 'Please enter a valid email address.' };
+  }
+  if (data.password.length < 8) {
+    return { message: 'Password must be at least 8 characters.' };
+  }
+  if (!data.name || data.name.length > 100) {
+    return { message: 'Please enter your name (100 characters max).' };
+  }
 
   // Check if user exists in our database first
   const existingDBUser = await db.select().from(usersTable).where(eq(usersTable.email, data.email));
@@ -210,10 +237,19 @@ export async function signup(currentState: { message: string }, formData: FormDa
 export async function loginUser(currentState: { message: string }, formData: FormData) {
   const supabase = await createClient();
 
+  const rawEmail = formData.get('email');
+  const rawPassword = formData.get('password');
+  if (typeof rawEmail !== 'string' || typeof rawPassword !== 'string') {
+    return { message: 'Please fill in all fields.' };
+  }
+
   const data = {
-    email: formData.get('email') as string,
-    password: formData.get('password') as string,
+    email: rawEmail.trim(),
+    password: rawPassword,
   };
+  if (!data.email || data.email.length > 254) {
+    return { message: 'Please enter a valid email address.' };
+  }
 
   const { data: signInData, error } = await supabase.auth.signInWithPassword(data);
 
@@ -246,14 +282,11 @@ export async function finishGoogleSignIn() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  logAuth('finishGoogleSignIn', { hasUser: !!user, email: user?.email ?? null });
-
   if (!user) {
     redirect('/auth/auth-code-error');
   }
 
   const bootstrapped = await bootstrapOAuthUser(user!);
-  logAuth('finishGoogleSignIn.bootstrap', { ok: bootstrapped.ok });
   if (!bootstrapped.ok) {
     redirect('/auth/auth-code-error');
   }
@@ -276,12 +309,6 @@ export async function signInWithGoogle() {
     },
   });
 
-  logAuth('signInWithGoogle', {
-    error: error?.message ?? null,
-    hasUrl: !!data.url,
-    url: data.url ?? null,
-  });
-
   if (error) {
     redirect('/auth/auth-code-error');
   }
@@ -300,12 +327,6 @@ export async function signInWithGithub() {
     options: {
       redirectTo: `${PUBLIC_URL}/auth/callback`,
     },
-  });
-
-  logAuth('signInWithGithub', {
-    error: error?.message ?? null,
-    hasUrl: !!data.url,
-    url: data.url ?? null,
   });
 
   if (error) {

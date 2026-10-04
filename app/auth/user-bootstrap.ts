@@ -3,7 +3,6 @@ import { createStripeCustomer } from '@/utils/stripe/api';
 import { db } from '@/utils/db/db';
 import { usersTable } from '@/utils/db/schema';
 import { eq } from 'drizzle-orm';
-import { logAuth } from '@/lib/auth-debug';
 
 // Same rule completeOnboarding enforces: 3-20 chars, lowercase letters,
 // numbers, underscores.
@@ -154,7 +153,6 @@ export async function bootstrapOAuthUser(user: User): Promise<{ ok: boolean }> {
     });
     return { ok: true };
   } catch (err) {
-    logAuth('bootstrap.error', { email, message: err instanceof Error ? err.message : 'Unknown' });
     // A Stripe/DB failure here would otherwise surface as a raw 500; log it
     // (including any created stripe_id, so a retry doesn't silently mint a
     // duplicate Stripe customer with no trace) and let the caller redirect to

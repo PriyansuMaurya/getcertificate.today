@@ -3,7 +3,7 @@
 import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { and, eq, gte } from 'drizzle-orm';
+import { and, eq, gte, sql } from 'drizzle-orm';
 import { createClient } from '@/utils/supabase/server';
 import { db } from '@/utils/db/db';
 import {
@@ -42,6 +42,24 @@ import {
 
 export type AssessmentActionState = { message: string; success?: boolean };
 
+/** Thrown inside submitAssessment's transaction when a racing submit consumed the last attempt. */
+class AttemptLimitError extends Error {
+  readonly retryAfterUtc: string;
+  constructor(retryAfterUtc: string) {
+    super('Attempt limit reached in this window.');
+    this.name = 'AttemptLimitError';
+    this.retryAfterUtc = retryAfterUtc;
+  }
+}
+
+/** Shared attempt-limit copy so the fast-path and in-lock races read the same. */
+function attemptLimitMessage(retryAfterUtc?: string) {
+  const base = `Attempt limit reached (${MAX_ATTEMPTS_PER_WINDOW} per ${ATTEMPT_COOLDOWN_DAYS} days)`;
+  return retryAfterUtc
+    ? `${base}. You can try again after ${retryAfterUtc}.`
+    : `${base}. Please try again later.`;
+}
+
 /** Feedback returned after the server validates one committed answer. */
 export type AnswerFeedback = {
   correct: boolean;
@@ -65,6 +83,9 @@ function displayTitle(title: string | null, youtubeId: string): string {
 }
 
 async function getOwnedItem(itemId: string, userId: string) {
+  // IDs travel from the client - only accept opaque text ids (uuids) so a
+  // non-string payload can never reach the query builder.
+  if (typeof itemId !== 'string' || itemId.length === 0 || itemId.length > 128) return null;
   const rows = await db
     .select()
     .from(learningItemsTable)
@@ -103,8 +124,8 @@ export async function startAssessment(
   const user = await requireUser();
   if (!user) redirect('/login');
 
-  const itemId = formData.get('itemId') as string | null;
-  if (!itemId) return { message: 'Missing course.' };
+  const itemId = formData.get('itemId');
+  if (typeof itemId !== 'string' || !itemId) return { message: 'Missing course.' };
 
   const item = await getOwnedItem(itemId, user.id);
   if (!item) return { message: 'That course was not found.' };
@@ -235,6 +256,15 @@ export async function checkAnswer(
     return { message: 'This assessment is locked until you finish the course.' };
   }
 
+  // Integer-only index bounds check before touching the questions array - a
+  // fractional/negative/non-numeric index would otherwise probe beyond bounds.
+  if (!Number.isInteger(questionIndex) || questionIndex < 0) {
+    return { message: 'That question does not exist.' };
+  }
+  if (!Number.isInteger(choice) || choice < 0) {
+    return { message: 'That answer is not a valid choice.' };
+  }
+
   const assessmentRows = await db
     .select()
     .from(assessmentsTable)
@@ -252,9 +282,9 @@ export async function checkAnswer(
   // weekly attempt limit is exhausted.
   const windowAttempts = await attemptsInWindow(assessment.id, user.id);
   if (windowAttempts.length >= MAX_ATTEMPTS_PER_WINDOW) {
-    return {
-      message: `Attempt limit reached (${MAX_ATTEMPTS_PER_WINDOW} per ${ATTEMPT_COOLDOWN_DAYS} days).`,
-    };
+    const latest = windowAttempts[windowAttempts.length - 1].created_at;
+    const available = new Date(latest.getTime() + ATTEMPT_COOLDOWN_DAYS * 24 * 60 * 60 * 1000);
+    return { message: attemptLimitMessage(available.toUTCString().slice(0, 16)) };
   }
 
   const correct = choice === question.correct;
@@ -280,8 +310,8 @@ export async function submitAssessment(
   const user = await requireUser();
   if (!user) redirect('/login');
 
-  const itemId = formData.get('itemId') as string | null;
-  if (!itemId) return { message: 'Missing course.' };
+  const itemId = formData.get('itemId');
+  if (typeof itemId !== 'string' || !itemId) return { message: 'Missing course.' };
 
   const item = await getOwnedItem(itemId, user.id);
   if (!item) return { message: 'That course was not found.' };
@@ -302,9 +332,7 @@ export async function submitAssessment(
   if (windowAttempts.length >= MAX_ATTEMPTS_PER_WINDOW) {
     const latest = windowAttempts[windowAttempts.length - 1].created_at;
     const available = new Date(latest.getTime() + ATTEMPT_COOLDOWN_DAYS * 24 * 60 * 60 * 1000);
-    return {
-      message: `Attempt limit reached (${MAX_ATTEMPTS_PER_WINDOW} per ${ATTEMPT_COOLDOWN_DAYS} days). You can try again after ${available.toUTCString().slice(0, 16)}.`,
-    };
+    return { message: attemptLimitMessage(available.toUTCString().slice(0, 16)) };
   }
 
   // Server re-validates every answer even though the client validated first.
@@ -332,6 +360,29 @@ export async function submitAssessment(
 
   try {
     await db.transaction(async (tx) => {
+      // Serialize concurrent submits for this (user, assessment) pair so the
+      // rolling attempt limit can't be exceeded by a racing double-submit.
+      // xact lock is released automatically at commit/rollback.
+      await tx.execute(
+        sql`SELECT pg_advisory_xact_lock(hashtext(${`attempt:${user.id}:${assessment.id}`}))`
+      );
+
+      const lockedWindow = await tx
+        .select({ created_at: attemptsTable.created_at })
+        .from(attemptsTable)
+        .where(
+          and(
+            eq(attemptsTable.assessment_id, assessment.id),
+            eq(attemptsTable.user_id, user.id),
+            gte(attemptsTable.created_at, attemptWindowCutoff())
+          )
+        );
+      if (lockedWindow.length >= MAX_ATTEMPTS_PER_WINDOW) {
+        const latest = lockedWindow[lockedWindow.length - 1].created_at;
+        const available = new Date(latest.getTime() + ATTEMPT_COOLDOWN_DAYS * 24 * 60 * 60 * 1000);
+        throw new AttemptLimitError(available.toUTCString().slice(0, 16));
+      }
+
       await tx.insert(attemptsTable).values({
         id: attemptId,
         assessment_id: assessment.id,
@@ -343,6 +394,11 @@ export async function submitAssessment(
       });
 
       if (!passed) return;
+
+      // Serialize the monthly free-quota check per user: two concurrent passing
+      // submits on *different* courses must not both see 0 credentials this
+      // month and mint two free credentials.
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`quota:${user.id}`}))`);
 
       const existingCred = await tx
         .select({ id: credentialsTable.id })
@@ -398,6 +454,9 @@ export async function submitAssessment(
       });
     });
   } catch (err) {
+    if (err instanceof AttemptLimitError) {
+      return { message: attemptLimitMessage(err.retryAfterUtc) };
+    }
     console.error('[assessment] submit failed:', err instanceof Error ? err.message : 'unknown');
     return { message: 'Could not save your attempt. Please try again.' };
   }
@@ -418,8 +477,8 @@ export async function mintFromAttempt(
   const user = await requireUser();
   if (!user) redirect('/login');
 
-  const attemptId = formData.get('attemptId') as string | null;
-  if (!attemptId) return { message: 'Missing attempt.' };
+  const attemptId = formData.get('attemptId');
+  if (typeof attemptId !== 'string' || !attemptId) return { message: 'Missing attempt.' };
 
   const attemptRows = await db
     .select()
@@ -435,6 +494,11 @@ export async function mintFromAttempt(
   let mintedId: string | null = null;
   try {
     await db.transaction(async (tx) => {
+      // Same per-user quota lock as submitAssessment - serializes concurrent
+      // mint requests so the monthly free-credential quota cannot be exceeded
+      // by a race between two tabs.
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`quota:${user.id}`}))`);
+
       const existingCred = await tx
         .select({ id: credentialsTable.id })
         .from(credentialsTable)

@@ -18,9 +18,15 @@ const PRICE_ENV: Record<string, string> = {
 export type PlanKey = keyof typeof PRICE_ENV;
 
 export async function startCheckout(planKey: string) {
-  const priceId = PRICE_ENV[planKey] ? process.env[PRICE_ENV[planKey]] : undefined;
+  // Allowlist check: `planKey` arrives from the client, so only the three
+  // known plan keys are ever resolved - an arbitrary key can never reach
+  // process.env indexing or Stripe.
+  const priceEnvKey = Object.prototype.hasOwnProperty.call(PRICE_ENV, planKey)
+    ? PRICE_ENV[planKey]
+    : undefined;
+  const priceId = priceEnvKey ? process.env[priceEnvKey] : undefined;
   if (!priceId) {
-    console.error(`startCheckout: missing env ${PRICE_ENV[planKey] ?? planKey}`);
+    console.error(`startCheckout: missing env ${priceEnvKey ?? 'unknown plan'}`);
     redirect('/subscribe?checkout=unavailable');
   }
 
@@ -41,17 +47,31 @@ export async function startCheckout(planKey: string) {
 
   let sessionUrl: string | null = null;
   try {
-    const session = await stripe.checkout.sessions.create({
-      // Existing customers keep their subscription history; brand-new accounts
-      // (or rows without stripe_id) are attached by email instead.
-      ...(stripeId
-        ? { customer: stripeId }
-        : { customer_email: user.email ?? undefined, client_reference_id: user.id }),
-      mode: 'subscription',
-      line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${PUBLIC_URL}/subscribe?checkout=success`,
-      cancel_url: `${PUBLIC_URL}/subscribe?checkout=canceled`,
-    });
+    const session = await stripe.checkout.sessions.create(
+      {
+        // Existing customers keep their subscription history; brand-new accounts
+        // (or rows without stripe_id) are attached by email instead.
+        ...(stripeId
+          ? { customer: stripeId }
+          : { customer_email: user.email ?? undefined, client_reference_id: user.id }),
+        mode: 'subscription',
+        line_items: [{ price: priceId, quantity: 1 }],
+        success_url: `${PUBLIC_URL}/subscribe?checkout=success`,
+        cancel_url: `${PUBLIC_URL}/subscribe?checkout=canceled`,
+      },
+      {
+        // Guard against Stripe's default long retry window stretching a single
+        // click past typical proxy timeouts on slow networks. The idempotency
+        // key dedupes double-submits (double click, network retry) so only one
+        // checkout session is ever created per user+plan click. The 1-minute
+        // time bucket keeps dedupe scoped to an actual double-submit: Stripe
+        // replays the same response for a repeated key for 24h, so a static
+        // key would hand back a stale session to a user who returns later.
+        timeout: 15_000,
+        maxNetworkRetries: 2,
+        idempotencyKey: `checkout:${user.id}:${planKey}:${Math.floor(Date.now() / 60_000)}`,
+      }
+    );
     sessionUrl = session.url;
   } catch (err) {
     // Stripe failure (bad price, config, network) must reach the designed
@@ -60,6 +80,10 @@ export async function startCheckout(planKey: string) {
   }
 
   if (!sessionUrl) {
+    redirect('/subscribe?checkout=unavailable');
+  }
+  // Only ever redirect to the HTTPS URL Stripe returned - never a caller-supplied value.
+  if (!sessionUrl.startsWith('https://')) {
     redirect('/subscribe?checkout=unavailable');
   }
   redirect(sessionUrl);

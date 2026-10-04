@@ -1,33 +1,20 @@
 import { NextResponse } from 'next/server';
 // The client you created from the Server-Side Auth instructions
 import { createClient } from '@/utils/supabase/server';
-import { hasCompletedOnboarding } from '@/app/auth/actions';
+import { hasCompletedOnboarding } from '@/app/auth/onboarding-status';
+import { safeNextPath } from '@/lib/safe-next';
 import { bootstrapOAuthUser } from '@/app/auth/user-bootstrap';
-import { logAuth } from '@/lib/auth-debug';
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  // if "next" is in param, use it as the redirect URL
-  const next = searchParams.get('next') ?? '/';
-
-  logAuth('callback.hit', {
-    // Never log the one-time `code` value itself - only its presence.
-    hasCode: !!code,
-    error: searchParams.get('error'),
-    errorDescription: searchParams.get('error_description'),
-    next,
-    cookieNames:
-      request.headers
-        .get('cookie')
-        ?.split(';')
-        .map((c) => c.trim().split('=')[0]) ?? [],
-  });
+  // Sanitized post-auth redirect target: same-origin relative path only, so a
+  // crafted ?next= can never bounce a freshly signed-in user off-site.
+  const next = safeNextPath(searchParams.get('next'));
 
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    logAuth('callback.exchange', { error: error?.message ?? null });
     if (!error) {
       const {
         data: { user },
@@ -36,7 +23,6 @@ export async function GET(request: Request) {
       // Create the local user row (Stripe customer + DB record) when this is
       // the user's first sign-in through any OAuth provider.
       const bootstrapped = await bootstrapOAuthUser(user!);
-      logAuth('callback.bootstrap', { ok: bootstrapped.ok, email: user!.email });
       if (!bootstrapped.ok) {
         return NextResponse.redirect(`${origin}/auth/auth-code-error`);
       }
@@ -61,10 +47,5 @@ export async function GET(request: Request) {
   }
 
   // return the user to an error page with instructions
-  logAuth('callback.fallback', {
-    hasCode: !!code,
-    error: searchParams.get('error'),
-    errorDescription: searchParams.get('error_description'),
-  });
   return NextResponse.redirect(`${origin}/auth/auth-code-error`);
 }

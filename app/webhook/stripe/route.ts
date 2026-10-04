@@ -61,7 +61,9 @@ export async function POST(req: Request) {
         break;
       }
       default:
-        console.log(`[stripe-webhook] unhandled event type ${event.type}`);
+        // Ignore other event types silently - signature already verified and
+        // there is nothing actionable to log for them.
+        break;
     }
 
     return new Response('Success', { status: 200 });

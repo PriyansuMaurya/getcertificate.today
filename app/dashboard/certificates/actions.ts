@@ -23,8 +23,11 @@ export async function revokeCredential(
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const credentialId = formData.get('credentialId') as string | null;
-  if (!credentialId) return { message: 'Missing credential.' };
+  const credentialIdRaw = formData.get('credentialId');
+  if (typeof credentialIdRaw !== 'string' || !credentialIdRaw) {
+    return { message: 'Missing credential.' };
+  }
+  const credentialId = credentialIdRaw;
 
   const rows = await db
     .select({ id: credentialsTable.id, status: credentialsTable.status })

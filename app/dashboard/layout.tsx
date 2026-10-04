@@ -3,7 +3,7 @@ import DashboardSidebar from '@/components/DashboardSidebar';
 import type { Metadata } from 'next';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-import { hasCompletedOnboarding } from '@/app/auth/actions';
+import { hasCompletedOnboarding } from '@/app/auth/onboarding-status';
 
 export const metadata: Metadata = {
   title: 'Dashboard | getcertificate.today',

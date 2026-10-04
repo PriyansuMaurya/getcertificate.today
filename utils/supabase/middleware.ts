@@ -45,9 +45,13 @@ export async function updateSession(request: NextRequest) {
   // redirecting them to /login would hide crawler directives from Google.
   const PUBLIC_PREFIXES = ['/verify', '/certificates', '/privacy', '/terms'];
   const CRAWLER_FILES = ['/robots.txt', '/sitemap.xml'];
+  // Exact path or path segment match: '/certificates' stays public but
+  // '/certificates-anything' (or a future '/verify-internal') does not silently
+  // inherit public access from a bare prefix match.
   const isPublicPath =
-    PUBLIC_PREFIXES.some((p) => request.nextUrl.pathname.startsWith(p)) ||
-    CRAWLER_FILES.includes(request.nextUrl.pathname);
+    PUBLIC_PREFIXES.some(
+      (p) => request.nextUrl.pathname === p || request.nextUrl.pathname.startsWith(`${p}/`)
+    ) || CRAWLER_FILES.includes(request.nextUrl.pathname);
 
   if (
     !user &&

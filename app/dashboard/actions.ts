@@ -81,8 +81,9 @@ export async function deleteLearningItem(
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const itemId = formData.get('itemId') as string | null;
-  if (!itemId) return { message: 'Missing item.' };
+  const itemIdRaw = formData.get('itemId');
+  if (typeof itemIdRaw !== 'string' || !itemIdRaw) return { message: 'Missing item.' };
+  const itemId = itemIdRaw;
 
   const rows = await db
     .select({ id: learningItemsTable.id })
@@ -127,7 +128,13 @@ export async function saveProgress(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, percent: 0 };
 
-  if (!Number.isFinite(positionSeconds) || !Number.isFinite(durationSeconds)) {
+  if (
+    typeof itemId !== 'string' ||
+    !itemId ||
+    itemId.length > 128 ||
+    !Number.isFinite(positionSeconds) ||
+    !Number.isFinite(durationSeconds)
+  ) {
     return { ok: false, percent: 0 };
   }
 

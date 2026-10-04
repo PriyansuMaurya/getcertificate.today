@@ -8,9 +8,6 @@
 .qwen/skills/
 .rovodev/skills/
 
-# auth flow debug log (temporary diagnostics)
-.auth-debug.log
-
 # dependencies
 /node_modules
 /.pnp
@@ -53,6 +50,7 @@ next-env.d.ts
 .freebuff/
 .media/
 dev-server.log
+.dev-server.log
 tree.txt
 scripts/demo-user.mjs
 scripts/figma-tree-dump.py
