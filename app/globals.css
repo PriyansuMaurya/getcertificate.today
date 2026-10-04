@@ -106,4 +106,16 @@
   [data-print-hide] {
     display: none !important;
   }
+
+  /* Canvas certificate document: keep the 3:2 canvas edge-to-edge on the
+     printed page at full fidelity (QR stays sharp at 2x backing store). */
+  [data-print-certificate] {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
 }
