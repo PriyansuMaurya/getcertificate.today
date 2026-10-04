@@ -1,9 +1,11 @@
 'use server';
+import { cookies } from 'next/headers';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { bootstrapOAuthUser } from '@/app/auth/user-bootstrap';
 import { hasCompletedOnboarding } from '@/app/auth/onboarding-status';
+import { ONBOARDING_PENDING_COOKIE, onboardingPendingCookie } from '@/lib/onboarding-cookie';
 import { createStripeCustomer, stripe } from '@/utils/stripe/api';
 import { db } from '@/utils/db/db';
 import { usersTable } from '@/utils/db/schema';
@@ -145,7 +147,23 @@ export async function completeOnboarding(currentState: { message: string }, form
   }
 
   revalidatePath('/', 'layout');
+  // Profile is complete now: drop the pending flag so the middleware's
+  // homepage -> dashboard auto-jump is restored.
+  (await cookies()).delete(ONBOARDING_PENDING_COOKIE);
   redirect('/dashboard');
+}
+
+/**
+ * Flags the session as "signed in, still owes onboarding". Called by
+ * OnboardingForm on mount - the only place that both (a) can write cookies
+ * (server action, unlike a server component render) and (b) runs exclusively
+ * for users who have NOT completed onboarding (so no false positives like a
+ * middleware stamp would hit when a completed user visits /onboarding and is
+ * bounced to the dashboard). Covers legacy sessions that signed in before
+ * the flag existed, without middleware ever needing to know onboarding state.
+ */
+export async function markOnboardingPending() {
+  (await cookies()).set(ONBOARDING_PENDING_COOKIE, '1', onboardingPendingCookie);
 }
 
 export type UsernameAvailability = {
@@ -323,6 +341,7 @@ export async function signup(currentState: { message: string }, formData: FormDa
   // The users_table row (and its Stripe customer) is created later, by
   // completeOnboarding, once username, name and DOB have all been supplied -
   // sign-up itself only creates the auth account.
+  (await cookies()).set(ONBOARDING_PENDING_COOKIE, '1', onboardingPendingCookie);
   revalidatePath('/', 'layout');
   redirect('/onboarding');
 }
@@ -354,14 +373,23 @@ export async function loginUser(currentState: { message: string }, formData: For
 
   // New users (or anyone who never finished onboarding) set up their profile first.
   if (await hasCompletedOnboarding(signInData.user.id)) {
+    // Drop any stale pending flag from an earlier unfinished session so the
+    // homepage -> dashboard auto-jump comes back.
+    (await cookies()).delete(ONBOARDING_PENDING_COOKIE);
     redirect('/dashboard');
   }
+  // Flag the pending session BEFORE landing on /onboarding so the middleware
+  // lets them leave the form (homepage stays reachable, no redirect loop).
+  (await cookies()).set(ONBOARDING_PENDING_COOKIE, '1', onboardingPendingCookie);
   redirect('/onboarding');
 }
 
 export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  // Stale pending flag would outlive the session and silently disable the
+  // homepage -> dashboard jump for the next user of this browser.
+  (await cookies()).delete(ONBOARDING_PENDING_COOKIE);
   redirect('/login');
 }
 
@@ -389,8 +417,10 @@ export async function finishGoogleSignIn() {
 
   // New users (or anyone who never finished onboarding) set up their profile first.
   if (await hasCompletedOnboarding(user!.id)) {
+    (await cookies()).delete(ONBOARDING_PENDING_COOKIE);
     redirect('/dashboard');
   }
+  (await cookies()).set(ONBOARDING_PENDING_COOKIE, '1', onboardingPendingCookie);
   redirect('/onboarding');
 }
 

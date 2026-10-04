@@ -5,6 +5,7 @@ import { useFormStatus } from 'react-dom';
 import {
   checkUsernameAvailability,
   completeOnboarding,
+  markOnboardingPending,
   type UsernameAvailability,
 } from '@/app/auth/actions';
 import { ArrowRightIcon, CheckIcon } from '@/components/icons';
@@ -79,6 +80,19 @@ export default function OnboardingForm({
   // Client-side dob validation message (the calendar's hidden input ignores
   // HTML `required`, so we surface the error ourselves instead of round-tripping).
   const [dobError, setDobError] = useState('');
+
+  // Stamp the pending-onboarding flag as soon as the form actually renders.
+  // This is the cookie that unlocks navigation off /onboarding (middleware
+  // skips its homepage -> dashboard auto-jump while it is present, which is
+  // what otherwise loops every exit back into this form). Mount == form shown
+  // == onboarding genuinely incomplete, so no completed-user false positives.
+  useEffect(() => {
+    markOnboardingPending().catch((err) => {
+      // Advisory flag only - navigation falls back to one extra bounce if the
+      // stamp fails; never block the form on it.
+      console.warn('Failed to flag pending onboarding:', err);
+    });
+  }, []);
 
   // Debounced live availability check as the user types. Only async setState
   // (inside the timer callback) - the displayed state is DERIVED during render

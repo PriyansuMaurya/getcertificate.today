@@ -4,6 +4,7 @@ import { createClient } from '@/utils/supabase/server';
 import { hasCompletedOnboarding } from '@/app/auth/onboarding-status';
 import { safeNextPath } from '@/lib/safe-next';
 import { bootstrapOAuthUser } from '@/app/auth/user-bootstrap';
+import { ONBOARDING_PENDING_COOKIE, onboardingPendingCookie } from '@/lib/onboarding-cookie';
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -30,20 +31,29 @@ export async function GET(request: Request) {
 
       const forwardedHost = request.headers.get('x-forwarded-host'); // original origin before load balancer
       const isLocalEnv = process.env.NODE_ENV === 'development';
+      const completed = await hasCompletedOnboarding(user!.id);
       let destination = next;
       if (next === '/') {
         // New users (no username yet) land on onboarding; everyone else on the dashboard.
-        const completed = await hasCompletedOnboarding(user!.id);
         destination = completed ? '/dashboard' : '/onboarding';
       }
-      if (isLocalEnv) {
-        // we can be sure that there is no load balancer in between, so no need to watch for X-Forwarded-Host
-        return NextResponse.redirect(`${origin}${destination}`);
-      } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${destination}`);
+      // Flag unfinished sessions BEFORE they land on /onboarding so the
+      // middleware exempts them from the homepage -> dashboard auto-jump
+      // (otherwise every exit from the form loops back into it).
+      const url = isLocalEnv
+        ? `${origin}${destination}`
+        : forwardedHost
+          ? `https://${forwardedHost}${destination}`
+          : `${origin}${destination}`;
+      const response = NextResponse.redirect(url);
+      if (completed) {
+        response.cookies.delete(ONBOARDING_PENDING_COOKIE);
       } else {
-        return NextResponse.redirect(`${origin}${destination}`);
+        response.cookies.set(ONBOARDING_PENDING_COOKIE, '1', onboardingPendingCookie);
       }
+      // we can be sure that there is no load balancer in local dev, so no need
+      // to watch for X-Forwarded-Host
+      return response;
     }
   }
 

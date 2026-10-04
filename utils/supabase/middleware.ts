@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { ONBOARDING_PENDING_COOKIE } from '@/lib/onboarding-cookie';
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -67,8 +68,15 @@ export async function updateSession(request: NextRequest) {
     url.pathname = '/login';
     return NextResponse.redirect(url);
   }
-  // // If user is logged in, redirect to dashboard
-  if (user && request.nextUrl.pathname === '/') {
+  // If user is logged in, redirect to dashboard - EXCEPT while they still
+  // owe onboarding: /onboarding stamps that cookie, and without this
+  // exemption every exit from the form would bounce
+  // / -> /dashboard -> /onboarding in an inescapable loop.
+  if (
+    user &&
+    request.nextUrl.pathname === '/' &&
+    !request.cookies.get(ONBOARDING_PENDING_COOKIE)?.value
+  ) {
     url.pathname = '/dashboard';
     return NextResponse.redirect(url);
   }

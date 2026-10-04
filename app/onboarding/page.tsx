@@ -86,6 +86,20 @@ export default async function Onboarding() {
             defaultDob={defaultDob}
           />
         </div>
+
+        {/* Exit hatch: the pending-onboarding cookie keeps the middleware from
+            bouncing / back into /dashboard (which redirects straight back
+            here), so this link now actually escapes the form. */}
+        <p className="mt-6 text-center text-sm text-clay">
+          Not ready yet?{' '}
+          <Link
+            href="/"
+            className="font-semibold text-ink underline underline-offset-4 hover:text-clay"
+          >
+            Browse the site first
+          </Link>{' '}
+          - you can finish your profile anytime.
+        </p>
       </div>
     </div>
   );
