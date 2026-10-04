@@ -4,10 +4,10 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { bootstrapOAuthUser } from '@/app/auth/user-bootstrap';
 import { hasCompletedOnboarding } from '@/app/auth/onboarding-status';
-import { createStripeCustomer } from '@/utils/stripe/api';
+import { createStripeCustomer, stripe } from '@/utils/stripe/api';
 import { db } from '@/utils/db/db';
 import { usersTable } from '@/utils/db/schema';
-import { eq, or } from 'drizzle-orm';
+import { and, eq, ne } from 'drizzle-orm';
 
 const PUBLIC_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || 'http://localhost:3000';
 
@@ -54,34 +54,145 @@ export async function completeOnboarding(currentState: { message: string }, form
   }
 
   // Friendly pre-check; the unique constraint in the DB is the source of truth.
+  // Only the username column is unique here: check for OTHER users holding this
+  // username, excluding the current user's own row (so keeping a pre-filled
+  // username from OAuth bootstrap is always allowed). Matching on email as
+  // well made every username appear taken whenever the signed-in email pointed
+  // at a users row with a different id.
   const conflict = await db
     .select({ id: usersTable.id })
     .from(usersTable)
-    .where(or(eq(usersTable.username, username), eq(usersTable.email, user.email!)));
+    .where(and(eq(usersTable.username, username), ne(usersTable.id, user.id)));
 
-  const usernameTaken = conflict.some((row) => row.id !== user.id);
-
-  if (usernameTaken) {
+  if (conflict.length > 0) {
     return { message: 'That username is already taken. Please choose another one.' };
   }
 
+  let stripeID: string | undefined;
   try {
-    await db
-      .update(usersTable)
-      .set({
+    const existing = await db
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(eq(usersTable.id, user.id));
+
+    if (existing.length > 0) {
+      // Returning user: only the profile details change.
+      await db
+        .update(usersTable)
+        .set({
+          username,
+          first_name: firstName,
+          last_name: lastName,
+          dob,
+        })
+        .where(eq(usersTable.id, user.id));
+    } else {
+      // First-time save: this is the single place a user record is created.
+      // Nothing exists until username, name and DOB are all supplied (both
+      // OAuth and password sign-ups skip row creation on their own paths).
+      const email = user.email;
+      if (!email) {
+        return { message: 'Your account has no email address. Please contact support.' };
+      }
+      const name = `${firstName} ${lastName}`;
+      // users_table.stripe_id is NOT NULL, so the Stripe customer has to exist
+      // before the insert. If the insert then fails (username race, DB error),
+      // the outer catch below deletes the just-created customer so no orphan
+      // is stranded in Stripe.
+      stripeID = await createStripeCustomer(user.id, email, name);
+      await db.insert(usersTable).values({
+        id: user.id,
+        name,
+        email,
+        stripe_id: stripeID,
+        plan: 'none',
         username,
         first_name: firstName,
         last_name: lastName,
         dob,
-      })
-      .where(eq(usersTable.id, user.id));
+      });
+    }
   } catch (err) {
-    console.error('Error saving profile:', err instanceof Error ? err.message : 'Unknown error');
+    const msg = err instanceof Error ? err.message : '';
+    // Clean up FIRST: every failure after the customer was created (username
+    // race, DB error) must remove it rather than leaking an unreferenced
+    // Stripe record - the next attempt creates a fresh one. Never masks the
+    // user-facing error below.
+    if (stripeID) {
+      try {
+        await stripe.customers.del(stripeID);
+      } catch (delErr) {
+        console.error(
+          'completeOnboarding: failed to clean up orphan stripe customer:',
+          stripeID,
+          delErr instanceof Error ? delErr.message : 'unknown error'
+        );
+      }
+    }
+    // Unique-violation race on the username (someone took it between the
+    // pre-check and the save) must surface the same actionable message as the
+    // pre-check. Other unique violations fall through to the generic message.
+    if (/unique|duplicate/i.test(msg) && /username/i.test(msg)) {
+      return { message: 'That username is already taken. Please choose another one.' };
+    }
+    console.error(
+      'Error saving profile:',
+      stripeID
+        ? `stripe customer created then cleaned up (id=${stripeID}) | ${msg || 'insert failed'}`
+        : msg || 'Unknown error'
+    );
     return { message: 'Failed to save your profile. Please try again.' };
   }
 
   revalidatePath('/', 'layout');
   redirect('/dashboard');
+}
+
+export type UsernameAvailability = {
+  status: 'available' | 'taken' | 'invalid' | 'error';
+};
+
+/**
+ * Live availability check for the onboarding username field. Debounced by the
+ * client as the user types; purely advisory - completeOnboarding and the DB
+ * unique constraint remain the source of truth. Only rejects usernames held
+ * by OTHER users so a pre-filled/own username always reports as available.
+ *
+ * This endpoint is intentionally public (username enumeration is inherent to
+ * any signup UX that shows availability) and does one indexed lookup per
+ * call; if it is ever abused, throttle at the proxy/edge rather than here.
+ */
+export async function checkUsernameAvailability(raw: string): Promise<UsernameAvailability> {
+  const username = typeof raw === 'string' ? raw.trim() : '';
+  if (!/^[a-z0-9_]{3,20}$/.test(username)) {
+    return { status: 'invalid' };
+  }
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const conflict = await db
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(
+        user
+          ? and(eq(usersTable.username, username), ne(usersTable.id, user.id))
+          : eq(usersTable.username, username)
+      );
+
+    return { status: conflict.length > 0 ? 'taken' : 'available' };
+  } catch (err) {
+    console.error(
+      '[onboarding] availability check failed:',
+      err instanceof Error ? err.message : 'Unknown error'
+    );
+    // Advisory only: report 'error' so the form can show a neutral hint rather
+    // than falsely claiming the username is taken/free.
+    return { status: 'error' };
+  }
 }
 
 function calculateAge(dob: string): number | null {
@@ -209,27 +320,9 @@ export async function signup(currentState: { message: string }, formData: FormDa
     return { message: 'Failed to create user' };
   }
 
-  try {
-    // create Stripe Customer Record using signup response data
-    const stripeID = await createStripeCustomer(
-      signUpData.user.id,
-      signUpData.user.email!,
-      data.name
-    );
-
-    // Create record in DB
-    await db.insert(usersTable).values({
-      id: signUpData.user.id,
-      name: data.name,
-      email: signUpData.user.email!,
-      stripe_id: stripeID,
-      plan: 'none',
-    });
-  } catch (err) {
-    console.error('Error in signup:', err instanceof Error ? err.message : 'Unknown error');
-    return { message: 'Failed to setup user account' };
-  }
-
+  // The users_table row (and its Stripe customer) is created later, by
+  // completeOnboarding, once username, name and DOB have all been supplied -
+  // sign-up itself only creates the auth account.
   revalidatePath('/', 'layout');
   redirect('/onboarding');
 }
@@ -274,8 +367,9 @@ export async function logout() {
 
 // Completes a Google sign-in performed client-side via Google Identity
 // Services (signInWithIdToken). The session cookie is already written by the
-// browser client before this action runs; we only need the shared OAuth
-// bootstrap (Stripe customer + users row) and the onboarding/dashboard route.
+// browser client before this action runs; we only need to validate the
+// session and route to onboarding/dashboard (the users row is created by
+// completeOnboarding, once every detail is filled in).
 export async function finishGoogleSignIn() {
   const supabase = await createClient();
   const {

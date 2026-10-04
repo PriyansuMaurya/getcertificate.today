@@ -1,5 +1,4 @@
 import type { User } from '@supabase/supabase-js';
-import { createStripeCustomer } from '@/utils/stripe/api';
 import { db } from '@/utils/db/db';
 import { usersTable } from '@/utils/db/schema';
 import { eq } from 'drizzle-orm';
@@ -41,7 +40,7 @@ function toUsernameCandidate(raw: string | undefined): string | null {
  * Returns null when nothing in the bounded search is free - the onboarding
  * form then asks the user to pick one, same as before.
  */
-async function pickAvailableUsername(candidate: string | null): Promise<string | null> {
+export async function pickAvailableUsername(candidate: string | null): Promise<string | null> {
   if (!candidate) return null;
   for (let i = 1; i <= 10; i++) {
     const attempt = i === 1 ? candidate : `${candidate.slice(0, 17)}_${i}`;
@@ -69,7 +68,7 @@ async function pickAvailableUsername(candidate: string | null): Promise<string |
  * is deliberately left unset - users still pass through onboarding to enter
  * it (see hasCompletedOnboarding).
  */
-function deriveProfileDefaults(user: User): ProfileDefaults {
+export function deriveProfileDefaults(user: User): ProfileDefaults {
   const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
 
   let firstName = metaString(meta, 'given_name');
@@ -98,71 +97,25 @@ function deriveProfileDefaults(user: User): ProfileDefaults {
 }
 
 /**
- * Ensure a local `users` row (and Stripe customer) exists for an OAuth user.
+ * Validate an OAuth user before they are routed to onboarding/dashboard.
  *
  * Shared by the redirect-based OAuth callback (`app/auth/callback/route.ts`)
  * and the Google Identity Services flow (`finishGoogleSignIn` in
- * `app/auth/actions.ts`), which perform the exact same bootstrap after the
- * Supabase session has been established.
+ * `app/auth/actions.ts`), which run after the Supabase session has been
+ * established.
  *
- * New rows are seeded with first name, last name, and a unique username
- * derived from the provider profile so onboarding arrives pre-filled.
+ * Deliberately writes NOTHING: the local `users` row (and its Stripe
+ * customer) is created by `completeOnboarding` only once every detail -
+ * username, first/last name and DOB - has been supplied, so a sign-in that is
+ * abandoned before onboarding leaves no partial user behind. Profile defaults
+ * for the onboarding form are derived on the fly from provider metadata via
+ * `deriveProfileDefaults` (see `app/onboarding/page.tsx`).
  *
- * Returns `{ ok: false }` on any failure so callers can route the user to the
- * designed error page instead of surfacing a raw 500. This function must never
- * call `redirect()` itself - callers own the navigation.
+ * Returns `{ ok: false }` when the account has no email address (required
+ * later for the users row and Stripe customer) so callers can route to the
+ * designed error page instead of surfacing a raw 500. This function must
+ * never call `redirect()` itself - callers own the navigation.
  */
 export async function bootstrapOAuthUser(user: User): Promise<{ ok: boolean }> {
-  const email = user.email;
-  if (!email) {
-    return { ok: false };
-  }
-
-  let stripeID: string | undefined;
-  try {
-    const existing = await db
-      .select({ id: usersTable.id })
-      .from(usersTable)
-      .where(eq(usersTable.email, email));
-    if (existing.length > 0) {
-      return { ok: true };
-    }
-
-    // `users.name` is NOT NULL and GitHub profiles often have no display name
-    // (full_name: null), so fall back to the GitHub username, then to the
-    // email local-part, before writing the row.
-    const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
-    const displayName: string =
-      metaString(meta, 'full_name', 'user_name', 'name') || email.split('@')[0];
-
-    const defaults = deriveProfileDefaults(user);
-    const username = await pickAvailableUsername(defaults.username ?? null);
-
-    stripeID = await createStripeCustomer(user.id, email, displayName);
-    await db.insert(usersTable).values({
-      id: user.id,
-      name: displayName,
-      email,
-      stripe_id: stripeID,
-      plan: 'none',
-      // Nullable columns: omitted/undefined stays NULL and the user fills the
-      // gap during onboarding.
-      username: username ?? undefined,
-      first_name: defaults.firstName,
-      last_name: defaults.lastName,
-    });
-    return { ok: true };
-  } catch (err) {
-    // A Stripe/DB failure here would otherwise surface as a raw 500; log it
-    // (including any created stripe_id, so a retry doesn't silently mint a
-    // duplicate Stripe customer with no trace) and let the caller redirect to
-    // the designed error page instead.
-    console.error(
-      'OAuth user bootstrap failed:',
-      stripeID ? `stripe customer created (id=${stripeID})` : 'stripe customer not created',
-      '|',
-      err instanceof Error ? err.message : 'Unknown error'
-    );
-    return { ok: false };
-  }
+  return { ok: Boolean(user.email) };
 }

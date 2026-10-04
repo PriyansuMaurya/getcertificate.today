@@ -20,8 +20,9 @@ export async function GET(request: Request) {
         data: { user },
       } = await supabase.auth.getUser();
 
-      // Create the local user row (Stripe customer + DB record) when this is
-      // the user's first sign-in through any OAuth provider.
+      // Validate the OAuth session (an email address is required to finish
+      // onboarding later). The local user row is created only when every
+      // profile detail has been supplied - see completeOnboarding.
       const bootstrapped = await bootstrapOAuthUser(user!);
       if (!bootstrapped.ok) {
         return NextResponse.redirect(`${origin}/auth/auth-code-error`);

@@ -43,6 +43,12 @@ export async function startCheckout(planKey: string) {
     .select({ stripe_id: usersTable.stripe_id })
     .from(usersTable)
     .where(eq(usersTable.id, user.id));
+  // The users row (created only by completeOnboarding) is what a subscription
+  // is recorded against - without it the account has not finished onboarding,
+  // so send the user there instead of starting an unattributable checkout.
+  if (rows.length === 0) {
+    redirect('/onboarding');
+  }
   const stripeId = rows[0]?.stripe_id;
 
   let sessionUrl: string | null = null;

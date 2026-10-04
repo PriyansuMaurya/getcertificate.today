@@ -31,11 +31,19 @@ export default async function Subscribe({
     redirect('/login');
   }
 
-  // Existing subscribers should manage their plan, not buy a second one.
+  // No users row yet means onboarding was never finished (the row - and its
+  // Stripe customer - is only created by completeOnboarding once every detail
+  // is supplied), so finish that first instead of selling a plan for an
+  // account that cannot be attached to it.
   const rows = await db
     .select({ plan: usersTable.plan })
     .from(usersTable)
     .where(eq(usersTable.id, user.id));
+  if (rows.length === 0) {
+    redirect('/onboarding');
+  }
+
+  // Existing subscribers should manage their plan, not buy a second one.
   const subscribed = Boolean(rows[0]?.plan && rows[0].plan !== 'none');
   let billingUrl: string | null = null;
   if (subscribed) {

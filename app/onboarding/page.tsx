@@ -6,6 +6,7 @@ import { hasCompletedOnboarding } from '@/app/auth/onboarding-status';
 import { db } from '@/utils/db/db';
 import { usersTable } from '@/utils/db/schema';
 import { eq } from 'drizzle-orm';
+import { deriveProfileDefaults, pickAvailableUsername } from '@/app/auth/user-bootstrap';
 import OnboardingForm from '@/components/OnboardingForm';
 
 export const metadata = {
@@ -40,6 +41,21 @@ export default async function Onboarding() {
 
   const profile = existing[0];
 
+  // No row yet (the user record is only created when onboarding completes):
+  // derive pre-fill defaults from the auth record's provider metadata instead
+  // - first/last name from Google/GitHub (or the sign-up name), and a unique
+  // username candidate so the form still arrives mostly filled in.
+  let defaultUsername = profile?.username ?? undefined;
+  let defaultFirstName = profile?.first_name ?? undefined;
+  let defaultLastName = profile?.last_name ?? undefined;
+  if (!profile) {
+    const defaults = deriveProfileDefaults(user);
+    defaultFirstName = defaults.firstName;
+    defaultLastName = defaults.lastName;
+    defaultUsername = (await pickAvailableUsername(defaults.username ?? null)) ?? undefined;
+  }
+  const defaultDob = profile?.dob ? new Date(profile.dob).toISOString().split('T')[0] : undefined;
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-cream px-4 py-12 text-ink">
       <div className="w-full max-w-[480px] rounded-2xl border border-sandline bg-paper p-8 shadow-figma-hero sm:p-10">
@@ -64,12 +80,10 @@ export default async function Onboarding() {
 
         <div className="mt-8">
           <OnboardingForm
-            defaultUsername={profile?.username ?? undefined}
-            defaultFirstName={profile?.first_name ?? undefined}
-            defaultLastName={profile?.last_name ?? undefined}
-            defaultDob={
-              profile?.dob ? new Date(profile.dob).toISOString().split('T')[0] : undefined
-            }
+            defaultUsername={defaultUsername}
+            defaultFirstName={defaultFirstName}
+            defaultLastName={defaultLastName}
+            defaultDob={defaultDob}
           />
         </div>
       </div>
