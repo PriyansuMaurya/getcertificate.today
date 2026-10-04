@@ -5,6 +5,13 @@ import SubscribeCheckoutButton from '@/components/SubscribeCheckoutButton';
 // Copy + tier order taken from the supplied design screenshot; colors follow
 // the site Figma tokens (ink highlight instead of the screenshot's purple,
 // per product decision).
+//
+// Feature bullets list ONLY capabilities that exist in this codebase
+// (assessments, progress tracking, credentials, free quota) - the previous
+// screenshot copy advertised mentor sessions, webinars, and reports that
+// were never built, which is a deceptive-claims risk (FTC Act §5). Tier
+// differentiation beyond that is a product decision (see
+// docs/LEGAL_COMPLIANCE_AUDIT.md).
 export const PLANS = [
   {
     key: 'basic',
@@ -14,10 +21,10 @@ export const PLANS = [
     tagline: 'Perfect for beginners',
     sub: 'Start learning today',
     features: [
-      'Access to selected courses',
-      'Community support',
-      'Progress tracking',
-      'Limited AI insights',
+      'AI-generated assessments for any video',
+      'Progress-tracking learning player',
+      'Unlimited verified certificates with QR + share links',
+      'Cancel anytime from settings',
     ],
   },
   {
@@ -28,11 +35,10 @@ export const PLANS = [
     tagline: 'Best for consistent learners',
     sub: 'Get started - grow faster',
     features: [
-      'Access to all courses',
-      'Personalized AI learning path',
-      'Priority support',
-      'Certificates of completion',
-      'Weekly progress reports',
+      'Everything in Basic',
+      'Public credential verification pages',
+      'Unlimited verified certificates',
+      'Cancel anytime from settings',
     ],
   },
   {
@@ -43,11 +49,10 @@ export const PLANS = [
     tagline: 'For ambitious learners',
     sub: 'Unlock your full potential',
     features: [
-      'Unlimited course access',
-      '1-on-1 mentor sessions',
-      'Advanced AI performance analytics',
-      'Exclusive webinars & resources',
-      'Lifetime certificate access',
+      'Everything in Most Popular',
+      'All platform features included',
+      'Unlimited verified certificates',
+      'Cancel anytime from settings',
     ],
   },
 ] as const;

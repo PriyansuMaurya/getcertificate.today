@@ -19,6 +19,9 @@ export const usersTable = pgTable('users_table', {
   first_name: text('first_name'),
   last_name: text('last_name'),
   dob: date('dob'),
+  // When the user accepted the Terms of Service + Privacy Policy (proof of
+  // GDPR consent; set at signup or onboarding, never overwritten on re-save).
+  terms_consented_at: timestamp('terms_consented_at', { withTimezone: true }),
 });
 
 export type InsertUser = typeof usersTable.$inferInsert;

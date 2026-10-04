@@ -56,6 +56,14 @@ export default async function Onboarding() {
   }
   const defaultDob = profile?.dob ? new Date(profile.dob).toISOString().split('T')[0] : undefined;
 
+  // Password signups already agreed at /signup (timestamp stored in auth
+  // metadata); OAuth users have never seen a consent checkbox - show it here
+  // so every account records terms acceptance exactly once.
+  const metadata = user.user_metadata as Record<string, unknown> | undefined;
+  const showConsent = !(
+    typeof metadata?.terms_consented_at === 'string' && metadata.terms_consented_at
+  );
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-cream px-4 py-12 text-ink">
       <div className="w-full max-w-[480px] rounded-2xl border border-sandline bg-paper p-8 shadow-figma-hero sm:p-10">
@@ -84,6 +92,7 @@ export default async function Onboarding() {
             defaultFirstName={defaultFirstName}
             defaultLastName={defaultLastName}
             defaultDob={defaultDob}
+            showConsent={showConsent}
           />
         </div>
 

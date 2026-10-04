@@ -44,32 +44,17 @@ const FEATURES = [
   {
     icon: BrainIcon,
     title: 'AI-Powered Assessments',
-    body: "We parse the video transcripts to generate highly relevant, non-cheatable questions specific to the creator's syllabus.",
+    body: "We parse the video transcripts to generate questions specific to the creator's syllabus - answers are validated server-side, so they can't be peeked at early.",
   },
   {
     icon: ShieldIcon,
     title: 'Verifiable Public Records',
-    body: 'Every minted certificate has a cryptographic hash and quick-verify QR code. Link it directly to your LinkedIn profile.',
+    body: 'Every minted certificate has a cryptographic hash and quick-verify QR code. Share the public verification link or post it to LinkedIn.',
   },
   {
     icon: ChartColumnIcon,
     title: 'Engagement Milestones',
-    body: 'Progress tracking ensures learners actually spend the time mastering chapters before attempting the exam.',
-  },
-];
-
-const TESTIMONIALS = [
-  {
-    quote:
-      '“I learned Kubernetes entirely through YouTube, but recruiters needed proof. getcertificate.today was the bridge. Secured my Devops engineer role within weeks.”',
-    name: 'Priyanshu Maurya',
-    role: 'DevOps Engineer',
-  },
-  {
-    quote:
-      '“An absolute game-changer. I now turn all standard React crash courses into certified achievements. Our team uses it to track internal developer training.”',
-    name: 'Sarah Chen',
-    role: 'VP of Engineering',
+    body: 'Assessments unlock only after you have watched 80% of the video, so the credential reflects real time spent with the material.',
   },
 ];
 
@@ -97,6 +82,7 @@ const FOOTER_COLUMNS: { title: string; links: { label: string; href: string }[] 
     links: [
       { label: 'Privacy Policy', href: '/privacy' },
       { label: 'Terms of Service', href: '/terms' },
+      { label: 'Cookie Policy', href: '/cookie-policy' },
     ],
   },
 ];
@@ -230,7 +216,6 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
-
         {/* ============ HowItWorks (Figma: bg #FAF8F5, pad 120/80, gap 80; cards r12, pad 32, gap 24) ============ */}
         <section id="how-it-works" className="bg-paper">
           <div className="mx-auto flex max-w-[1440px] flex-col gap-10 px-4 py-16 sm:px-6 md:gap-20 md:py-[118px] xl:px-20">
@@ -258,23 +243,23 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
-
         {/* ============ Features (Figma: bg #F5F0EB, pad 120/80, gap 80) ============ */}
         <section id="features" className="bg-cream">
           <div className="mx-auto flex max-w-[1440px] flex-col gap-10 px-4 py-16 sm:px-6 md:gap-20 md:py-[119.5px] xl:px-20">
             {/* Split intro: left copy 608px + empty right frame 608x100 (Figma keeps the right side empty) */}
             <div className="flex flex-col items-start gap-10 md:gap-16 lg:flex-row lg:items-center">
               <div className="flex flex-1 flex-col gap-6">
+                {' '}
                 <p className="text-[13px] font-bold leading-[1.366] text-sand">
-                  Guaranteed Authenticity
+                  Verifiable records
                 </p>
                 <h2 className="font-fraunces text-[32px] font-bold leading-[1.233] text-ink sm:text-[40px]">
                   Engineered for credible learning.
                 </h2>
                 <p className="text-base leading-[1.366] text-clay">
                   YouTube contains the world&apos;s finest educational library. We build the
-                  infrastructure to convert those video minutes into certified value recognized by
-                  employers worldwide.
+                  infrastructure to turn those video minutes into shareable, independently
+                  verifiable credentials.
                 </p>
               </div>
               <div className="hidden flex-1 lg:block" />
@@ -294,36 +279,13 @@ export default function LandingPage() {
               ))}
             </div>
           </div>
-        </section>
-
-        {/* ============ Testimonials (Figma: bg #FAF8F5, pad 120/80, gap 64; cards r16, pad 40, gap 32) ============ */}
-        <section className="bg-paper">
-          <div className="mx-auto flex max-w-[1440px] flex-col gap-10 px-4 py-16 sm:px-6 md:gap-16 md:py-[118.5px] xl:px-20">
-            <div className="flex flex-col items-center gap-4">
-              <p className="text-[13px] font-bold leading-[1.366] text-sand">Success Stories</p>
-              <h2 className="text-center font-fraunces text-[32px] font-bold leading-[1.233] text-ink sm:text-[40px]">
-                Validated by self-taught achievers.
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 gap-6 md:gap-8 lg:grid-cols-2">
-              {TESTIMONIALS.map((t) => (
-                <div
-                  key={t.name}
-                  className="flex flex-col gap-8 rounded-2xl border border-sandline bg-cream p-10"
-                >
-                  <p className="font-fraunces text-lg leading-[1.233] text-ink">{t.quote}</p>
-                  <div className="flex flex-col gap-1">
-                    <p className="text-[15px] font-bold leading-[1.366] text-ink">{t.name}</p>
-                    <p className="text-[13px] leading-[1.366] text-clay">{t.role}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ============ Pricing (Figma: bg #F5F0EB, pad 120/80, gap 64; cards r16, pad 48, gap 32) ============ */}
-        <section id="pricing" className="bg-cream">
+        </section>{' '}
+        {/* ============ Pricing (Figma: bg #F5F0EB, pad 120/80, gap 64; cards r16, pad 48, gap 32).
+            Section flipped to bg-paper after the testimonials section was
+            removed: features (bg-cream) and pricing were adjacent cream
+            bands, so pricing takes paper and its cards take cream to keep
+            the alternation and card contrast (same recipe as How It Works). */}
+        <section id="pricing" className="bg-paper">
           <div className="mx-auto flex max-w-[1440px] flex-col gap-10 px-4 py-16 sm:px-6 md:gap-16 md:py-[119.75px] xl:px-20">
             <div className="flex flex-col items-center gap-4">
               <p className="text-[13px] font-bold leading-[1.366] text-sand">Pricing Plans</p>
@@ -341,7 +303,7 @@ export default function LandingPage() {
                     'flex w-full flex-col gap-8 rounded-2xl p-6 sm:p-8 md:p-12',
                     plan.popular
                       ? 'max-w-[420px] bg-ink shadow-figma-pro'
-                      : 'max-w-[400px] border border-sandline bg-paper',
+                      : 'max-w-[400px] border border-sandline bg-cream',
                   ].join(' ')}
                 >
                   <div className="flex flex-col gap-2">
@@ -418,7 +380,6 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
-
         {/* ============ CTA (Figma: bg #FAF8F5, border top+bottom #E3DCD5, pad 120/80, gap 32) ============ */}
         <section className="border-y border-sandline bg-paper">
           <div className="mx-auto flex max-w-[1440px] flex-col items-center gap-6 px-4 py-16 sm:px-6 md:gap-8 md:py-[119.25px] xl:px-20">

@@ -33,6 +33,16 @@ export async function completeOnboarding(currentState: { message: string }, form
     return { message: 'All fields are required.' };
   }
 
+  // GDPR proof of consent: password signups store a timestamp in auth
+  // metadata at /signup; OAuth users first see the checkbox here. Server-side
+  // check - the client checkbox alone is never trusted.
+  const metadata = user.user_metadata as Record<string, unknown> | undefined;
+  const storedConsent = metadata?.terms_consented_at;
+  const hasStoredConsent = typeof storedConsent === 'string' && storedConsent.length > 0;
+  if (!hasStoredConsent && formData.get('termsConsent') !== 'true') {
+    return { message: 'Please agree to the Terms of Service and Privacy Policy to continue.' };
+  }
+
   if (firstName.length > 100 || lastName.length > 100) {
     return { message: 'Name must be 100 characters or fewer.' };
   }
@@ -69,6 +79,11 @@ export async function completeOnboarding(currentState: { message: string }, form
   if (conflict.length > 0) {
     return { message: 'That username is already taken. Please choose another one.' };
   }
+
+  // Proof-of-consent timestamp for the users row: prefer the value captured
+  // at signup (auth metadata); otherwise the checkbox just accepted here.
+  const parsedConsent = hasStoredConsent ? new Date(storedConsent as string) : new Date();
+  const termsConsentedAt = Number.isNaN(parsedConsent.getTime()) ? new Date() : parsedConsent;
 
   let stripeID: string | undefined;
   try {
@@ -112,6 +127,7 @@ export async function completeOnboarding(currentState: { message: string }, form
         first_name: firstName,
         last_name: lastName,
         dob,
+        terms_consented_at: termsConsentedAt,
       });
     }
   } catch (err) {
@@ -291,6 +307,15 @@ export async function signup(currentState: { message: string }, formData: FormDa
   ) {
     return { message: 'Please fill in all fields.' };
   }
+  // Required Terms + Privacy consent: server-side gate (the checkbox in
+  // SignupForm is `required`, but the browser is never trusted). The
+  // timestamp lands in auth metadata so completeOnboarding can persist it to
+  // the users row without asking OAuth users to consent twice.
+  if (formData.get('termsConsent') !== 'true') {
+    return { message: 'Please agree to the Terms of Service and Privacy Policy to continue.' };
+  }
+  const termsConsentedAt = new Date().toISOString();
+
   const data = {
     email: rawEmail.trim(),
     password: rawPassword,
@@ -323,6 +348,7 @@ export async function signup(currentState: { message: string }, formData: FormDa
       data: {
         email_confirm: process.env.NODE_ENV !== 'production',
         full_name: data.name,
+        terms_consented_at: termsConsentedAt,
       },
     },
   });

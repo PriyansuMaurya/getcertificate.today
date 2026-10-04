@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from 'react';
 import { useFormStatus } from 'react-dom';
+import Link from 'next/link';
 import {
   checkUsernameAvailability,
   completeOnboarding,
@@ -48,11 +49,18 @@ export default function OnboardingForm({
   defaultFirstName,
   defaultLastName,
   defaultDob,
+  showConsent,
 }: {
   defaultUsername?: string;
   defaultFirstName?: string;
   defaultLastName?: string;
   defaultDob?: string;
+  /**
+   * False when the user already consented at /signup (password signups:
+   * timestamp lives in auth metadata). OAuth users first see the checkbox
+   * here, so the two flows each collect consent exactly once.
+   */
+  showConsent: boolean;
 }) {
   const initialState = {
     message: '',
@@ -240,6 +248,41 @@ export default function OnboardingForm({
         />
         <p className="text-xs text-clay">Must be at least 13 years old.</p>
       </div>
+
+      {showConsent && (
+        <div className="flex items-start gap-3">
+          <input
+            id="terms-consent"
+            name="termsConsent"
+            type="checkbox"
+            value="true"
+            required
+            aria-describedby="terms-consent-hint"
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-clay text-ink focus:ring-ink"
+          />
+          <label
+            htmlFor="terms-consent"
+            id="terms-consent-hint"
+            className="text-[13px] leading-[1.5] text-clay"
+          >
+            I agree to the{' '}
+            <Link
+              href="/terms"
+              className="font-semibold text-ink underline underline-offset-4 hover:text-clay"
+            >
+              Terms of Service
+            </Link>{' '}
+            and{' '}
+            <Link
+              href="/privacy"
+              className="font-semibold text-ink underline underline-offset-4 hover:text-clay"
+            >
+              Privacy Policy
+            </Link>
+            , including the collection of my personal data as described there.
+          </label>
+        </div>
+      )}
 
       <SubmitButton />
 

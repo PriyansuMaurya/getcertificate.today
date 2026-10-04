@@ -78,23 +78,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
-
+  // NOTE: intentionally no <noscript> GTM iframe here. The old fallback
+  // loaded Google Tag Manager for no-JS visitors without consent, which
+  // contradicts the cookie banner (analytics is opt-in until accepted -
+  // see components/analytics/ConsentGate.tsx and /cookie-policy). GTM now
+  // loads only through that consent gate.
   return (
     <html lang="en">
       <body className={`${manrope.variable} ${fraunces.variable} font-manrope antialiased`}>
-        {/* Google Tag Manager noscript fallback (the GoogleTagManager component
-            only injects the head script). Renders nothing when unset. */}
-        {gtmId ? (
-          <noscript>
-            <iframe
-              src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
-              height="0"
-              width="0"
-              style={{ display: 'none', visibility: 'hidden' }}
-            />
-          </noscript>
-        ) : null}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

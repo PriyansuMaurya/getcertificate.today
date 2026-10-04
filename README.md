@@ -166,4 +166,4 @@ Deploy with the [Vercel Platform](https://vercel.com/new). Set the environment v
 
 - No committed test suite or CI yet. Playwright is installed but only used by dev-only scripts (`docs/TASK.md` Phase 0).
 - `stripeSetup.ts` seeds placeholder plans that do not match the Free/Pro tiers shown on the landing page.
-- Legal pages (privacy/terms) are outstanding.
+- Legal pages live at /privacy, /terms, and /cookie-policy (see docs/LEGAL_COMPLIANCE_AUDIT.md).

@@ -38,16 +38,19 @@ const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 // Tiers must match components/SubscribePricingCards.tsx and the STRIPE_PRICE_*
 // env price IDs. Product names are exact matches so re-running the script
 // updates the existing products instead of creating duplicates.
+// Features must list only capabilities that exist in the app (see
+// docs/LEGAL_COMPLIANCE_AUDIT.md): advertising unimplemented features
+// (mentor sessions, webinars, reports) is a deceptive-claims risk.
 const plans: Plan[] = [
   {
     name: 'Basic',
     price: 900, // $9/mo, price in cents
     description: 'Perfect for beginners',
     features: [
-      'Access to selected courses',
-      'Community support',
-      'Progress tracking',
-      'Limited AI insights',
+      'AI-generated assessments for any video',
+      'Progress-tracking learning player',
+      'Unlimited verified certificates with QR + share links',
+      'Cancel anytime from settings',
     ],
   },
   {
@@ -55,11 +58,10 @@ const plans: Plan[] = [
     price: 1900, // $19/mo
     description: 'Best for consistent learners',
     features: [
-      'Access to all courses',
-      'Personalized AI learning path',
-      'Priority support',
-      'Certificates of completion',
-      'Weekly progress reports',
+      'Everything in Basic',
+      'Public credential verification pages',
+      'Unlimited verified certificates',
+      'Cancel anytime from settings',
     ],
   },
   {
@@ -67,11 +69,10 @@ const plans: Plan[] = [
     price: 3900, // $39/mo
     description: 'For ambitious learners',
     features: [
-      'Unlimited course access',
-      '1-on-1 mentor sessions',
-      'Advanced AI performance analytics',
-      'Exclusive webinars & resources',
-      'Lifetime certificate access',
+      'Everything in Most Popular',
+      'All platform features included',
+      'Unlimited verified certificates',
+      'Cancel anytime from settings',
     ],
   },
 ];

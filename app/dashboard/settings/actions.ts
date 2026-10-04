@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { and, eq, ne } from 'drizzle-orm';
 import { createClient } from '@/utils/supabase/server';
 import { db } from '@/utils/db/db';
-import { usersTable } from '@/utils/db/schema';
+import { usersTable, credentialsTable, attemptsTable, learningItemsTable } from '@/utils/db/schema';
 
 export type SettingsActionState = { message: string; success?: boolean };
 
@@ -90,4 +90,54 @@ export async function changePassword(
   }
 
   return { message: 'Password updated.', success: true };
+}
+
+/**
+ * One-click account deletion (GDPR art. 17 / CCPA deletion right).
+ * Removes the profile row plus every owned record (learning items cascade to
+ * assessments; attempts and credentials are deleted explicitly because their
+ * FKs to users have no ON DELETE rule), then ends the session. NOTE: this
+ * does NOT remove the Supabase Auth identity itself - admin deletion needs a
+ * service-role key, which this project forbids (RULES §9), so the privacy
+ * policy directs users to email us for that. Subscribers must cancel in the
+ * billing portal first so a paid subscription is never orphaned.
+ */
+export async function deleteAccount(): Promise<SettingsActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
+
+  const rows = await db.select().from(usersTable).where(eq(usersTable.id, user.id));
+  const profile = rows[0];
+  if (!profile) {
+    // No profile row yet (mid-onboarding): nothing app-side to delete.
+    await supabase.auth.signOut();
+    redirect('/');
+  }
+
+  if (profile.plan && profile.plan !== 'none') {
+    return {
+      message:
+        'You have an active subscription. Cancel it in the billing portal first, then delete your account.',
+    };
+  }
+
+  try {
+    await db.delete(credentialsTable).where(eq(credentialsTable.user_id, user.id));
+    await db.delete(attemptsTable).where(eq(attemptsTable.user_id, user.id));
+    await db.delete(learningItemsTable).where(eq(learningItemsTable.user_id, user.id));
+    await db.delete(usersTable).where(eq(usersTable.id, user.id));
+  } catch (err) {
+    console.error(
+      '[settings] account deletion failed:',
+      err instanceof Error ? err.message : 'unknown error'
+    );
+    return { message: 'Could not delete your account. Please try again or contact support.' };
+  }
+
+  await supabase.auth.signOut();
+  revalidatePath('/', 'layout');
+  redirect('/');
 }

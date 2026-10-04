@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
+import Link from 'next/link';
 import { signup } from '@/app/auth/actions';
 import { ArrowRightIcon } from '@/components/icons';
 
@@ -74,6 +75,39 @@ export default function SignupForm() {
           required
           className="h-[50px] rounded-lg border border-sandline bg-cream px-3.5 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
         />
+      </div>
+
+      <div className="flex items-start gap-3 pt-1">
+        <input
+          id="terms-consent"
+          name="termsConsent"
+          type="checkbox"
+          value="true"
+          required
+          aria-describedby="terms-consent-hint"
+          className="mt-0.5 h-4 w-4 shrink-0 rounded border-clay text-ink focus:ring-ink"
+        />
+        <label
+          htmlFor="terms-consent"
+          id="terms-consent-hint"
+          className="text-[13px] leading-[1.5] text-clay"
+        >
+          I agree to the{' '}
+          <Link
+            href="/terms"
+            className="font-semibold text-ink underline underline-offset-4 hover:text-clay"
+          >
+            Terms of Service
+          </Link>{' '}
+          and{' '}
+          <Link
+            href="/privacy"
+            className="font-semibold text-ink underline underline-offset-4 hover:text-clay"
+          >
+            Privacy Policy
+          </Link>
+          , including the collection of my personal data as described there.
+        </label>
       </div>
 
       <SubmitButton />
