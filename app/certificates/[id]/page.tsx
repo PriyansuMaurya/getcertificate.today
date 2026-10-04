@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { eq } from 'drizzle-orm';
@@ -25,6 +26,9 @@ function clamp(value: string, max: number): string {
 // LinkedIn, so the OG title/description must describe THIS certificate, not
 // inherit the homepage card. The page body re-queries below (force-dynamic,
 // so no stale-cache risk; the extra read is one indexed primary-key lookup).
+// og:image itself is file-based: ./opengraph-image.tsx renders the actual
+// certificate (file convention takes precedence over openGraph.images below,
+// which remains only as a Twitter-card fallback).
 export async function generateMetadata({
   params,
 }: {
@@ -52,6 +56,21 @@ export async function generateMetadata({
       : `${cred.holder_name} scored ${cred.score}% on the ${cred.item_title} assessment. Verifiable credential issued by getcertificate.today.`,
     160
   );
+  // LinkedIn strips pre-filled share text, so the link preview card (og:title /
+  // og:description) is the only place the first-person achievement copy shows.
+  // Only a fully valid credential may claim completion - revoked or hash-invalid
+  // cards fall back to the neutral title/description (same gate the share button
+  // uses via `validity` in the page body).
+  const shareable = cred.status !== 'revoked' && verifyCredentialHash(cred);
+  const ogTitle = shareable
+    ? clamp(`I have successfully completed ${cred.item_title} | getcertificate.today`, 70)
+    : title;
+  const ogDescription = shareable
+    ? clamp(
+        `I scored ${cred.score}% on the ${cred.item_title} assessment and earned a verifiable certificate from getcertificate.today.`,
+        160
+      )
+    : description;
   return {
     title,
     description,
@@ -59,8 +78,8 @@ export async function generateMetadata({
     openGraph: {
       type: 'article',
       siteName: 'getcertificate.today',
-      title,
-      description,
+      title: ogTitle,
+      description: ogDescription,
       url: `/certificates/${id}`,
       images: [
         {
@@ -104,6 +123,12 @@ export default async function CertificatePage({ params }: { params: Promise<{ id
       : 'valid';
 
   const verifyUrl = `${PUBLIC_URL}/verify/${cred.id}`;
+  const certificateUrl = `${PUBLIC_URL}/certificates/${cred.id}`;
+  // Suggested LinkedIn post text - copied to the clipboard by the share button
+  // (LinkedIn no longer accepts pre-filled commentary in share URLs). The URL is
+  // deliberately omitted: LinkedIn's composer already injects it alongside the
+  // preview card, so including it would show the link twice.
+  const linkedinShareText = `I have successfully completed "${cred.item_title}" with a score of ${cred.score}% on getcertificate.today.`;
   const qrSvg = await buildCertificateQrSvg(verifyUrl);
   const issued = cred.passed_at.toLocaleDateString('en-US', {
     year: 'numeric',
@@ -140,8 +165,16 @@ export default async function CertificatePage({ params }: { params: Promise<{ id
         className="sticky top-0 z-40 h-20 border-b border-sandline bg-cream/95 backdrop-blur print:hidden"
       >
         <div className="mx-auto flex h-full max-w-[1440px] items-center justify-between px-4 sm:px-6 xl:px-20">
-          <Link href="/" className="text-sm font-bold text-ink">
-            getcertificate.today
+          <Link href="/" className="flex shrink-0 items-center">
+            <Image
+              src="/figma/logo-no-tagline.svg"
+              alt="getcertificate.today logo"
+              width={1339}
+              height={767}
+              priority
+              unoptimized
+              className="h-8 w-auto sm:h-10"
+            />
           </Link>
           <div className="flex items-center gap-4">
             <Link
@@ -174,6 +207,8 @@ export default async function CertificatePage({ params }: { params: Promise<{ id
             content={certificateContent}
             validityLabel={validityBanner.text}
             validityVariant={validity}
+            shareUrl={validity === 'valid' ? certificateUrl : undefined}
+            shareText={validity === 'valid' ? linkedinShareText : undefined}
           />
 
           <h1 className="sr-only">

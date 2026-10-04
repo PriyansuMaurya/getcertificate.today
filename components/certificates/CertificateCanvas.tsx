@@ -1,8 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Download, FileImage, Loader2, Printer } from 'lucide-react';
+import { ChevronDown, Download, FileImage, Loader2 } from 'lucide-react';
 import { certificateFontClass } from '@/lib/certificate-fonts';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import ShareOnLinkedInButton from './ShareOnLinkedInButton';
 import {
   CERT_H,
   CERT_W,
@@ -102,11 +109,16 @@ export default function CertificateCanvas({
   content,
   validityLabel,
   validityVariant,
+  shareUrl,
+  shareText,
 }: {
   content: CertificateContent;
   /** e.g. "Valid credential" - stamped as a watermark on PDF exports only. */
   validityLabel: string;
   validityVariant: 'valid' | 'revoked' | 'invalid';
+  /** Absolute certificate URL + suggested post text for the LinkedIn button. */
+  shareUrl?: string;
+  shareText?: string;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<HTMLCanvasElement>(null);
@@ -209,7 +221,6 @@ export default function CertificateCanvas({
 
   const btn =
     'inline-flex h-11 items-center justify-center gap-2 rounded-lg px-5 text-sm font-bold transition-colors disabled:opacity-50';
-  const btnPrimary = `${btn} bg-ink text-cream hover:bg-ink/90`;
   const btnAlt = `${btn} border border-ink text-ink hover:bg-ink hover:text-cream`;
 
   return (
@@ -226,31 +237,55 @@ export default function CertificateCanvas({
       />
 
       <div data-print-hide className="mt-5 flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={() => window.print()}
-          disabled={!ready}
-          className={btnPrimary}
-        >
-          <Printer aria-hidden="true" className="h-4 w-4" />
-          Print
-        </button>
-        <button type="button" onClick={onPdf} disabled={!ready || busy !== null} className={btnAlt}>
-          {busy === 'pdf' ? (
-            <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-          ) : (
-            <Download aria-hidden="true" className="h-4 w-4" />
-          )}
-          Download PDF
-        </button>
-        <button type="button" onClick={onPng} disabled={!ready || busy !== null} className={btnAlt}>
-          {busy === 'png' ? (
-            <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-          ) : (
-            <FileImage aria-hidden="true" className="h-4 w-4" />
-          )}
-          Download PNG
-        </button>
+        {/* Split control: main area downloads PDF (default), caret opens the
+            format dropdown (PDF first, PNG second). */}
+        <div className="inline-flex">
+          <button
+            type="button"
+            onClick={onPdf}
+            disabled={!ready || busy !== null}
+            className={`${btnAlt} rounded-r-none`}
+          >
+            {busy !== null ? (
+              <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download aria-hidden="true" className="h-4 w-4" />
+            )}
+            Download PDF
+          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label="Choose download format"
+                disabled={!ready || busy !== null}
+                className={`${btnAlt} -ml-px w-9 rounded-l-none px-0 disabled:opacity-50`}
+              >
+                <ChevronDown aria-hidden="true" className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="min-w-[11rem] rounded-lg border-sandline bg-paper p-1 text-ink shadow-figma-pro"
+            >
+              <DropdownMenuItem
+                onSelect={() => void onPdf()}
+                className="gap-2 rounded-md text-sm font-semibold text-ink focus:bg-linen focus:text-ink"
+              >
+                <Download aria-hidden="true" className="h-4 w-4" />
+                Download PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => void onPng()}
+                className="gap-2 rounded-md text-sm font-semibold text-ink focus:bg-linen focus:text-ink"
+              >
+                <FileImage aria-hidden="true" className="h-4 w-4" />
+                Download PNG
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        {shareUrl && shareText && <ShareOnLinkedInButton url={shareUrl} text={shareText} />}
         <span role="status" aria-live="polite" className="min-h-5 text-sm text-clay">
           {status}
         </span>
