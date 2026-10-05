@@ -1,6 +1,7 @@
 import { count, desc, eq, ilike, or, sql, inArray, type SQL } from 'drizzle-orm';
 import { db } from '@/utils/db/db';
 import { attemptsTable, credentialsTable, learningItemsTable, usersTable } from '@/utils/db/schema';
+import { ilikeContains } from '@/utils/db/like';
 
 // Deliberately NOT a 'use server' file: every export of a server-actions
 // module becomes a publicly callable endpoint (same rule as
@@ -23,13 +24,39 @@ export type AdminUserRow = {
   credentialsEarned: number;
 };
 
+/** Server-side sort order for the users list (values used in the sort select). */
+export type AdminUserSort = 'joined_desc' | 'joined_asc' | 'name_asc';
+
+export const USER_SORTS: readonly AdminUserSort[] = ['joined_desc', 'joined_asc', 'name_asc'];
+
+/** Coerces an untrusted `?sort=` value to a supported order (defaults newest). */
+export function parseUserSort(value: string | undefined): AdminUserSort {
+  return USER_SORTS.includes(value as AdminUserSort) ? (value as AdminUserSort) : 'joined_desc';
+}
+
 export type AdminUserList = {
   rows: AdminUserRow[];
   total: number;
   page: number;
   pageCount: number;
   query: string;
+  sort: AdminUserSort;
 };
+
+/** ORDER BY for the users list; `name_asc` mirrors the displayed name. */
+function userOrderBy(sort: AdminUserSort) {
+  if (sort === 'joined_asc') {
+    // Secondary id key keeps pagination stable when values tie.
+    return [sql`${usersTable.terms_consented_at} asc nulls last`, usersTable.id];
+  }
+  if (sort === 'name_asc') {
+    return [
+      sql`lower(coalesce(nullif(trim(concat_ws(' ', ${usersTable.first_name}, ${usersTable.last_name})), ''), ${usersTable.username}, ${usersTable.name}, ${usersTable.email})) asc`,
+      usersTable.id,
+    ];
+  }
+  return [sql`${usersTable.terms_consented_at} desc nulls last`, usersTable.id];
+}
 
 /**
  * Searchable, paginated user list for /admin/users. Aggregates (videos,
@@ -40,10 +67,14 @@ export type AdminUserList = {
  * Search matches name / username / email case-insensitively. Any query
  * failure rejects so the route's error boundary can offer a retry.
  */
-export async function getAdminUsers(query: string, page: number): Promise<AdminUserList> {
+export async function getAdminUsers(
+  query: string,
+  page: number,
+  sort: AdminUserSort
+): Promise<AdminUserList> {
   const q = query.trim();
   // ILIKE wildcards in user input would otherwise act as globs; escape them.
-  const pattern = `%${q.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
+  const pattern = ilikeContains(q);
 
   const searchFilter = q
     ? or(
@@ -76,7 +107,7 @@ export async function getAdminUsers(query: string, page: number): Promise<AdminU
     .from(usersTable)
     .where(where)
     // drizzle-orm 0.45 has no descNullsLast export, so the SQL is inline.
-    .orderBy(sql`${usersTable.terms_consented_at} desc nulls last`)
+    .orderBy(...userOrderBy(sort))
     .limit(USERS_PAGE_SIZE)
     .offset((safePage - 1) * USERS_PAGE_SIZE);
 
@@ -98,7 +129,7 @@ export async function getAdminUsers(query: string, page: number): Promise<AdminU
     };
   });
 
-  return { rows, total, page: safePage, pageCount, query: q };
+  return { rows, total, page: safePage, pageCount, query: q, sort };
 }
 
 async function getTotal(where: SQL<unknown> | undefined): Promise<number> {

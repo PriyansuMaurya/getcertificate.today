@@ -15,16 +15,15 @@ import {
 } from '@/utils/db/schema';
 import {
   ATTEMPT_COOLDOWN_DAYS,
-  MAX_ATTEMPTS_PER_WINDOW,
-  PASS_SCORE,
   UNLOCK_PERCENT,
-  FREE_CREDENTIALS_PER_MONTH,
   attemptWindowCutoff,
   computeCredentialHash,
   hasFreeQuotaRemaining,
   monthWindowStart,
   newCredentialId,
 } from '@/utils/credentials';
+import { getSettings } from '@/utils/settings';
+import { SUSPENDED_MESSAGE, isAccountSuspended } from '@/utils/auth';
 import {
   AIUnavailableError,
   AIRateLimitError,
@@ -53,8 +52,8 @@ class AttemptLimitError extends Error {
 }
 
 /** Shared attempt-limit copy so the fast-path and in-lock races read the same. */
-function attemptLimitMessage(retryAfterUtc?: string) {
-  const base = `Attempt limit reached (${MAX_ATTEMPTS_PER_WINDOW} per ${ATTEMPT_COOLDOWN_DAYS} days)`;
+function attemptLimitMessage(maxAttemptsPerWindow: number, retryAfterUtc?: string) {
+  const base = `Attempt limit reached (${maxAttemptsPerWindow} per ${ATTEMPT_COOLDOWN_DAYS} days)`;
   return retryAfterUtc
     ? `${base}. You can try again after ${retryAfterUtc}.`
     : `${base}. Please try again later.`;
@@ -123,6 +122,9 @@ export async function startAssessment(
 ): Promise<AssessmentActionState> {
   const user = await requireUser();
   if (!user) redirect('/login');
+  // Enforce an admin suspension immediately: the edge proxy cannot reach
+  // Postgres, so this action is a server-side gate (see utils/auth.ts).
+  if (await isAccountSuspended(user.id)) return { message: SUSPENDED_MESSAGE };
 
   const itemId = formData.get('itemId');
   if (typeof itemId !== 'string' || !itemId) return { message: 'Missing course.' };
@@ -249,6 +251,7 @@ export async function checkAnswer(
 ): Promise<AnswerFeedback | { message: string }> {
   const user = await requireUser();
   if (!user) return { message: 'Your session has expired. Please sign in again.' };
+  if (await isAccountSuspended(user.id)) return { message: SUSPENDED_MESSAGE };
 
   const item = await getOwnedItem(itemId, user.id);
   if (!item) return { message: 'That course was not found.' };
@@ -279,12 +282,15 @@ export async function checkAnswer(
   }
 
   // Same attempt-window gate as submitAssessment - no feedback after the
-  // weekly attempt limit is exhausted.
+  // weekly attempt limit is exhausted. The limit is the live admin setting.
+  const { maxAttemptsPerWindow } = await getSettings();
   const windowAttempts = await attemptsInWindow(assessment.id, user.id);
-  if (windowAttempts.length >= MAX_ATTEMPTS_PER_WINDOW) {
+  if (windowAttempts.length >= maxAttemptsPerWindow) {
     const latest = windowAttempts[windowAttempts.length - 1].created_at;
     const available = new Date(latest.getTime() + ATTEMPT_COOLDOWN_DAYS * 24 * 60 * 60 * 1000);
-    return { message: attemptLimitMessage(available.toUTCString().slice(0, 16)) };
+    return {
+      message: attemptLimitMessage(maxAttemptsPerWindow, available.toUTCString().slice(0, 16)),
+    };
   }
 
   const correct = choice === question.correct;
@@ -309,6 +315,9 @@ export async function submitAssessment(
 ): Promise<AssessmentActionState> {
   const user = await requireUser();
   if (!user) redirect('/login');
+  // Enforce an admin suspension immediately: the edge proxy cannot reach
+  // Postgres, so this action is a server-side gate (see utils/auth.ts).
+  if (await isAccountSuspended(user.id)) return { message: SUSPENDED_MESSAGE };
 
   const itemId = formData.get('itemId');
   if (typeof itemId !== 'string' || !itemId) return { message: 'Missing course.' };
@@ -328,11 +337,17 @@ export async function submitAssessment(
   const assessment = assessmentRows[0];
   if (!assessment) return { message: 'No assessment exists for this course yet.' };
 
+  // Live admin settings: pass mark, attempt limit and free quota all come from
+  // app_settings so a change at /admin/settings takes effect on the next submit.
+  const { passScore, maxAttemptsPerWindow, freeCredentialsPerMonth } = await getSettings();
+
   const windowAttempts = await attemptsInWindow(assessment.id, user.id);
-  if (windowAttempts.length >= MAX_ATTEMPTS_PER_WINDOW) {
+  if (windowAttempts.length >= maxAttemptsPerWindow) {
     const latest = windowAttempts[windowAttempts.length - 1].created_at;
     const available = new Date(latest.getTime() + ATTEMPT_COOLDOWN_DAYS * 24 * 60 * 60 * 1000);
-    return { message: attemptLimitMessage(available.toUTCString().slice(0, 16)) };
+    return {
+      message: attemptLimitMessage(maxAttemptsPerWindow, available.toUTCString().slice(0, 16)),
+    };
   }
 
   // Server re-validates every answer even though the client validated first.
@@ -354,7 +369,7 @@ export async function submitAssessment(
     0
   );
   const score = Math.round((correct / assessment.questions.length) * 100);
-  const passed = score >= PASS_SCORE;
+  const passed = score >= passScore;
 
   const attemptId = randomUUID();
 
@@ -377,7 +392,7 @@ export async function submitAssessment(
             gte(attemptsTable.created_at, attemptWindowCutoff())
           )
         );
-      if (lockedWindow.length >= MAX_ATTEMPTS_PER_WINDOW) {
+      if (lockedWindow.length >= maxAttemptsPerWindow) {
         const latest = lockedWindow[lockedWindow.length - 1].created_at;
         const available = new Date(latest.getTime() + ATTEMPT_COOLDOWN_DAYS * 24 * 60 * 60 * 1000);
         throw new AttemptLimitError(available.toUTCString().slice(0, 16));
@@ -418,7 +433,14 @@ export async function submitAssessment(
         .where(
           and(eq(credentialsTable.user_id, user.id), gte(credentialsTable.passed_at, monthStart))
         );
-      if (!hasFreeQuotaRemaining(credsThisMonth.length, profile?.plan ?? 'none')) return;
+      if (
+        !hasFreeQuotaRemaining(
+          credsThisMonth.length,
+          profile?.plan ?? 'none',
+          freeCredentialsPerMonth
+        )
+      )
+        return;
 
       const holderName =
         [profile?.first_name, profile?.last_name].filter(Boolean).join(' ') ||
@@ -455,7 +477,7 @@ export async function submitAssessment(
     });
   } catch (err) {
     if (err instanceof AttemptLimitError) {
-      return { message: attemptLimitMessage(err.retryAfterUtc) };
+      return { message: attemptLimitMessage(maxAttemptsPerWindow, err.retryAfterUtc) };
     }
     console.error('[assessment] submit failed:', err instanceof Error ? err.message : 'unknown');
     return { message: 'Could not save your attempt. Please try again.' };
@@ -476,6 +498,9 @@ export async function mintFromAttempt(
 ): Promise<AssessmentActionState> {
   const user = await requireUser();
   if (!user) redirect('/login');
+  // Enforce an admin suspension immediately: the edge proxy cannot reach
+  // Postgres, so this action is a server-side gate (see utils/auth.ts).
+  if (await isAccountSuspended(user.id)) return { message: SUSPENDED_MESSAGE };
 
   const attemptId = formData.get('attemptId');
   if (typeof attemptId !== 'string' || !attemptId) return { message: 'Missing attempt.' };
@@ -490,6 +515,9 @@ export async function mintFromAttempt(
 
   const item = await getOwnedItem(attempt.learning_item_id, user.id);
   if (!item) return { message: 'That course was not found.' };
+
+  // Live admin setting: the free monthly credential quota.
+  const { freeCredentialsPerMonth } = await getSettings();
 
   let mintedId: string | null = null;
   try {
@@ -522,7 +550,14 @@ export async function mintFromAttempt(
             gte(credentialsTable.passed_at, monthWindowStart())
           )
         );
-      if (!hasFreeQuotaRemaining(credsThisMonth.length, profile?.plan ?? 'none')) return;
+      if (
+        !hasFreeQuotaRemaining(
+          credsThisMonth.length,
+          profile?.plan ?? 'none',
+          freeCredentialsPerMonth
+        )
+      )
+        return;
 
       const holderName =
         [profile?.first_name, profile?.last_name].filter(Boolean).join(' ') ||
@@ -571,6 +606,6 @@ export async function mintFromAttempt(
   }
 
   return {
-    message: `Free plan includes ${FREE_CREDENTIALS_PER_MONTH} credential per month. Upgrade to Professional to mint this one now.`,
+    message: `Free plan includes ${freeCredentialsPerMonth} credential per month. Upgrade to Professional to mint this one now.`,
   };
 }

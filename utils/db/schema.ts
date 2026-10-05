@@ -162,3 +162,27 @@ export const credentialsTable = pgTable(
 
 export type SelectCredential = typeof credentialsTable.$inferSelect;
 export type InsertCredential = typeof credentialsTable.$inferInsert;
+
+// Runtime-tunable platform settings, edited at /admin/settings. Exactly one row
+// (id = 'global'); always read through utils/settings.ts, which falls back to
+// the historical defaults when the row is missing. No CHECK constraints here -
+// like plan/role/status, values are validated server-side before every write.
+export const appSettingsTable = pgTable('app_settings', {
+  id: text('id').primaryKey().default('global'),
+  // Minimum score (0-100) an attempt must reach to pass and mint a credential.
+  pass_score: integer('pass_score').notNull().default(70),
+  // How many questions the generator creates per assessment.
+  assessment_question_count: integer('assessment_question_count').notNull().default(2),
+  // Attempts allowed per learner per rolling cooldown window.
+  max_attempts_per_window: integer('max_attempts_per_window').notNull().default(3),
+  // Model id sent to the OpenAI-compatible endpoint in utils/ai.ts.
+  ai_model: text('ai_model').notNull().default('gpt-4o-mini'),
+  // 'transcriptapi' (TranscriptAPI, DB-cached) | 'youtube' (public captions).
+  transcript_provider: text('transcript_provider').notNull().default('transcriptapi'),
+  // Credentials a free (non-subscriber) user may mint per calendar month.
+  free_credentials_per_month: integer('free_credentials_per_month').notNull().default(1),
+  updated_at: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type SelectAppSettings = typeof appSettingsTable.$inferSelect;
+export type InsertAppSettings = typeof appSettingsTable.$inferInsert;

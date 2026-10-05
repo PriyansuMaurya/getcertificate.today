@@ -1,15 +1,11 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { and, eq, gte } from 'drizzle-orm';
-import { createClient } from '@/utils/supabase/server';
 import { db } from '@/utils/db/db';
 import { attemptsTable, credentialsTable, learningItemsTable, usersTable } from '@/utils/db/schema';
-import {
-  FREE_CREDENTIALS_PER_MONTH,
-  PASS_SCORE,
-  hasFreeQuotaRemaining,
-  monthWindowStart,
-} from '@/utils/credentials';
+import { hasFreeQuotaRemaining, monthWindowStart } from '@/utils/credentials';
+import { getSettings } from '@/utils/settings';
+import { requireActiveUser } from '@/utils/auth';
 import MintCredentialButton from '@/components/learn/MintCredentialButton';
 import { ArrowRight, BadgeCheck, RotateCcw } from 'lucide-react';
 
@@ -28,11 +24,8 @@ export default async function AssessmentResultPage({
   const { id } = await params;
   const { attempt: attemptId } = await searchParams;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
+  // Sign-in + admin-suspension gate.
+  const user = await requireActiveUser();
   if (!attemptId) redirect(`/learn/${id}`);
 
   const attemptRows = await db
@@ -54,6 +47,9 @@ export default async function AssessmentResultPage({
   const credential = credentialRows[0];
   const profile = profileRows[0];
 
+  // Live admin settings: pass mark for the score card and the free quota limit.
+  const { passScore, freeCredentialsPerMonth } = await getSettings();
+
   // Quota state for passing attempts with no credential yet.
   let quotaBlocked = false;
   if (attempt.passed && !credential) {
@@ -66,7 +62,11 @@ export default async function AssessmentResultPage({
           gte(credentialsTable.passed_at, monthWindowStart())
         )
       );
-    quotaBlocked = !hasFreeQuotaRemaining(credsThisMonth.length, profile?.plan ?? 'none');
+    quotaBlocked = !hasFreeQuotaRemaining(
+      credsThisMonth.length,
+      profile?.plan ?? 'none',
+      freeCredentialsPerMonth
+    );
   }
 
   const passed = attempt.passed;
@@ -99,7 +99,7 @@ export default async function AssessmentResultPage({
             </div>
             <div className="h-14 w-px bg-sandline" aria-hidden="true" />
             <div>
-              <p className="font-fraunces text-5xl font-black text-ink">{PASS_SCORE}%</p>
+              <p className="font-fraunces text-5xl font-black text-ink">{passScore}%</p>
               <p className="mt-1 text-xs text-clay">Pass mark</p>
             </div>
           </div>
@@ -130,7 +130,7 @@ export default async function AssessmentResultPage({
               <div className="rounded-xl border border-sandline bg-cream p-5 text-left">
                 <p className="text-sm font-semibold text-ink">Passed - credential pending quota</p>
                 <p className="mt-1.5 text-sm text-clay">
-                  Your free plan includes {FREE_CREDENTIALS_PER_MONTH} credential per month and this
+                  Your free plan includes {freeCredentialsPerMonth} credential per month and this
                   month&apos;s is already issued. Upgrade to Professional to mint this credential
                   now, or wait until next month.
                 </p>

@@ -5,9 +5,8 @@
 // SERVER ONLY - contains no secrets itself but must never enter a client graph.
 import OpenAI from 'openai';
 import type { AssessmentQuestion } from '@/utils/db/schema';
-import { ASSESSMENT_QUESTION_COUNT } from '@/utils/assessment-config';
+import { getSettings } from '@/utils/settings';
 
-const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 // Keep the whole generation bounded so the UI can never hang indefinitely:
 // worst case ≈ 2 attempts × 30s + 2s backoff ≈ 62s (timeouts and 429/5xx both
 // consume the one retry; auth/config errors still fail fast).
@@ -56,7 +55,12 @@ function getClient(): OpenAI {
   });
 }
 
-function buildPrompt(title: string, author: string | null, transcript: string) {
+function buildPrompt(
+  title: string,
+  author: string | null,
+  transcript: string,
+  questionCount: number
+) {
   return `You are an assessor creating a multiple-choice quiz about one YouTube video.
 
 Video title: ${title}
@@ -67,7 +71,7 @@ Below is the transcript of the video.
 ${transcript}
 ---
 
-Create exactly ${ASSESSMENT_QUESTION_COUNT} multiple-choice questions grounded STRICTLY in the transcript above.
+Create exactly ${questionCount} multiple-choice questions grounded STRICTLY in the transcript above.
 Rules:
 - Each question has exactly one correct answer and exactly 3 distractors (4 choices total).
 - Questions must reference only content present in the transcript above.
@@ -91,7 +95,7 @@ function cleanText(raw: string, maxLength: number): string {
     .slice(0, maxLength);
 }
 
-function parseQuestions(raw: string): AssessmentQuestion[] {
+function parseQuestions(raw: string, questionCount: number): AssessmentQuestion[] {
   // Strip code fences if the model wrapped the JSON.
   const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
   const parsed: unknown = JSON.parse(cleaned);
@@ -141,10 +145,10 @@ function parseQuestions(raw: string): AssessmentQuestion[] {
       explanation: cleanText(explanation, 600),
       choice_explanations: choice_explanations.map((c) => cleanText(c, 600)),
     });
-    if (questions.length === ASSESSMENT_QUESTION_COUNT) break;
+    if (questions.length === questionCount) break;
   }
 
-  if (questions.length < ASSESSMENT_QUESTION_COUNT) {
+  if (questions.length < questionCount) {
     throw new Error(`AI returned only ${questions.length} valid questions`);
   }
   return questions;
@@ -168,6 +172,10 @@ export async function generateAssessment(
   transcript: string
 ): Promise<GenerationResult> {
   const client = getClient();
+  // Live admin settings: model id + question count come from app_settings so a
+  // change at /admin/settings applies to every new generation (this is the one
+  // generation pipeline - /admin/assessments regenerates through it too).
+  const { aiModel, assessmentQuestionCount } = await getSettings();
 
   let lastError: unknown = null;
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
@@ -175,7 +183,7 @@ export async function generateAssessment(
     let response: OpenAI.Chat.Completions.ChatCompletion;
     try {
       response = await client.chat.completions.create({
-        model: MODEL,
+        model: aiModel,
         temperature: 0.4,
         response_format: { type: 'json_object' },
         messages: [
@@ -184,7 +192,10 @@ export async function generateAssessment(
             content:
               'You generate strictly-formatted multiple-choice assessments. Always respond with valid JSON matching the requested schema.',
           },
-          { role: 'user', content: buildPrompt(title, author, transcript) },
+          {
+            role: 'user',
+            content: buildPrompt(title, author, transcript, assessmentQuestionCount),
+          },
         ],
       });
     } catch (err) {
@@ -211,7 +222,7 @@ export async function generateAssessment(
     }
     try {
       return {
-        questions: parseQuestions(raw),
+        questions: parseQuestions(raw, assessmentQuestionCount),
         source: 'transcriptapi',
       };
     } catch (err) {

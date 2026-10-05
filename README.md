@@ -8,7 +8,7 @@ A single [Next.js 16](https://nextjs.org/) application (App Router) that turns Y
 
 1. **Add a video.** Paste a YouTube URL (`watch`, `youtu.be`, or `shorts`); the system validates it and creates a learning item.
 2. **Learn.** Watch in the embedded player; progress is persisted server-side (client-reported, clamped and ownership-checked) and the assessment unlocks at **≥ 80% completion**.
-3. **Assess.** "Generate & start assessment" fetches the transcript through [TranscriptAPI](https://transcriptapi.com/docs/api/) (server-side, cached per video ID in the `transcripts` table), with best-effort YouTube captions (`utils/youtube.ts`) as the fallback source, then sends it to an OpenAI-compatible LLM, and generates multiple-choice questions strictly from that content. Answers are graded **server-side**; each question shows instant feedback with the selected answer, the correct answer, and why each is right/wrong. Pass score is 70%, max 3 attempts per 7-day window.
+3. **Assess.** "Generate & start assessment" fetches the transcript through [TranscriptAPI](https://transcriptapi.com/docs/api/) (server-side, cached per video ID in the `transcripts` table), with best-effort YouTube captions (`utils/youtube.ts`) as the fallback source, then sends it to an OpenAI-compatible LLM, and generates multiple-choice questions strictly from that content. Answers are graded **server-side**; each question shows instant feedback with the selected answer, the correct answer, and why each is right/wrong. The question count, pass score (70% default), and attempt limit (3 per 7-day window default) are administered at `/admin/settings`.
 4. **Certify.** Passing mints a credential transactionally: score, unique credential ID, `sha256-v1:` hash over immutable fields, free-tier quota enforced (1 credential/month on Free, unlimited on Pro).
 5. **Verify.** The certificate page renders an SVG QR code; the public `/verify/<id>` page rechecks the hash and shows valid / revoked / invalid states for anyone, without logging in.
 
@@ -18,7 +18,7 @@ A single [Next.js 16](https://nextjs.org/) application (App Router) that turns Y
 - Google + GitHub OAuth (rendered only when provider env vars are set)
 - Mandatory onboarding gate (username, name, DOB with 13+ age check)
 - Protected `/dashboard` with stats, add-video flow, quick search (Cmd/Ctrl+K), settings
-- Protected `/admin` console (gated by `users_table.role = 'admin'`, non-admins get 404): overview dashboard with real metrics (users, 30-day actives, learning items, attempts, pass rate, credentials), recent users/credentials, and recent failure signals; plus a searchable users table (`/admin/users`) with per-user activity counts, a detail page, and server-side suspend/unsuspend/delete actions; and an assessments review area (`/admin/assessments`) listing every generated question set with attempt scores, failed-generation surfacing (title-only assessments), a full question inspector, and server-gated regenerate/delete reusing the production transcript + LLM pipeline
+- Protected `/admin` console (gated by `users_table.role = 'admin'`, non-admins get 404): overview dashboard with real metrics (users, 30-day actives, learning items, attempts, pass rate, credentials), recent users/credentials, and recent failure signals; plus a searchable users table (`/admin/users`) with per-user activity counts, a detail page, and server-side suspend/unsuspend/delete actions; and an assessments review area (`/admin/assessments`) listing every generated question set with attempt scores, failed-generation surfacing (title-only assessments), a full question inspector, and server-gated regenerate/delete reusing the production transcript + LLM pipeline; and a settings page (`/admin/settings`) that loads and persists the six platform-wide values driving the product - passing score, question count, max attempts, AI model, transcript provider, and the free-user credential limit - with server-side validation and a confirmation step for changes that affect every user; each admin list (users, assessments, credentials) supports server-side search, filtering, sorting, and pagination so the browser never loads the whole table
 - YouTube learning: embedded player, server-validated progress, 80% completion gate
 - TranscriptAPI transcript fetch with **per-video DB cache** (no repeated API calls)
 - LLM assessment generation via one thin OpenAI-compatible interface (structured JSON, validated before it reaches the frontend), configurable question count
@@ -110,13 +110,15 @@ OPENAI_MODEL=gpt-4o-mini     # any model id on your endpoint
 OPENAI_BASE_URL=https://api.openai.com/v1   # or OpenRouter, Ollama, etc.
 ```
 
+`OPENAI_MODEL` is only the initial fallback: once an admin saves `/admin/settings`, the `app_settings` row takes over as the model used for every new generation.
+
 ### 5. Transcript fetching
 
 ```bash
 TRANSCRIPTAPI_KEY=...        # https://transcriptapi.com/docs/api/
 ```
 
-Server-only. Transcripts are cached in the `transcripts` table by YouTube video ID, so each video hits the API at most once. Without the key, cached transcripts are still reused and new videos get a friendly "transcript unavailable" error.
+Server-only. Transcripts are cached in the `transcripts` table by YouTube video ID, so each video hits the API at most once. Without the key, cached transcripts are still reused and new videos get a friendly "transcript unavailable" error - or set the transcript provider to best-effort YouTube captions at `/admin/settings`.
 
 ### 6. Run
 

@@ -1,4 +1,4 @@
-import { count, desc, eq, ilike, inArray, ne, or, sql, type SQL } from 'drizzle-orm';
+import { asc, count, desc, eq, ilike, inArray, notInArray, or, sql, type SQL } from 'drizzle-orm';
 import { db } from '@/utils/db/db';
 import {
   assessmentsTable,
@@ -8,6 +8,7 @@ import {
   usersTable,
   type AssessmentQuestion,
 } from '@/utils/db/schema';
+import { ilikeContains } from '@/utils/db/like';
 
 // Deliberately NOT a 'use server' file: every export of a server-actions
 // module becomes a publicly callable endpoint (same rule as
@@ -32,6 +33,9 @@ export function generationStatus(source: string): GenerationStatus {
   return 'failed';
 }
 
+/** Column values that count as a true (transcript-less) generation failure. */
+const GROUNDED_SOURCES = ['transcriptapi', 'captions'] as const;
+
 /** Shared chip styling/labels for generation status (list + detail). */
 export const statusChip: Record<GenerationStatus, string> = {
   ready: 'bg-linen text-clay',
@@ -43,6 +47,45 @@ export const statusLabel: Record<GenerationStatus, string> = {
   ready: 'Generated',
   failed: 'Failed \u00b7 title only',
   legacy: 'Legacy \u00b7 captions',
+};
+
+/** Pass/fail filter, applied to the outcome of the latest attempt. */
+export type AssessmentResult = 'all' | 'passed' | 'failed' | 'none';
+/** Generation-status filter over assessments.source. */
+export type AssessmentGeneration = 'all' | 'ready' | 'failed' | 'legacy';
+/** Server-side sort order (values used in the sort select). */
+export type AssessmentSort = 'newest' | 'oldest';
+
+export const ASSESSMENT_RESULTS: readonly AssessmentResult[] = ['all', 'passed', 'failed', 'none'];
+export const ASSESSMENT_GENERATIONS: readonly AssessmentGeneration[] = [
+  'all',
+  'ready',
+  'failed',
+  'legacy',
+];
+export const ASSESSMENT_SORTS: readonly AssessmentSort[] = ['newest', 'oldest'];
+
+export function parseAssessmentResult(value: string | undefined): AssessmentResult {
+  return ASSESSMENT_RESULTS.includes(value as AssessmentResult)
+    ? (value as AssessmentResult)
+    : 'all';
+}
+
+export function parseAssessmentGeneration(value: string | undefined): AssessmentGeneration {
+  return ASSESSMENT_GENERATIONS.includes(value as AssessmentGeneration)
+    ? (value as AssessmentGeneration)
+    : 'all';
+}
+
+export function parseAssessmentSort(value: string | undefined): AssessmentSort {
+  return ASSESSMENT_SORTS.includes(value as AssessmentSort) ? (value as AssessmentSort) : 'newest';
+}
+
+export type AssessmentFilters = {
+  query: string;
+  result: AssessmentResult;
+  generation: AssessmentGeneration;
+  sort: AssessmentSort;
 };
 
 export type AdminAssessmentAttemptSummary = {
@@ -74,12 +117,26 @@ export type AdminAssessmentList = {
   total: number;
   page: number;
   pageCount: number;
-  query: string;
-  /** Filter state so the page can render the active tab. */
-  status: 'all' | 'failed';
+  filters: AssessmentFilters;
   /** Count of degraded generations across ALL rows (banner), unfiltered. */
   failedTotal: number;
 };
+
+/**
+ * Passed flag of the most recent attempt for the row's assessment, as a
+ * correlated subquery. Returns null when the assessment has no attempts yet.
+ * Scalar subqueries like this stay in the database - the filter never pulls
+ * rows into the app to decide pass/fail.
+ */
+function latestAttemptPassed() {
+  return sql<boolean | null>`(
+    SELECT ${attemptsTable.passed}
+    FROM ${attemptsTable}
+    WHERE ${attemptsTable.assessment_id} = ${assessmentsTable.id}
+    ORDER BY ${attemptsTable.created_at} DESC, ${attemptsTable.id} DESC
+    LIMIT 1
+  )`;
+}
 
 /** Correct answers in one attempt, scored against the stored questions. */
 function countCorrect(questions: AssessmentQuestion[], answers: number[]): number {
@@ -91,19 +148,22 @@ function countCorrect(questions: AssessmentQuestion[], answers: number[]): numbe
 }
 
 /**
- * Searchable, paginated assessment list. Each row joins the owning learning
- * item and user, then hydrates attempt/credential aggregates for the page's
- * assessment ids in grouped queries (no join fan-out). The latest attempt per
- * assessment carries the visible score/pass/answers columns.
+ * Searchable, filterable, sortable, paginated assessment list. Each row joins
+ * the owning learning item and user, then hydrates attempt/credential
+ * aggregates for the page's assessment ids in grouped queries (no join
+ * fan-out). The latest attempt per assessment carries the visible
+ * score/pass/answers columns.
+ *
+ * All filters run in SQL (search ILIKE, source status, latest-attempt
+ * pass/fail via a correlated subquery) so pagination stays correct and the
+ * browser never receives the whole table.
  */
 export async function getAdminAssessments(
-  query: string,
-  page: number,
-  status: 'all' | 'failed'
+  filters: AssessmentFilters,
+  page: number
 ): Promise<AdminAssessmentList> {
-  const q = query.trim();
-  // ILIKE wildcards in user input would otherwise act as globs; escape them.
-  const pattern = `%${q.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
+  const q = filters.query.trim();
+  const pattern = ilikeContains(q);
 
   const searchFilter = q
     ? or(
@@ -114,17 +174,44 @@ export async function getAdminAssessments(
         ilike(usersTable.username, pattern)
       )
     : undefined;
-  const statusFilter =
-    status === 'failed' ? ne(assessmentsTable.source, 'transcriptapi') : undefined;
-  const where = [searchFilter, statusFilter].filter(Boolean) as (SQL<unknown> | undefined)[];
-  const whereClause = where.length > 0 ? sql`${sql.join(where, sql` and `)}` : undefined;
+
+  const latest = latestAttemptPassed();
+  const resultFilter =
+    filters.result === 'passed'
+      ? sql<boolean>`${latest} IS TRUE`
+      : filters.result === 'failed'
+        ? sql<boolean>`${latest} IS FALSE`
+        : filters.result === 'none'
+          ? sql<boolean>`${latest} IS NULL`
+          : undefined;
+
+  const generationFilter =
+    filters.generation === 'ready'
+      ? eq(assessmentsTable.source, 'transcriptapi')
+      : filters.generation === 'legacy'
+        ? eq(assessmentsTable.source, 'captions')
+        : filters.generation === 'failed'
+          ? notInArray(assessmentsTable.source, [...GROUNDED_SOURCES])
+          : undefined;
+
+  const conditions = [searchFilter, resultFilter, generationFilter].filter(
+    Boolean
+  ) as SQL<unknown>[];
+  const whereClause = conditions.length > 0 ? sql.join(conditions, sql` and `) : undefined;
 
   const [totalRows, failedRows] = await Promise.all([
-    db.select({ value: count() }).from(assessmentsTable).where(whereClause),
+    // The count query needs the same joins as the list query because the
+    // search filter references the joined tables.
     db
       .select({ value: count() })
       .from(assessmentsTable)
-      .where(ne(assessmentsTable.source, 'transcriptapi')),
+      .innerJoin(learningItemsTable, eq(assessmentsTable.learning_item_id, learningItemsTable.id))
+      .innerJoin(usersTable, eq(learningItemsTable.user_id, usersTable.id))
+      .where(whereClause),
+    db
+      .select({ value: count() })
+      .from(assessmentsTable)
+      .where(notInArray(assessmentsTable.source, [...GROUNDED_SOURCES])),
   ]);
   const total = Number(totalRows[0]?.value ?? 0);
   const failedTotal = Number(failedRows[0]?.value ?? 0);
@@ -152,7 +239,13 @@ export async function getAdminAssessments(
     .innerJoin(learningItemsTable, eq(assessmentsTable.learning_item_id, learningItemsTable.id))
     .innerJoin(usersTable, eq(learningItemsTable.user_id, usersTable.id))
     .where(whereClause)
-    .orderBy(desc(assessmentsTable.created_at))
+    // Secondary id key keeps pagination stable when timestamps tie.
+    .orderBy(
+      filters.sort === 'oldest'
+        ? asc(assessmentsTable.created_at)
+        : desc(assessmentsTable.created_at),
+      assessmentsTable.id
+    )
     .limit(ASSESSMENTS_PAGE_SIZE)
     .offset((safePage - 1) * ASSESSMENTS_PAGE_SIZE);
 
@@ -161,7 +254,7 @@ export async function getAdminAssessments(
 
   const rows: AdminAssessmentRow[] = assessments.map((a) => {
     const attempts = attemptsByAssessment.get(a.id) ?? [];
-    const latest = attempts[0];
+    const latestAttempt = attempts[0];
     const full = [a.firstName, a.lastName].filter(Boolean).join(' ');
     return {
       id: a.id,
@@ -175,20 +268,20 @@ export async function getAdminAssessments(
       status: generationStatus(a.source),
       attemptCount: attempts.length,
       credentialCount: credentialCounts.get(a.id) ?? 0,
-      latest: latest
+      latest: latestAttempt
         ? {
-            answers: latest.answers,
-            correctCount: countCorrect(a.questions, latest.answers),
-            score: latest.score,
-            passed: latest.passed,
-            at: latest.created_at,
+            answers: latestAttempt.answers,
+            correctCount: countCorrect(a.questions, latestAttempt.answers),
+            score: latestAttempt.score,
+            passed: latestAttempt.passed,
+            at: latestAttempt.created_at,
           }
         : null,
       createdAt: a.createdAt,
     };
   });
 
-  return { rows, total, page: safePage, pageCount, query: q, status, failedTotal };
+  return { rows, total, page: safePage, pageCount, filters, failedTotal };
 }
 
 /** Latest-first attempts per assessment + credential counts, for one page. */
@@ -218,7 +311,9 @@ async function getAttemptAggregates(assessmentIds: string[]): Promise<{
       })
       .from(attemptsTable)
       .where(inArray(attemptsTable.assessment_id, assessmentIds))
-      .orderBy(desc(attemptsTable.created_at)),
+      // id tie-break matches the latest-attempt subquery, so the filter and the
+      // displayed score/pass agree even when created_at values tie.
+      .orderBy(desc(attemptsTable.created_at), desc(attemptsTable.id)),
     db
       .select({ assessmentId: attemptsTable.assessment_id, value: count() })
       .from(credentialsTable)

@@ -1,15 +1,11 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { and, eq, gte } from 'drizzle-orm';
-import { createClient } from '@/utils/supabase/server';
 import { db } from '@/utils/db/db';
 import { assessmentsTable, attemptsTable, learningItemsTable } from '@/utils/db/schema';
-import {
-  MAX_ATTEMPTS_PER_WINDOW,
-  PASS_SCORE,
-  UNLOCK_PERCENT,
-  attemptWindowCutoff,
-} from '@/utils/credentials';
+import { UNLOCK_PERCENT, attemptWindowCutoff } from '@/utils/credentials';
+import { getSettings } from '@/utils/settings';
+import { requireActiveUser } from '@/utils/auth';
 import AssessmentForm, { type PublicQuestion } from '@/components/learn/AssessmentForm';
 import { ArrowLeft, LockKeyhole } from 'lucide-react';
 
@@ -21,11 +17,8 @@ export const metadata = {
 export default async function AssessmentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
+  // Sign-in + admin-suspension gate (a suspended account cannot keep testing).
+  const user = await requireActiveUser();
 
   const itemRows = await db
     .select()
@@ -57,7 +50,9 @@ export default async function AssessmentPage({ params }: { params: Promise<{ id:
       )
     );
 
-  const remainingAttempts = Math.max(0, MAX_ATTEMPTS_PER_WINDOW - windowAttempts.length);
+  // Live admin settings drive the attempt limit and pass-mark copy.
+  const { passScore, maxAttemptsPerWindow } = await getSettings();
+  const remainingAttempts = Math.max(0, maxAttemptsPerWindow - windowAttempts.length);
 
   // Strip correct answers - only prompt + choices reach the client (FR-D3 AC2).
   const questions: PublicQuestion[] = assessment.questions.map((q, index) => ({
@@ -83,7 +78,7 @@ export default async function AssessmentPage({ params }: { params: Promise<{ id:
             {item.title ?? 'Course assessment'}
           </h1>
           <p className="text-sm text-clay sm:text-base">
-            {questions.length} questions · {PASS_SCORE}% to pass · your answers are scored on the
+            {questions.length} questions · {passScore}% to pass · your answers are scored on the
             server.
           </p>
         </div>
@@ -104,8 +99,8 @@ export default async function AssessmentPage({ params }: { params: Promise<{ id:
                 Attempt limit reached
               </h2>
               <p className="mt-2 text-sm text-clay">
-                You have used all {MAX_ATTEMPTS_PER_WINDOW} attempts for this week. Come back after
-                the cooldown to try again.
+                You have used all {maxAttemptsPerWindow} attempts for this week. Come back after the
+                cooldown to try again.
               </p>
               <Link
                 href={`/learn/${id}`}

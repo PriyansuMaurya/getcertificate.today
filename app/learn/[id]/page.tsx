@@ -1,11 +1,11 @@
 import Link from 'next/link';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { and, eq } from 'drizzle-orm';
-import { createClient } from '@/utils/supabase/server';
 import { db } from '@/utils/db/db';
 import { assessmentsTable, attemptsTable, learningItemsTable } from '@/utils/db/schema';
 import { UNLOCK_PERCENT } from '@/utils/credentials';
-import { ASSESSMENT_QUESTION_COUNT } from '@/utils/assessment-config';
+import { getSettings } from '@/utils/settings';
+import { requireActiveUser } from '@/utils/auth';
 import LearnPlayerPanel from '@/components/learn/LearnPlayerPanel';
 import StartAssessmentButton from '@/components/learn/StartAssessmentButton';
 import { ArrowLeft, LockKeyhole, Sparkles } from 'lucide-react';
@@ -18,11 +18,8 @@ export const metadata = {
 export default async function LearnPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
+  // Sign-in + admin-suspension gate (a suspended account cannot keep learning).
+  const user = await requireActiveUser();
 
   const rows = await db
     .select()
@@ -53,6 +50,8 @@ export default async function LearnPage({ params }: { params: Promise<{ id: stri
   const title = item.title ?? 'YouTube video';
   const bestScore = attempts.length > 0 ? Math.max(...attempts.map((a) => a.score)) : null;
   const passed = attempts.some((a) => a.passed);
+  // Live admin settings drive the assessment copy on this page.
+  const { passScore, assessmentQuestionCount, maxAttemptsPerWindow } = await getSettings();
 
   return (
     <main className="min-h-[calc(100dvh-80px)] bg-cream text-ink">
@@ -98,7 +97,7 @@ export default async function LearnPage({ params }: { params: Promise<{ id: stri
                   <h2 className="font-fraunces text-xl font-bold text-ink">AI Assessment</h2>
                   <p className="mt-1 text-sm text-clay">
                     {unlocked
-                      ? `You have unlocked the assessment. ${ASSESSMENT_QUESTION_COUNT} questions, 70% to pass.`
+                      ? `You have unlocked the assessment. ${assessmentQuestionCount} questions, ${passScore}% to pass.`
                       : `Watch ${UNLOCK_PERCENT}% of this course to unlock the assessment. You are at ${item.progress_percent}%.`}
                   </p>
                 </div>
@@ -106,7 +105,13 @@ export default async function LearnPage({ params }: { params: Promise<{ id: stri
 
               <div className="mt-5">
                 {unlocked ? (
-                  <StartAssessmentButton itemId={item.id} hasAssessment={Boolean(assessment)} />
+                  <StartAssessmentButton
+                    itemId={item.id}
+                    hasAssessment={Boolean(assessment)}
+                    passScore={passScore}
+                    assessmentQuestionCount={assessmentQuestionCount}
+                    maxAttemptsPerWindow={maxAttemptsPerWindow}
+                  />
                 ) : (
                   <div>
                     <button
@@ -174,7 +179,7 @@ export default async function LearnPage({ params }: { params: Promise<{ id: stri
                       <span className={passed ? 'font-bold text-green-700' : 'font-bold text-ink'}>
                         {bestScore}%
                       </span>
-                      {passed ? ' · Passed' : ' · 70% needed to pass'}
+                      {passed ? ' · Passed' : ` · ${passScore}% needed to pass`}
                     </p>
                   )}
                 </div>

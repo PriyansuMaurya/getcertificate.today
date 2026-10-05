@@ -228,6 +228,26 @@ CREATE TABLE IF NOT EXISTS public.credentials (
 CREATE UNIQUE INDEX IF NOT EXISTS credentials_user_item_unique
   ON public.credentials (user_id, learning_item_id);
 
+-- 3.7 app_settings (single-row runtime settings edited at /admin/settings;
+-- read through utils/settings.ts, added by migration 0007). No FKs and no
+-- CHECKs: like plan/role/status, every value is validated server-side
+-- (utils/settings.ts validateSettings) before each write.
+CREATE TABLE IF NOT EXISTS public.app_settings (
+  id text PRIMARY KEY DEFAULT 'global' NOT NULL,
+  pass_score integer NOT NULL DEFAULT 70,
+  assessment_question_count integer NOT NULL DEFAULT 2,
+  max_attempts_per_window integer NOT NULL DEFAULT 3,
+  ai_model text NOT NULL DEFAULT 'gpt-4o-mini',
+  transcript_provider text NOT NULL DEFAULT 'transcriptapi',
+  free_credentials_per_month integer NOT NULL DEFAULT 1,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- No default row is seeded on purpose: utils/settings.ts falls back to the
+-- historical defaults (including an env-provided OPENAI_MODEL) when the row is
+-- absent, so seeding here would make the bootstrap path diverge from the
+-- migration path. The first admin save creates the row.
+
 -- -----------------------------------------------------------------------------
 -- SECTION 4 - CHECK constraints.
 -- Every allowed value below is enumerated by existing code; nothing is
@@ -536,6 +556,20 @@ CREATE INDEX IF NOT EXISTS credentials_attempt_idx
   ON public.credentials (attempt_id);
 CREATE INDEX IF NOT EXISTS users_table_stripe_id_idx
   ON public.users_table (stripe_id);
+-- Admin console lists (search / filter / sort / paginate; Section 8 notes).
+CREATE INDEX IF NOT EXISTS users_table_terms_consented_idx
+  ON public.users_table (terms_consented_at DESC);
+CREATE INDEX IF NOT EXISTS assessments_created_at_idx
+  ON public.assessments (created_at DESC);
+CREATE INDEX IF NOT EXISTS assessments_source_idx
+  ON public.assessments (source);
+-- Latest-attempt lookup behind the admin pass/fail filter.
+CREATE INDEX IF NOT EXISTS attempts_assessment_created_idx
+  ON public.attempts (assessment_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS credentials_passed_at_idx
+  ON public.credentials (passed_at DESC);
+CREATE INDEX IF NOT EXISTS credentials_status_passed_at_idx
+  ON public.credentials (status, passed_at DESC);
 
 -- -----------------------------------------------------------------------------
 -- SECTION 8 - Storage buckets: NONE.

@@ -98,6 +98,8 @@ export default function AssessmentActions({
           className="flex flex-wrap items-center gap-2"
         >
           <input type="hidden" name="assessmentId" value={assessmentId} />
+          {/* Server-side confirmation gate (app/admin/assessments/actions.ts). */}
+          <input type="hidden" name="confirm" value="yes" />
           <ActionSubmitButton
             pendingLabel={isRegen ? 'Regenerating…' : 'Deleting…'}
             className={`${btnBase} ${

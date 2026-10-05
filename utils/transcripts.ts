@@ -9,6 +9,8 @@ import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { db } from '@/utils/db/db';
 import { transcriptsTable } from '@/utils/db/schema';
+import { getSettings } from '@/utils/settings';
+import { fetchYouTubeCaptions } from '@/utils/youtube';
 
 const API_BASE = 'https://transcriptapi.com/api/v2';
 const REQUEST_TIMEOUT_MS = 15_000;
@@ -64,9 +66,38 @@ export type TranscriptResult = {
 };
 
 /**
- * Fetch a video's transcript, cache-first: DB by video ID → TranscriptAPI →
- * cache write (best-effort, race-safe via ON CONFLICT DO NOTHING) → return.
- * Throws the typed errors above; never returns an empty transcript.
+ * Best-effort cache write keyed by video ID; a duplicate-key race just means
+ * another request stored it first - either way the next start reads the DB.
+ * Never throws (a cache miss only costs a future API/captions fetch).
+ */
+async function cacheTranscript(
+  youtubeId: string,
+  transcript: string,
+  language: string | null
+): Promise<void> {
+  try {
+    await db
+      .insert(transcriptsTable)
+      .values({
+        id: randomUUID(),
+        youtube_id: youtubeId,
+        transcript,
+        language,
+      })
+      .onConflictDoNothing();
+  } catch (err) {
+    console.error(
+      '[transcripts] cache write failed:',
+      err instanceof Error ? err.message : 'unknown'
+    );
+  }
+}
+
+/**
+ * Fetch a video's transcript, cache-first: DB by video ID then the provider
+ * selected at /admin/settings (TranscriptAPI, or best-effort YouTube captions)
+ * then cache write. Throws the typed errors above; never returns an empty
+ * transcript. Callers see the same shape regardless of provider.
  */
 export async function getTranscript(youtubeId: string): Promise<TranscriptResult> {
   if (!VIDEO_ID_PATTERN.test(youtubeId)) {
@@ -80,6 +111,16 @@ export async function getTranscript(youtubeId: string): Promise<TranscriptResult
   const cached = cachedRows[0];
   if (cached) {
     return { transcript: cached.transcript, language: cached.language, cached: true };
+  }
+
+  const { transcriptProvider } = await getSettings();
+
+  // Provider 'youtube': public timedtext captions (no API key). Best-effort.
+  if (transcriptProvider === 'youtube') {
+    const captions = await fetchYouTubeCaptions(youtubeId);
+    if (captions === null) throw new TranscriptNotFoundError();
+    await cacheTranscript(youtubeId, captions, 'en');
+    return { transcript: captions, language: 'en', cached: false };
   }
 
   const apiKey = process.env.TRANSCRIPTAPI_KEY;
@@ -126,22 +167,7 @@ export async function getTranscript(youtubeId: string): Promise<TranscriptResult
 
   // Best-effort cache write: a duplicate-key race just means another request
   // stored it first - either way the next start is served from the DB.
-  try {
-    await db
-      .insert(transcriptsTable)
-      .values({
-        id: randomUUID(),
-        youtube_id: youtubeId,
-        transcript,
-        language,
-      })
-      .onConflictDoNothing();
-  } catch (err) {
-    console.error(
-      '[transcripts] cache write failed:',
-      err instanceof Error ? err.message : 'unknown'
-    );
-  }
+  await cacheTranscript(youtubeId, transcript, language);
 
   return { transcript, language, cached: false };
 }

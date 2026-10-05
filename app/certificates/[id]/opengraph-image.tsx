@@ -16,7 +16,8 @@ import { eq } from 'drizzle-orm';
 import QRCode from 'qrcode';
 import { db } from '@/utils/db/db';
 import { credentialsTable } from '@/utils/db/schema';
-import { PASS_SCORE, verifyCredentialHash } from '@/utils/credentials';
+import { verifyCredentialHash } from '@/utils/credentials';
+import { getSettings } from '@/utils/settings';
 import { formatCertDate } from '@/lib/certificate-draw';
 
 export const runtime = 'nodejs';
@@ -227,7 +228,13 @@ function FallbackCard({ reason, fonts }: { reason: string; fonts: OgFont[] }) {
   );
 }
 
-function CertificateCard({ data }: { data: Extract<CardData, { found: true }> }) {
+function CertificateCard({
+  data,
+  passScore,
+}: {
+  data: Extract<CardData, { found: true }>;
+  passScore: number;
+}) {
   const hasFonts = data.fonts.length > 0;
   const serif = hasFonts ? 'DM Serif Display' : undefined;
   const sans = hasFonts ? 'DM Sans' : undefined;
@@ -493,7 +500,7 @@ function CertificateCard({ data }: { data: Extract<CardData, { found: true }> })
                 fontFamily: sans,
               }}
             >
-              {PASS_SCORE}% required to pass
+              {passScore}% required to pass
             </div>
           </div>
 
@@ -550,10 +557,17 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   // by it anyway.
   let card: Extract<CardData, { found: true }> | null = null;
   let failureReason: string | null = null;
+  // Live admin pass mark; defaults to the historical value if settings are
+  // unreadable so the card still renders.
+  let passScore = 70;
   try {
-    const data = await gather(id);
-    if (data.found) card = data;
-    else failureReason = 'Certificate not found';
+    const [data, settings] = await Promise.all([gather(id), getSettings()]);
+    if (data.found) {
+      card = data;
+      passScore = settings.passScore;
+    } else {
+      failureReason = 'Certificate not found';
+    }
   } catch (err) {
     console.error('[og] certificate image failed:', err instanceof Error ? err.message : err);
     failureReason = 'Certificate preview unavailable';
@@ -562,7 +576,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   // Stage 2: all JSX is built outside try/catch (by the components below).
   const fonts = card ? card.fonts : await loadFonts();
   const element = card ? (
-    <CertificateCard data={card} />
+    <CertificateCard data={card} passScore={passScore} />
   ) : (
     <FallbackCard reason={failureReason ?? 'Certificate preview unavailable'} fonts={fonts} />
   );

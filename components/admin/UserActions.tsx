@@ -76,6 +76,8 @@ export default function UserActions({
         </p>
         <form action={deleteAction} className="flex flex-wrap items-center gap-2">
           <input type="hidden" name="userId" value={userId} />
+          {/* Server-side confirmation gate (app/admin/users/actions.ts). */}
+          <input type="hidden" name="confirm" value="yes" />
           <ActionSubmitButton
             pendingLabel="Deleting…"
             className={`${btnBase} bg-red-600 text-white hover:bg-red-700`}

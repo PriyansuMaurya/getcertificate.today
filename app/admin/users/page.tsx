@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
 import { requireAdmin } from '../require-admin';
-import { getAdminUsers } from './users-data';
+import { getAdminUsers, parseUserSort, type AdminUserSort } from './users-data';
 import UserActions from '@/components/admin/UserActions';
 
 export const metadata: Metadata = {
@@ -18,11 +18,12 @@ const fmtDate = (d: Date | null | undefined) =>
       })
     : '\u2014';
 
-/** Builds the /admin/users URL for a given search/page state. */
-function usersUrl(q: string, page: number): string {
+/** Builds the /admin/users URL for a given search/page/sort state. */
+function usersUrl(q: string, page: number, sort: AdminUserSort): string {
   const params = new URLSearchParams();
   if (q) params.set('q', q);
   if (page > 1) params.set('page', String(page));
+  if (sort !== 'joined_desc') params.set('sort', sort);
   const s = params.toString();
   return s ? `/admin/users?${s}` : '/admin/users';
 }
@@ -30,19 +31,20 @@ function usersUrl(q: string, page: number): string {
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; sort?: string }>;
 }) {
   await requireAdmin();
 
   const sp = await searchParams;
   const query = (sp.q ?? '').slice(0, 100);
   const page = Number.parseInt(sp.page ?? '1', 10);
+  const sort = parseUserSort(sp.sort);
   const {
     rows,
     total,
     page: safePage,
     pageCount,
-  } = await getAdminUsers(query, Number.isFinite(page) ? page : 1);
+  } = await getAdminUsers(query, Number.isFinite(page) ? page : 1, sort);
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
@@ -58,13 +60,13 @@ export default async function AdminUsersPage({
       <form
         method="get"
         action="/admin/users"
-        className="mt-6 flex max-w-md items-center gap-2"
+        className="mt-6 flex flex-wrap items-center gap-2"
         role="search"
       >
         <label htmlFor="user-search" className="sr-only">
           Search users by name, username, or email
         </label>
-        <div className="relative flex-1">
+        <div className="relative min-w-[200px] flex-1">
           <Search
             aria-hidden="true"
             className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-clay"
@@ -78,11 +80,24 @@ export default async function AdminUsersPage({
             className="h-10 w-full rounded-lg border border-sandline bg-paper pl-9 pr-3 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
           />
         </div>
+        <label htmlFor="user-sort" className="sr-only">
+          Sort users
+        </label>
+        <select
+          id="user-sort"
+          name="sort"
+          defaultValue={sort}
+          className="h-10 rounded-lg border border-sandline bg-paper px-3 text-sm text-ink focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
+        >
+          <option value="joined_desc">Newest first</option>
+          <option value="joined_asc">Oldest first</option>
+          <option value="name_asc">Name A–Z</option>
+        </select>
         <button
           type="submit"
           className="flex h-10 items-center justify-center rounded-lg bg-ink px-4 text-sm font-bold text-cream transition-colors hover:bg-ink/90"
         >
-          Search
+          Apply
         </button>
       </form>
 
@@ -259,7 +274,7 @@ export default async function AdminUsersPage({
             >
               {safePage > 1 ? (
                 <Link
-                  href={usersUrl(query, safePage - 1)}
+                  href={usersUrl(query, safePage - 1, sort)}
                   className="inline-flex h-9 items-center rounded-lg border border-sandline bg-paper px-4 text-xs font-bold text-ink transition-colors hover:bg-ink/5"
                 >
                   ← Previous
@@ -272,7 +287,7 @@ export default async function AdminUsersPage({
               </p>
               {safePage < pageCount ? (
                 <Link
-                  href={usersUrl(query, safePage + 1)}
+                  href={usersUrl(query, safePage + 1, sort)}
                   className="inline-flex h-9 items-center rounded-lg border border-sandline bg-paper px-4 text-xs font-bold text-ink transition-colors hover:bg-ink/5"
                 >
                   Next →

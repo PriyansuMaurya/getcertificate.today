@@ -21,8 +21,10 @@ export type AdminUserActionState = { message: string; success?: boolean };
 async function authorizeTarget(
   userId: string
 ): Promise<AdminUserActionState | { userId: string; role: string }> {
-  if (!userId) {
-    return { message: 'Missing user id.' };
+  // Ids are opaque text (uuid-like); bound the length so an oversized payload
+  // never reaches the query builder.
+  if (!userId || userId.length > 128) {
+    return { message: 'Missing or invalid user id.' };
   }
 
   const admin = await requireAdmin();
@@ -112,6 +114,12 @@ export async function deleteUser(
   const userId = targetOf(formData);
   const auth = await authorizeTarget(userId);
   if ('message' in auth) return auth;
+
+  // Confirmation is enforced server-side, not only by the two-step dialog: a
+  // deletion request that does not carry the acknowledgement is refused.
+  if (formData.get('confirm') !== 'yes') {
+    return { message: 'Confirmation required to delete an account.' };
+  }
 
   if (auth.role === 'admin') {
     return { message: 'Admin accounts cannot be deleted from the console.' };

@@ -3,7 +3,8 @@ import type { Metadata } from 'next';
 import { eq } from 'drizzle-orm';
 import { db } from '@/utils/db/db';
 import { credentialsTable } from '@/utils/db/schema';
-import { verifyCredentialHash, PASS_SCORE } from '@/utils/credentials';
+import { verifyCredentialHash } from '@/utils/credentials';
+import { getSettings } from '@/utils/settings';
 import { BadgeCheck, ShieldCheck, ShieldX, SearchX } from 'lucide-react';
 
 // Metadata is generated per credential in generateMetadata below.
@@ -86,6 +87,9 @@ export default async function VerifyPage({ params }: { params: Promise<{ id: str
 
   const rows = await db.select().from(credentialsTable).where(eq(credentialsTable.id, id));
   const cred = rows[0];
+
+  // Live admin pass mark shown alongside the holder's score.
+  const { passScore } = await getSettings();
 
   const notFoundState = !cred;
   const hashValid = cred ? verifyCredentialHash(cred) : false;
@@ -185,7 +189,7 @@ export default async function VerifyPage({ params }: { params: Promise<{ id: str
               <div className="flex items-start justify-between gap-4">
                 <dt className="text-xs font-bold uppercase tracking-wider text-sand">Score</dt>
                 <dd className="text-right text-sm font-semibold text-ink">
-                  {cred.score}% <span className="text-clay">(pass mark {PASS_SCORE}%)</span>
+                  {cred.score}% <span className="text-clay">(pass mark {passScore}%)</span>
                 </dd>
               </div>
               <div className="flex items-start justify-between gap-4">

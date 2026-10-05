@@ -3,7 +3,6 @@
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { startAssessment, type AssessmentActionState } from '@/app/learn/actions';
-import { ASSESSMENT_QUESTION_COUNT } from '@/utils/assessment-config';
 import { Sparkles, Loader2 } from 'lucide-react';
 
 function SubmitButton({ label }: { label: string }) {
@@ -32,9 +31,15 @@ function SubmitButton({ label }: { label: string }) {
 export default function StartAssessmentButton({
   itemId,
   hasAssessment,
+  passScore,
+  assessmentQuestionCount,
+  maxAttemptsPerWindow,
 }: {
   itemId: string;
   hasAssessment: boolean;
+  passScore: number;
+  assessmentQuestionCount: number;
+  maxAttemptsPerWindow: number;
 }) {
   const initialState: AssessmentActionState = { message: '' };
   const [formState, formAction] = useActionState(startAssessment, initialState);
@@ -50,8 +55,8 @@ export default function StartAssessmentButton({
       )}
       <p className="mt-2 text-xs text-clay">
         {hasAssessment
-          ? '70% to pass · 3 attempts per week · scoring happens on the server.'
-          : `Generation takes a few seconds. ${ASSESSMENT_QUESTION_COUNT} questions · 70% to pass · 3 attempts per week.`}
+          ? `${passScore}% to pass · ${maxAttemptsPerWindow} attempts per week · scoring happens on the server.`
+          : `Generation takes a few seconds. ${assessmentQuestionCount} questions · ${passScore}% to pass · ${maxAttemptsPerWindow} attempts per week.`}
       </p>
     </form>
   );

@@ -5,7 +5,8 @@ import { notFound } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 import { db } from '@/utils/db/db';
 import { credentialsTable } from '@/utils/db/schema';
-import { verifyCredentialHash, PASS_SCORE } from '@/utils/credentials';
+import { verifyCredentialHash } from '@/utils/credentials';
+import { getSettings } from '@/utils/settings';
 import CertificateCanvas from '@/components/certificates/CertificateCanvas';
 import CertificateQR, { buildCertificateQrSvg } from '@/components/certificates/CertificateQR';
 import { formatCertDate, type CertificateContent } from '@/lib/certificate-draw';
@@ -113,6 +114,9 @@ export default async function CertificatePage({ params }: { params: Promise<{ id
   const rows = await db.select().from(credentialsTable).where(eq(credentialsTable.id, id));
   const cred = rows[0];
   if (!cred) notFound();
+
+  // Live admin pass mark for the details panel.
+  const { passScore } = await getSettings();
 
   // Recompute the integrity hash before rendering a "valid" state (RULES §18.2).
   const hashValid = verifyCredentialHash(cred);
@@ -225,7 +229,7 @@ export default async function CertificatePage({ params }: { params: Promise<{ id
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-sand">Score</p>
               <p className="mt-1 font-fraunces text-3xl font-black text-ink">{cred.score}%</p>
-              <p className="text-xs text-clay">{PASS_SCORE}% required</p>
+              <p className="text-xs text-clay">{passScore}% required</p>
             </div>
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-sand">Issued</p>

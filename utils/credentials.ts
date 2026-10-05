@@ -8,11 +8,17 @@ import type { SelectCredential } from '@/utils/db/schema';
 
 export const HASH_VERSION = 'sha256-v1';
 
+// --- Defaults for runtime-tunable settings (utils/settings.ts, edited at
+// /admin/settings). Runtime call sites read the live values via getSettings();
+// these constants are the fallback when no app_settings row exists and the
+// seed defaults, so they must stay in sync with the schema defaults.
 export const PASS_SCORE = 70; // PRD §14.1 proposal (recorded in MEMORY.md)
 export const MAX_ATTEMPTS_PER_WINDOW = 3;
+export const FREE_CREDENTIALS_PER_MONTH = 1; // FR-B6
+
+// Fixed policy constants (not admin-tunable).
 export const ATTEMPT_COOLDOWN_DAYS = 7;
 export const UNLOCK_PERCENT = 80; // landing-copy completion gate (FR-C5)
-export const FREE_CREDENTIALS_PER_MONTH = 1; // FR-B6
 
 /**
  * Canonical serialization of the credential's immutable fields.
@@ -82,11 +88,17 @@ export function monthWindowStart(now: Date = new Date()): Date {
 }
 
 /**
- * Free plan quota check: at most 1 credential per calendar month (UTC).
- * `plan` is 'none' for free users (existing sentinel); any other value is a
- * Stripe subscription ID and counts as Professional until the webhook resets it.
+ * Free plan quota check: at most `freeCredentialsPerMonth` credentials per
+ * calendar month (UTC). `plan` is 'none' for free users (existing sentinel);
+ * any other value is a Stripe subscription ID and counts as Professional until
+ * the webhook resets it. The limit defaults to the static constant but callers
+ * pass the live value from getSettings().
  */
-export function hasFreeQuotaRemaining(credsThisMonth: number, plan: string | null): boolean {
+export function hasFreeQuotaRemaining(
+  credsThisMonth: number,
+  plan: string | null,
+  freeCredentialsPerMonth: number = FREE_CREDENTIALS_PER_MONTH
+): boolean {
   if (plan && plan !== 'none') return true; // Professional: unlimited
-  return credsThisMonth < FREE_CREDENTIALS_PER_MONTH;
+  return credsThisMonth < freeCredentialsPerMonth;
 }

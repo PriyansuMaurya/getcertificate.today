@@ -1,12 +1,9 @@
 import DashboardHeader from '@/components/DashboardHeader';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import type { Metadata } from 'next';
-import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-import { eq } from 'drizzle-orm';
 import { hasCompletedOnboarding } from '@/app/auth/onboarding-status';
-import { db } from '@/utils/db/db';
-import { usersTable } from '@/utils/db/schema';
+import { requireActiveUser } from '@/utils/auth';
 
 export const metadata: Metadata = {
   title: 'Dashboard | getcertificate.today',
@@ -18,32 +15,13 @@ export default async function DashboardLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Sign-in + admin-suspension gate. This lives in app code rather than the
+  // middleware proxy because the edge runtime cannot reach Postgres; it is
+  // shared with the learner routes (utils/auth.ts) so the behaviour cannot
+  // drift. Subscribing is a voluntary choice, never forced.
+  const user = await requireActiveUser();
+
   // Users must complete onboarding before seeing the dashboard.
-  // Subscribing is a voluntary choice made inside the dashboard, never forced.
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect('/login');
-  }
-
-  // Suspension enforcement: end the session on any dashboard request so a
-  // suspended account cannot keep using an already-open session. This lives
-  // in layouts/actions rather than the middleware proxy because the edge
-  // runtime cannot reach Postgres; routes that never render this layout are
-  // covered by the login and requireAdmin gates instead.
-  const suspensionRows = await db
-    .select({ suspendedAt: usersTable.suspended_at })
-    .from(usersTable)
-    .where(eq(usersTable.id, user.id));
-  if (suspensionRows[0]?.suspendedAt) {
-    await supabase.auth.signOut();
-    redirect('/login');
-  }
-
   if (!(await hasCompletedOnboarding(user.id))) {
     redirect('/onboarding');
   }

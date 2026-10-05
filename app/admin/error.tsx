@@ -33,8 +33,11 @@ export default function AdminError({
           </span>
           <div className="min-w-0">
             <h2 className="font-fraunces text-xl font-bold text-ink">Something went wrong</h2>
+            {/* Deliberately not error.message: raw server/DB error text could
+                leak internals. The digest is the safe, actionable reference. */}
             <p className="mt-2 break-words text-sm leading-relaxed text-clay">
-              {error.message || 'Unexpected error while loading admin data.'}
+              An unexpected error occurred while loading admin data. Try again, and if it keeps
+              happening check the server logs.
             </p>
             {error.digest ? (
               <p className="mt-1 text-xs text-clay">Reference: {error.digest}</p>

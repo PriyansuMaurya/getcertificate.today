@@ -69,7 +69,7 @@ async function fetchOEmbed(
  * tracks (manual then auto-generated). Returns null when no track is served
  * or the payload is empty - never throws. (ToS review tracked in MEMORY.md.)
  */
-async function fetchCaptions(youtubeId: string): Promise<string | null> {
+export async function fetchYouTubeCaptions(youtubeId: string): Promise<string | null> {
   const attempts = [
     `https://www.youtube.com/api/timedtext?v=${youtubeId}&lang=en&fmt=json3`,
     `https://www.youtube.com/api/timedtext?v=${youtubeId}&lang=en&kind=asr&fmt=json3`,
@@ -101,7 +101,10 @@ async function fetchCaptions(youtubeId: string): Promise<string | null> {
  * metadata (always attempted) + transcript (best effort).
  */
 export async function getVideoMeta(youtubeId: string): Promise<YouTubeVideoMeta> {
-  const [meta, transcript] = await Promise.all([fetchOEmbed(youtubeId), fetchCaptions(youtubeId)]);
+  const [meta, transcript] = await Promise.all([
+    fetchOEmbed(youtubeId),
+    fetchYouTubeCaptions(youtubeId),
+  ]);
   return {
     youtubeId,
     sourceUrl: `https://www.youtube.com/watch?v=${youtubeId}`,

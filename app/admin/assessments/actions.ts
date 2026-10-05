@@ -36,8 +36,10 @@ export type AdminAssessmentActionState = { message: string; success?: boolean };
 async function authorizeAssessment(
   assessmentId: string
 ): Promise<AdminAssessmentActionState | { assessmentId: string }> {
-  if (!assessmentId) {
-    return { message: 'Missing assessment id.' };
+  // Ids are opaque text (uuid-like); bound the length so an oversized payload
+  // never reaches the query builder.
+  if (!assessmentId || assessmentId.length > 128) {
+    return { message: 'Missing or invalid assessment id.' };
   }
   await requireAdmin();
 
@@ -103,6 +105,11 @@ export async function regenerateAssessment(
   const assessmentId = targetOf(formData);
   const auth = await authorizeAssessment(assessmentId);
   if ('message' in auth) return auth;
+
+  // Confirmation is enforced server-side, not only by the two-step dialog.
+  if (formData.get('confirm') !== 'yes') {
+    return { message: 'Confirmation required to regenerate an assessment.' };
+  }
 
   const rows = await db
     .select({
@@ -176,6 +183,11 @@ export async function deleteAssessment(
   const assessmentId = targetOf(formData);
   const auth = await authorizeAssessment(assessmentId);
   if ('message' in auth) return auth;
+
+  // Confirmation is enforced server-side, not only by the two-step dialog.
+  if (formData.get('confirm') !== 'yes') {
+    return { message: 'Confirmation required to delete an assessment.' };
+  }
 
   const attempts = await db
     .select({ id: attemptsTable.id })
