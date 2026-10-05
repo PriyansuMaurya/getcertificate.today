@@ -22,6 +22,16 @@ export const usersTable = pgTable('users_table', {
   // When the user accepted the Terms of Service + Privacy Policy (proof of
   // GDPR consent; set at signup or onboarding, never overwritten on re-save).
   terms_consented_at: timestamp('terms_consented_at', { withTimezone: true }),
+  // Authorization role: 'user' (default) or 'admin'. Only 'admin' rows pass
+  // the requireAdmin() gate for /admin routes (app/admin/require-admin.ts).
+  // Server-derived from the DB - never trusted from anything the client sends.
+  role: text('role').notNull().default('user'),
+  // Moderation status: null = active, a timestamp = suspended at that time
+  // (set/cleared only by admin server actions in app/admin/users/actions.ts).
+  // Enforced server-side at login, OAuth sign-in, the dashboard layout and
+  // requireAdmin() - never by hiding UI. (Postgres has no native boolean for
+  // this because the suspension timestamp is needed for the admin list.)
+  suspended_at: timestamp('suspended_at', { withTimezone: true }),
 });
 
 export type InsertUser = typeof usersTable.$inferInsert;

@@ -126,6 +126,12 @@ BEGIN
   END IF;
 END $$;
 
+-- Columns added by later migrations (terms_consented_at from 0004, role from
+-- 0005, suspended_at from 0006) are intentionally NOT in the CREATE TABLE
+-- above: only journal
+-- entries 0000-0003 are marked applied below, so `drizzle-kit migrate`
+-- (npm run build) adds them to bootstrapped databases. See Section 9.
+
 -- NOTE: users_table.stripe_id intentionally has NO unique constraint.
 -- Migration 0002 drops users_table_stripe_id_unique and schema.ts does not
 -- define one; the Stripe webhook updates by stripe_id
@@ -580,5 +586,6 @@ WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at = 
 -- SELECT schemaname, tablename, policyname FROM pg_policies
 --   WHERE schemaname = 'public' ORDER BY tablename, policyname;
 -- SELECT hash, created_at FROM drizzle.__drizzle_migrations ORDER BY created_at;
---   last row created_at must match journal _journal.json's latest `when`
---   (1790784869180 for 0003_stale_princess_powerful)
+--   rows for 0000-0003 exist from Section 9; 0004+ are added by
+--   `drizzle-kit migrate`, so the last row must match the latest `when` in
+--   utils/db/migrations/meta/_journal.json.

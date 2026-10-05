@@ -18,6 +18,7 @@ A single [Next.js 16](https://nextjs.org/) application (App Router) that turns Y
 - Google + GitHub OAuth (rendered only when provider env vars are set)
 - Mandatory onboarding gate (username, name, DOB with 13+ age check)
 - Protected `/dashboard` with stats, add-video flow, quick search (Cmd/Ctrl+K), settings
+- Protected `/admin` console (gated by `users_table.role = 'admin'`, non-admins get 404): overview dashboard with real metrics (users, 30-day actives, learning items, attempts, pass rate, credentials), recent users/credentials, and recent failure signals; plus a searchable users table (`/admin/users`) with per-user activity counts, a detail page, and server-side suspend/unsuspend/delete actions
 - YouTube learning: embedded player, server-validated progress, 80% completion gate
 - TranscriptAPI transcript fetch with **per-video DB cache** (no repeated API calls)
 - LLM assessment generation via one thin OpenAI-compatible interface (structured JSON, validated before it reaches the frontend), configurable question count
@@ -84,6 +85,12 @@ After that, normal drizzle workflow applies to schema changes:
 1. Edit `utils/db/schema.ts`
 2. `npm run db:generate` to generate the migration
 3. `npm run db:migrate` to apply it
+
+**Granting admin access:** the `/admin` console only admits users with `users_table.role = 'admin'` (everyone else defaults to `'user'` and gets a 404). There is no self-serve promotion flow - grant it directly:
+
+```sql
+UPDATE users_table SET role = 'admin' WHERE email = 'you@example.com';
+```
 
 ### 3. Stripe (optional but recommended)
 

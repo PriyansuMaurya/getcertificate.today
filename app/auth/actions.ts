@@ -395,6 +395,18 @@ export async function loginUser(currentState: { message: string }, formData: For
     return { message: error.message };
   }
 
+  // Suspension is enforced server-side here (plus the dashboard layout and
+  // requireAdmin): a suspended account may authenticate with Supabase, but
+  // the app never lets the session go anywhere.
+  const suspendedRows = await db
+    .select({ suspendedAt: usersTable.suspended_at })
+    .from(usersTable)
+    .where(eq(usersTable.id, signInData.user.id));
+  if (suspendedRows[0]?.suspendedAt) {
+    await supabase.auth.signOut();
+    return { message: 'This account has been suspended. Please contact support.' };
+  }
+
   revalidatePath('/', 'layout');
 
   // New users (or anyone who never finished onboarding) set up their profile first.
@@ -437,6 +449,16 @@ export async function finishGoogleSignIn() {
   const bootstrapped = await bootstrapOAuthUser(user!);
   if (!bootstrapped.ok) {
     redirect('/auth/auth-code-error');
+  }
+
+  // Same suspension gate as loginUser: OAuth sessions are not exempt.
+  const suspendedRows = await db
+    .select({ suspendedAt: usersTable.suspended_at })
+    .from(usersTable)
+    .where(eq(usersTable.id, user!.id));
+  if (suspendedRows[0]?.suspendedAt) {
+    await supabase.auth.signOut();
+    redirect('/login');
   }
 
   revalidatePath('/', 'layout');

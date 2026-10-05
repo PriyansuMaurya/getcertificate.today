@@ -36,6 +36,20 @@
       "when": 1791129828120,
       "tag": "0004_calm_bucky",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791225848126,
+      "tag": "0005_blue_prowler",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791228250704,
+      "tag": "0006_fair_odin",
+      "breakpoints": true
     }
   ]
 }
