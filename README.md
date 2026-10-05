@@ -18,7 +18,7 @@ A single [Next.js 16](https://nextjs.org/) application (App Router) that turns Y
 - Google + GitHub OAuth (rendered only when provider env vars are set)
 - Mandatory onboarding gate (username, name, DOB with 13+ age check)
 - Protected `/dashboard` with stats, add-video flow, quick search (Cmd/Ctrl+K), settings
-- Protected `/admin` console (gated by `users_table.role = 'admin'`, non-admins get 404): overview dashboard with real metrics (users, 30-day actives, learning items, attempts, pass rate, credentials), recent users/credentials, and recent failure signals; plus a searchable users table (`/admin/users`) with per-user activity counts, a detail page, and server-side suspend/unsuspend/delete actions
+- Protected `/admin` console (gated by `users_table.role = 'admin'`, non-admins get 404): overview dashboard with real metrics (users, 30-day actives, learning items, attempts, pass rate, credentials), recent users/credentials, and recent failure signals; plus a searchable users table (`/admin/users`) with per-user activity counts, a detail page, and server-side suspend/unsuspend/delete actions; and an assessments review area (`/admin/assessments`) listing every generated question set with attempt scores, failed-generation surfacing (title-only assessments), a full question inspector, and server-gated regenerate/delete reusing the production transcript + LLM pipeline
 - YouTube learning: embedded player, server-validated progress, 80% completion gate
 - TranscriptAPI transcript fetch with **per-video DB cache** (no repeated API calls)
 - LLM assessment generation via one thin OpenAI-compatible interface (structured JSON, validated before it reaches the frontend), configurable question count
