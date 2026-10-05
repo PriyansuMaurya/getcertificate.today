@@ -1,24 +1,19 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import {
-  ArrowRightIcon,
-  SparklesIcon,
-  BrainIcon,
-  ShieldIcon,
-  ChartColumnIcon,
-  CheckIcon,
-} from '@/components/icons';
+import { ArrowUpRight } from 'lucide-react';
+import { BrainIcon, ShieldIcon, ChartColumnIcon, CheckIcon } from '@/components/icons';
 import MobileNav from '@/components/MobileNav';
 import { PLANS } from '@/components/SubscribePricingCards';
 
-// Implemented 1:1 from the Figma design (getcertificate.today, landing-page frame 6:9, 1440x4477).
-// All colors, typography, spacing, radii, borders, shadows and assets are taken from the
-// Figma node tree - the design is the visual source of truth.
+// Sections below implement the Figma landing-page frame 6:9 (getcertificate.today), except
+// the navbar and hero, which follow the revamp-hero-section reference: borderless nav with
+// centered links and a square "Create yours" CTA, editorial split hero with certificate showcase.
+// Colors/typography reuse the Figma design tokens (tailwind.config.ts).
 
 const NAV_LINKS = [
-  { label: 'How It Works', href: '#how-it-works' },
-  { label: 'Features', href: '#features' },
+  { label: 'How it works', href: '#how-it-works' },
+  { label: 'Why certificates', href: '#features' },
   { label: 'Pricing', href: '#pricing' },
 ];
 
@@ -104,10 +99,10 @@ export const metadata: Metadata = {
     url: '/',
     images: [
       {
-        url: '/figma/hero.png',
-        width: 1536,
-        height: 1024,
-        alt: 'getcertificate.today product preview',
+        url: '/figma/certificate-hero-sm.jpg',
+        width: 1520,
+        height: 1013,
+        alt: 'Example getcertificate.today certificate of completion',
       },
     ],
   },
@@ -123,10 +118,14 @@ export default function LandingPage() {
       >
         Skip to main content
       </a>
-      {/* ============ Navbar (Figma: 1440x80 incl. 1px inside bottom border) ============ */}
-      <header className="relative h-20 border-b border-sandline bg-cream">
-        <div className="mx-auto flex h-full max-w-[1440px] items-center justify-between px-4 sm:px-6 xl:px-20">
-          <Link href="/" className="flex shrink-0 items-center">
+      {/* ============ Navbar (revamped: borderless, centered links, square "Create yours" CTA) ============ */}
+      <header className="relative bg-cream">
+        <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-6 px-4 py-6 sm:px-6 xl:px-20">
+          <Link
+            href="/"
+            className="flex shrink-0 items-center"
+            aria-label="getcertificate.today home"
+          >
             <Image
               src="/figma/logo-no-tagline.svg"
               alt="getcertificate.today logo"
@@ -134,85 +133,78 @@ export default function LandingPage() {
               height={767}
               priority
               unoptimized
-              className="h-8 w-auto sm:h-10"
+              className="h-9 w-auto sm:h-11"
             />
           </Link>
-          <nav className="hidden items-center gap-8 lg:flex xl:gap-10">
+          <nav
+            aria-label="Main navigation"
+            className="hidden items-center gap-10 text-sm text-clay md:flex"
+          >
             {NAV_LINKS.map((l) => (
-              <Link
-                key={l.label}
-                href={l.href}
-                className="text-[15px] font-semibold leading-[1.366] text-ink transition-colors hover:text-clay"
-              >
+              <Link key={l.label} href={l.href} className="transition-colors hover:text-ink">
                 {l.label}
               </Link>
             ))}
           </nav>
-          <div className="hidden items-center gap-4 lg:flex">
-            <Link
-              href="/login"
-              className="text-[15px] font-semibold leading-[1.366] text-ink transition-colors hover:text-clay"
-            >
-              Sign In
-            </Link>
+          <div className="flex items-center gap-4">
             <Link
               href="/signup"
-              className="flex h-12 items-center justify-center rounded-lg bg-ink px-6 py-3.5 text-[15px] font-bold leading-[1.366] text-cream transition-colors hover:bg-ink/90"
+              className="group inline-flex items-center gap-2 bg-ink px-5 py-3 text-sm font-semibold text-cream transition-colors hover:bg-sand hover:text-ink"
             >
-              Get Started
+              Create yours
+              <ArrowUpRight
+                aria-hidden="true"
+                className="h-4 w-4 shrink-0 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+              />
             </Link>
+            <MobileNav />
           </div>
-          <MobileNav />
         </div>
       </header>
 
       <main id="main-content">
-        {/* ============ Hero (Figma: pad 96/80, gap 64; left col 642px, gaps 32/16) ============ */}
+        {/* ============ Hero (revamped: editorial split, oversized serif headline,
+            certificate showcase with offset accent shadow) ============ */}
         <section className="bg-cream">
-          <div className="mx-auto flex max-w-[1440px] flex-col items-center gap-10 px-4 py-16 sm:px-6 md:gap-16 md:py-[97px] lg:flex-row xl:px-20">
-            <div className="flex flex-1 flex-col gap-8 lg:flex-[1.12_1_0%]">
-              <div className="flex flex-col gap-4">
-                <h1 className="text-balance font-fraunces text-[40px] font-black leading-[1.233] text-ink sm:text-[48px] md:text-[56px] lg:text-[64px]">
-                  Turn your YouTube learning into verifiable credentials.
-                </h1>
-                <p className="text-base leading-[1.366] text-clay sm:text-lg sm:leading-[1.366]">
-                  Paste any YouTube video. Watch it in the learning player, pass an AI-generated
-                  assessment tailored to the content, and earn a shareable verified certificate.
-                  Learn Today. Go Further.
-                </p>
-              </div>
-              <div className="flex w-full flex-col gap-4 sm:w-auto sm:flex-row sm:items-center sm:gap-4">
+          <div className="mx-auto grid max-w-[1440px] items-center gap-12 px-4 pb-16 pt-12 sm:px-6 lg:grid-cols-[0.7fr_1.3fr] lg:gap-32 lg:pb-24 lg:pt-24 xl:gap-36 xl:px-20">
+            <div className="relative z-10 min-w-0 max-w-2xl">
+              <p className="mb-8 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.28em] text-sand">
+                <span aria-hidden="true" className="h-px w-12 bg-sand" />
+                Learn. Certify. Grow.
+              </p>
+              <h1 className="max-w-2xl text-balance font-fraunces text-[clamp(3.8rem,6.5vw,8.4rem)] font-black leading-[0.84] tracking-[-0.075em] text-ink">
+                Your next skill deserves <em className="font-normal text-clay">proof.</em>
+              </h1>
+              <p className="mt-9 max-w-lg text-lg leading-8 text-clay">
+                Turn the things you learn online into credentials that feel as real as the work
+                behind them.
+              </p>
+              <div className="mt-10">
                 <Link
                   href="/signup"
-                  className="flex h-12 items-center justify-center gap-2 rounded-lg bg-ink px-6 py-3.5 text-[15px] font-bold leading-[1.366] text-cream transition-colors hover:bg-ink/90"
+                  className="group inline-flex items-center gap-4 bg-ink px-6 py-4 text-sm font-bold text-cream transition-colors hover:bg-ink/90"
                 >
-                  Get Started Free
-                  <ArrowRightIcon className="h-4 w-4 shrink-0" />
+                  Make a certificate
+                  <ArrowUpRight
+                    aria-hidden="true"
+                    className="h-4 w-4 shrink-0 transition-transform group-hover:-translate-y-1 group-hover:translate-x-1"
+                  />
                 </Link>
-                <Link
-                  href="#pricing"
-                  className="flex h-12 w-full items-center justify-center rounded-lg border-[1.5px] border-ink px-6 py-3.5 text-[15px] font-bold leading-[1.366] text-ink transition-colors hover:bg-ink/5 sm:w-auto"
-                >
-                  See Pricing
-                </Link>
-              </div>
-              <div className="flex items-center gap-4">
-                <SparklesIcon className="h-5 w-5 shrink-0 text-sand" />
-                <p className="text-sm font-semibold leading-[1.366] text-clay">
-                  No credit card required. 1 Cert/month free forever.
-                </p>
               </div>
             </div>
-            {/* Figma: 574x407 rectangle, image fill scale=STRETCH, r8, shadow 0 2 8 #6B6059@5% */}
-            <div className="relative aspect-[574/407] w-full max-w-[574px] lg:flex-[1_1_0%]">
-              <Image
-                src="/figma/hero.png"
-                alt="getcertificate.today product preview"
-                fill
-                priority
-                sizes="(max-width: 1024px) 100vw, 574px"
-                className="rounded-lg object-fill shadow-figma-hero"
-              />
+
+            <div className="relative lg:pt-8">
+              <div className="relative">
+                <Image
+                  src="/figma/certificate-hero-sm.jpg"
+                  alt="Example getcertificate.today certificate of completion"
+                  width={1520}
+                  height={1013}
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 740px"
+                  className="block h-auto w-full shadow-[18px_22px_0_rgba(181,160,142,0.35)]"
+                />
+              </div>
             </div>
           </div>
         </section>

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
 
 // Mobile navigation disclosure for the landing navbar.
-// Desktop (lg+) is unchanged - links render in the header bar per the Figma design.
+// Desktop (md+) links render in the header bar; this toggle shows below md.
 const LINKS = [
   { label: 'How It Works', href: '#how-it-works' },
   { label: 'Features', href: '#features' },
@@ -39,7 +39,7 @@ export default function MobileNav() {
   }, [open]);
 
   return (
-    <div ref={containerRef} className="lg:hidden">
+    <div ref={containerRef} className="md:hidden">
       <button
         ref={triggerRef}
         type="button"
