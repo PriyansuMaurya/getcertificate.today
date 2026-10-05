@@ -60,3 +60,6 @@ scripts/figma-tree-dump.py
 
 # throwaway per-session debug probes
 _diag-*.mjs
+
+# hero visual QA screenshots (scripts/hero-qa.mjs output)
+.hero-qa/

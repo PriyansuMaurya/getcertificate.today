@@ -120,7 +120,7 @@ export default function LandingPage() {
       </a>
       {/* ============ Navbar (revamped: borderless, centered links, square "Create yours" CTA) ============ */}
       <header className="relative bg-cream">
-        <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-6 px-4 py-6 sm:px-6 xl:px-20">
+        <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-6 px-4 py-5 sm:px-6 xl:px-20">
           <Link
             href="/"
             className="flex shrink-0 items-center"
@@ -133,15 +133,19 @@ export default function LandingPage() {
               height={767}
               priority
               unoptimized
-              className="h-9 w-auto sm:h-11"
+              className="h-10 w-auto sm:h-12"
             />
           </Link>
           <nav
             aria-label="Main navigation"
-            className="hidden items-center gap-10 text-sm text-clay md:flex"
+            className="hidden items-center gap-8 text-[15px] font-medium text-ink/75 md:flex xl:gap-10"
           >
             {NAV_LINKS.map((l) => (
-              <Link key={l.label} href={l.href} className="transition-colors hover:text-ink">
+              <Link
+                key={l.label}
+                href={l.href}
+                className="transition-colors hover:text-ink"
+              >
                 {l.label}
               </Link>
             ))}
@@ -151,7 +155,7 @@ export default function LandingPage() {
               href="/signup"
               className="group inline-flex items-center gap-2 bg-ink px-5 py-3 text-sm font-semibold text-cream transition-colors hover:bg-sand hover:text-ink"
             >
-              Create yours
+              Earn yours
               <ArrowUpRight
                 aria-hidden="true"
                 className="h-4 w-4 shrink-0 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
@@ -163,53 +167,77 @@ export default function LandingPage() {
       </header>
 
       <main id="main-content">
-        {/* ============ Hero (revamped: editorial split, oversized serif headline,
-            certificate showcase with offset accent shadow) ============ */}
+        {/* ============ Hero (editorial split: 43% copy / 57% certificate,
+            vertically centered in the viewport, certificate as the primary
+            visual proof with a restrained offset backing layer) ============ */}
         <section className="bg-cream">
-          <div className="mx-auto grid max-w-[1440px] items-center gap-12 px-4 pb-16 pt-12 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:gap-24 lg:pb-24 lg:pt-24 xl:px-20">
-            <div className="relative z-10 min-w-0 max-w-2xl">
-              <p className="mb-8 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.28em] text-sand">
-                <span aria-hidden="true" className="h-px w-12 bg-sand" />
-                Learn. Certify. Grow.
-              </p>
-              {/* Line breaks match the reference placement (Your / next skill /
-                  deserves / proof.) from lg up; below lg the headline wraps
-                  naturally so narrow screens stay fluid. */}
-              <h1 className="max-w-2xl text-balance font-fraunces text-[clamp(3.8rem,7vw,8.4rem)] font-black leading-[0.84] tracking-[-0.075em] text-ink">
-                Your
-                <br className="hidden lg:inline" /> next skill
-                <br className="hidden lg:inline" /> deserves
-                <br className="hidden lg:inline" />{' '}
-                <em className="font-normal text-clay">proof.</em>
-              </h1>
-              <p className="mt-9 max-w-lg text-lg leading-8 text-clay">
-                Turn the things you learn online into credentials that feel as real as the work
-                behind them.
-              </p>
-              <div className="mt-10">
-                <Link
-                  href="/signup"
-                  className="group inline-flex items-center gap-4 bg-ink px-6 py-4 text-sm font-bold text-cream transition-colors hover:bg-ink/90"
-                >
-                  Make a certificate
-                  <ArrowUpRight
-                    aria-hidden="true"
-                    className="h-4 w-4 shrink-0 transition-transform group-hover:-translate-y-1 group-hover:translate-x-1"
-                  />
-                </Link>
+          <div className="mx-auto flex max-w-[1440px] items-center px-4 pb-14 pt-4 sm:px-6 lg:min-h-[calc(100dvh-7rem)] lg:pb-24 xl:px-20">
+            <div className="grid w-full items-center gap-8 lg:grid-cols-[43fr_57fr] lg:gap-12 xl:gap-10">
+              <div className="relative z-10 min-w-0">
+                <div className="mb-[31px] inline-flex items-center gap-2.5 rounded-full bg-[#fbecd9] px-4 py-2.5 text-sm font-bold text-clay">
+                  <span aria-hidden="true" className="text-clay">
+                    ✦
+                  </span>
+                  From YouTube to Verifiable Credentials
+                </div>
+                {/* Fraunces black carries the headline; the italic "proof." lands
+                    on its own line at lg+ so the serif turn feels deliberate. */}
+                {/* Fraunces black carries the headline; explicit breaks at lg+
+                    set a 3-line editorial stack with "proof." on its own line. */}
+                <h1 className="max-w-[15ch] text-balance font-fraunces text-[clamp(2.5rem,4.6vw,4.5rem)] font-black leading-[0.98] tracking-[-0.03em] text-ink">
+                  Turn what you
+                  <br className="hidden md:inline" /> learn into
+                  <br className="hidden md:inline" />{' '}
+                  <em
+                    className="bg-clip-text font-normal italic text-transparent [-webkit-box-decoration-break:clone] [box-decoration-break:clone]"
+                    style={{
+                      backgroundImage:
+                        'linear-gradient(95deg, #cfa578 0%, #b68a5e 45%, #9a6c45 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                    }}
+                  >
+                    verifiable credentials.
+                  </em>
+                </h1>
+                <p className="mt-6 max-w-[46ch] text-base leading-7 text-ink/70 sm:text-lg sm:leading-8">
+                  Learn from any YouTube video or playlist, take an AI assessment, and earn a
+                  shareable certificate.
+                </p>
+                <div className="mt-8 flex flex-col items-start gap-4">
+                  <Link
+                    href="/signup"
+                    className="group inline-flex items-center gap-3 bg-ink px-6 py-4 text-sm font-bold text-cream transition-colors hover:bg-ink/90"
+                  >
+                    Earn your first credential
+                    <ArrowUpRight
+                      aria-hidden="true"
+                      className="h-4 w-4 shrink-0 transition-transform group-hover:-translate-y-1 group-hover:translate-x-1"
+                    />
+                  </Link>
+                  <p className="text-[13px] font-medium tracking-wide text-ink/70">
+                    AI-assessed · Verifiable · Shareable
+                  </p>
+                </div>
               </div>
-            </div>
 
-            <div className="relative lg:pt-8">
-              <div className="relative">
+              {/* Certificate: offset linen backing + restrained elevation keeps the
+                  cream/certificate separation without heavy effects. */}
+              {/* Certificate stays strictly inside the container padding: no negative
+                  margins; the backing layer's 16px offset fits within the page gutter. */}
+              <div className="relative min-w-0">
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 translate-x-3 translate-y-3 bg-linen sm:translate-x-4 sm:translate-y-4"
+                />
                 <Image
                   src="/figma/certificate-hero-sm.jpg"
                   alt="Example getcertificate.today certificate of completion"
                   width={1520}
                   height={1013}
                   priority
-                  sizes="(max-width: 1024px) 100vw, 710px"
-                  className="block h-auto w-full shadow-[18px_22px_0_rgba(181,160,142,0.35)]"
+                  sizes="(max-width: 1024px) 100vw, 760px"
+                  className="relative block h-auto w-full max-w-full border border-sandline shadow-[0_4px_12px_rgba(26,26,26,0.10),0_32px_64px_-16px_rgba(26,26,26,0.30)]"
                 />
               </div>
             </div>
