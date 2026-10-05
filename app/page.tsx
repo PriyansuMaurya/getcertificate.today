@@ -204,7 +204,7 @@ export default function LandingPage() {
                   Learn from any YouTube video or playlist, take an AI assessment, and earn a
                   shareable certificate.
                 </p>
-                <div className="mt-8 flex flex-col items-start gap-4">
+                <div className="mt-8">
                   <Link
                     href="/signup"
                     className="group inline-flex items-center gap-3 bg-ink px-6 py-4 text-sm font-bold text-cream transition-colors hover:bg-ink/90"
@@ -215,9 +215,6 @@ export default function LandingPage() {
                       className="h-4 w-4 shrink-0 transition-transform group-hover:-translate-y-1 group-hover:translate-x-1"
                     />
                   </Link>
-                  <p className="text-[13px] font-medium tracking-wide text-ink/70">
-                    AI-assessed · Verifiable · Shareable
-                  </p>
                 </div>
               </div>
 
