@@ -12,6 +12,7 @@ import {
   type AssessmentFilters,
 } from './assessments-data';
 import AssessmentActions from '@/components/admin/AssessmentActions';
+import AdminNotice from '@/components/admin/AdminNotice';
 
 export const metadata: Metadata = {
   title: 'Assessments',
@@ -60,6 +61,7 @@ export default async function AdminAssessmentsPage({
     result?: string;
     generation?: string;
     sort?: string;
+    deleted?: string;
   }>;
 }) {
   await requireAdmin();
@@ -89,6 +91,8 @@ export default async function AdminAssessmentsPage({
           Generated question sets, learner attempts, and generation failures.
         </p>
       </div>
+
+      {sp.deleted === '1' && <AdminNotice message="Assessment deleted." />}
 
       {/* Failed-generation banner: the one thing an operator must not miss. */}
       {failedTotal > 0 && filters.generation !== 'failed' && (
@@ -175,7 +179,7 @@ export default async function AdminAssessmentsPage({
         </select>
         <button
           type="submit"
-          className="flex h-10 items-center justify-center rounded-lg bg-ink px-4 text-sm font-bold text-cream transition-colors hover:bg-ink/90"
+          className="flex h-10 items-center justify-center rounded-lg bg-ink px-4 text-sm font-bold text-cream transition-colors hover:bg-ink/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
         >
           Apply
         </button>
@@ -222,38 +226,41 @@ export default async function AdminAssessmentsPage({
         <>
           {/* Desktop table / mobile cards: one list, two presentations. */}
           <div className="mt-6 overflow-hidden rounded-2xl border border-sandline bg-paper">
-            <div className="hidden overflow-x-auto lg:block">
-              <table className="w-full min-w-[1100px] text-left text-sm">
+            {/* `relative` contains the absolutely-positioned sr-only "Actions" header
+                span, which would otherwise escape this scroll container and widen
+                the page past the viewport. */}
+            <div className="relative hidden overflow-x-auto xl:block">
+              <table className="w-full min-w-[1000px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-sandline text-xs text-clay">
-                    <th scope="col" className="px-4 py-3 font-bold">
+                  <tr className="border-b border-sandline text-xs text-clay [&>th]:whitespace-nowrap">
+                    <th scope="col" className="px-3 py-3 font-bold">
                       User
                     </th>
-                    <th scope="col" className="px-4 py-3 font-bold">
+                    <th scope="col" className="px-3 py-3 font-bold">
                       Course
                     </th>
-                    <th scope="col" className="px-4 py-3 text-right font-bold">
+                    <th scope="col" className="px-3 py-3 text-right font-bold">
                       Questions
                     </th>
-                    <th scope="col" className="px-4 py-3 text-right font-bold">
+                    <th scope="col" className="px-3 py-3 text-right font-bold">
                       Correct
                     </th>
-                    <th scope="col" className="px-4 py-3 font-bold">
+                    <th scope="col" className="px-3 py-3 font-bold">
                       User answers
                     </th>
-                    <th scope="col" className="px-4 py-3 text-right font-bold">
+                    <th scope="col" className="px-3 py-3 text-right font-bold">
                       Score
                     </th>
-                    <th scope="col" className="px-4 py-3 font-bold">
+                    <th scope="col" className="px-3 py-3 font-bold">
                       Result
                     </th>
-                    <th scope="col" className="px-4 py-3 font-bold">
+                    <th scope="col" className="px-3 py-3 font-bold">
                       Created
                     </th>
-                    <th scope="col" className="px-4 py-3 font-bold">
+                    <th scope="col" className="px-3 py-3 font-bold">
                       Generation
                     </th>
-                    <th scope="col" className="px-4 py-3 text-right font-bold">
+                    <th scope="col" className="px-3 py-3 text-right font-bold">
                       <span className="sr-only">Actions</span>
                     </th>
                   </tr>
@@ -262,9 +269,9 @@ export default async function AdminAssessmentsPage({
                   {rows.map((a) => (
                     <tr
                       key={a.id}
-                      className="last:border-b-none border-b border-sandline hover:bg-linen/60"
+                      className="border-b border-sandline last:border-b-0 hover:bg-linen/60"
                     >
-                      <td className="max-w-[180px] px-4 py-3">
+                      <td className="max-w-[160px] px-3 py-3">
                         <Link
                           href={`/admin/users/${a.userId}`}
                           className="block truncate font-semibold text-ink underline-offset-4 hover:underline"
@@ -273,7 +280,7 @@ export default async function AdminAssessmentsPage({
                         </Link>
                         <span className="block truncate text-xs text-clay">{a.userEmail}</span>
                       </td>
-                      <td className="max-w-[240px] px-4 py-3">
+                      <td className="max-w-[220px] px-3 py-3">
                         <Link
                           href={`/admin/assessments/${a.id}`}
                           className="block truncate font-semibold text-ink underline-offset-4 hover:underline"
@@ -281,19 +288,24 @@ export default async function AdminAssessmentsPage({
                           {a.courseTitle}
                         </Link>
                       </td>
-                      <td className="px-4 py-3 text-right font-semibold text-ink">
+                      <td className="px-3 py-3 text-right font-semibold tabular-nums text-ink">
                         {a.questionCount}
                       </td>
-                      <td className="px-4 py-3 text-right font-semibold text-ink">
+                      <td className="px-3 py-3 text-right font-semibold tabular-nums text-ink">
                         {a.latest ? `${a.latest.correctCount}/${a.questionCount}` : '\u2014'}
                       </td>
-                      <td className="px-4 py-3 text-xs text-clay">
-                        {a.latest ? a.latest.answers.join(', ') : '\u2014'}
+                      <td className="px-3 py-3">
+                        <span
+                          className="block max-w-[180px] truncate text-xs tabular-nums text-clay"
+                          title={a.latest ? a.latest.answers.join(', ') : undefined}
+                        >
+                          {a.latest ? a.latest.answers.join(', ') : '\u2014'}
+                        </span>
                       </td>
-                      <td className="px-4 py-3 text-right font-semibold text-ink">
+                      <td className="px-3 py-3 text-right font-semibold tabular-nums text-ink">
                         {a.latest ? `${a.latest.score}%` : '\u2014'}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-3">
                         {a.latest ? (
                           <span
                             className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ${
@@ -306,20 +318,21 @@ export default async function AdminAssessmentsPage({
                           <span className="text-xs text-clay">No attempts</span>
                         )}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-clay">
+                      <td className="whitespace-nowrap px-3 py-3 text-clay">
                         {fmtDate(a.createdAt)}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-3">
                         <span
                           className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-bold ${statusChip[a.status]}`}
                         >
                           {statusLabel[a.status]}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-3">
                         <AssessmentActions
                           assessmentId={a.id}
                           courseTitle={a.courseTitle}
+                          returnTo={assessmentsUrl(filters, safePage)}
                           compact
                         />
                       </td>
@@ -330,7 +343,7 @@ export default async function AdminAssessmentsPage({
             </div>
 
             {/* Stacked cards below lg - same data, no horizontal scrolling. */}
-            <ul className="divide-y divide-sandline lg:hidden">
+            <ul className="divide-y divide-sandline xl:hidden">
               {rows.map((a) => (
                 <li key={a.id} className="flex flex-col gap-3 p-4">
                   <div className="flex items-start justify-between gap-3">
@@ -369,7 +382,11 @@ export default async function AdminAssessmentsPage({
                       </dd>
                     </div>
                   </dl>
-                  <AssessmentActions assessmentId={a.id} courseTitle={a.courseTitle} />
+                  <AssessmentActions
+                    assessmentId={a.id}
+                    courseTitle={a.courseTitle}
+                    returnTo={assessmentsUrl(filters, safePage)}
+                  />
                 </li>
               ))}
             </ul>

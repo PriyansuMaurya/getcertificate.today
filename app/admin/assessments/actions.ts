@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { eq, inArray } from 'drizzle-orm';
 import { db } from '@/utils/db/db';
 import {
@@ -24,6 +25,7 @@ import {
   getTranscript,
 } from '@/utils/transcripts';
 import { requireAdmin } from '../require-admin';
+import { safeAdminReturnPath, withDeletedNotice } from '../return-path';
 
 export type AdminAssessmentActionState = { message: string; success?: boolean };
 
@@ -223,5 +225,8 @@ export async function deleteAssessment(
   revalidatePath('/admin/assessments');
   revalidatePath(`/admin/assessments/${assessmentId}`);
   revalidatePath('/admin');
-  return { message: 'Assessment deleted.', success: true };
+  // The deleted row unmounts on revalidation, so a row-level success message
+  // would go with it. Redirect back to the list (filters preserved), where
+  // AdminNotice confirms the deletion.
+  redirect(withDeletedNotice(safeAdminReturnPath(formData.get('returnTo'), '/admin/assessments')));
 }

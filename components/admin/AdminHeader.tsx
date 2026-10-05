@@ -34,7 +34,7 @@ export default function AdminHeader({ email }: { email: string }) {
 
         <Link
           href="/dashboard"
-          className="hidden text-sm font-semibold text-ink underline underline-offset-4 hover:text-clay sm:inline"
+          className="hidden rounded text-sm font-semibold text-ink underline underline-offset-4 hover:text-clay focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-cream sm:inline"
         >
           User dashboard
         </Link>

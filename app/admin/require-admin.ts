@@ -32,9 +32,13 @@ import { usersTable } from '@/utils/db/schema';
  */
 export async function requireAdmin() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // A forged/malformed auth cookie can make getUser() throw; treat that as
+  // signed out rather than letting it surface as a 500. (Defense in depth - the
+  // middleware already normalizes this for the normal document request path.)
+  const user = await supabase.auth
+    .getUser()
+    .then(({ data }) => data.user)
+    .catch(() => null);
 
   if (!user) {
     redirect('/login');

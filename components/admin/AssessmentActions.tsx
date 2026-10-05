@@ -29,7 +29,7 @@ function ActionSubmitButton({
       type="submit"
       disabled={pending}
       aria-label={ariaLabel}
-      className={`${className} disabled:opacity-50`}
+      className={`${className} disabled:cursor-not-allowed disabled:opacity-50`}
     >
       {pending ? pendingLabel : children}
     </button>
@@ -37,7 +37,7 @@ function ActionSubmitButton({
 }
 
 const btnBase =
-  'inline-flex h-9 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-bold transition-colors';
+  'inline-flex h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-cream';
 
 /**
  * Row/detail action cluster for /admin/assessments: View (link), Regenerate
@@ -49,10 +49,13 @@ const btnBase =
 export default function AssessmentActions({
   assessmentId,
   courseTitle,
+  returnTo,
   compact = false,
 }: {
   assessmentId: string;
   courseTitle: string;
+  /** Where a successful delete redirects back to (the list/detail that rendered this row). */
+  returnTo?: string;
   /** Compact variant for table rows (icon-only, labels via aria-label). */
   compact?: boolean;
 }) {
@@ -64,19 +67,24 @@ export default function AssessmentActions({
 
   // Only surface the message from whichever action ran most recently so a
   // stale success never shadows a later failure (and vice versa).
-  const message =
+  const activeState =
     confirming === 'delete'
-      ? deleteState.message
+      ? deleteState
       : confirming === 'regenerate'
-        ? regenState.message
+        ? regenState
         : lastAction === 'delete'
-          ? deleteState.message
-          : regenState.message;
+          ? deleteState
+          : regenState;
+  const message = activeState.message;
 
   if (confirming !== 'none') {
     const isRegen = confirming === 'regenerate';
     return (
-      <div className="flex w-full min-w-[260px] flex-col gap-2 rounded-xl border border-sandline bg-paper p-3">
+      <div
+        role="group"
+        aria-label={isRegen ? 'Confirm assessment regeneration' : 'Confirm assessment deletion'}
+        className="flex w-full min-w-[260px] max-w-[340px] flex-col gap-2 rounded-xl border border-sandline bg-paper p-3"
+      >
         <p className="text-xs leading-[1.6] text-clay">
           {isRegen ? (
             <>
@@ -98,6 +106,8 @@ export default function AssessmentActions({
           className="flex flex-wrap items-center gap-2"
         >
           <input type="hidden" name="assessmentId" value={assessmentId} />
+          {/* Where delete redirects after success (re-validated server-side; ignored by regenerate). */}
+          <input type="hidden" name="returnTo" value={returnTo ?? ''} />
           {/* Server-side confirmation gate (app/admin/assessments/actions.ts). */}
           <input type="hidden" name="confirm" value="yes" />
           <ActionSubmitButton
@@ -105,7 +115,7 @@ export default function AssessmentActions({
             className={`${btnBase} ${
               isRegen
                 ? 'bg-ink text-cream hover:bg-ink/90'
-                : 'bg-red-600 text-white hover:bg-red-700'
+                : 'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600'
             }`}
           >
             {isRegen ? 'Yes, regenerate' : 'Yes, delete'}
@@ -118,16 +128,23 @@ export default function AssessmentActions({
             Cancel
           </button>
         </form>
-        <p role="status" className="text-xs font-medium text-clay">
-          {message}
-        </p>
+        {message && (
+          <p
+            role={activeState.success ? 'status' : 'alert'}
+            className={`text-xs font-medium ${
+              activeState.success ? 'text-green-700' : 'text-red-600'
+            }`}
+          >
+            {message}
+          </p>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-end gap-1.5">
-      <div className="flex flex-wrap items-center justify-end gap-2">
+    <div className="flex flex-col gap-1.5 sm:items-end">
+      <div className="flex flex-wrap items-center gap-2 sm:justify-end">
         <Link
           href={`/admin/assessments/${assessmentId}`}
           className={`${btnBase} border border-sandline bg-paper text-ink hover:bg-ink/5`}
@@ -150,7 +167,7 @@ export default function AssessmentActions({
         <button
           type="button"
           onClick={() => setConfirming('delete')}
-          className={`${btnBase} border border-red-600/50 bg-paper text-red-600 hover:bg-red-50`}
+          className={`${btnBase} border border-red-600/50 bg-paper text-red-600 hover:bg-red-50 focus-visible:ring-red-600`}
           aria-label={compact ? `Delete ${courseTitle}` : undefined}
         >
           <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
@@ -158,7 +175,12 @@ export default function AssessmentActions({
         </button>
       </div>
       {message && (
-        <p role="status" className="max-w-[260px] text-right text-xs font-medium text-clay">
+        <p
+          role={activeState.success ? 'status' : 'alert'}
+          className={`max-w-[260px] text-xs font-medium sm:text-right ${
+            activeState.success ? 'text-green-700' : 'text-red-600'
+          }`}
+        >
           {message}
         </p>
       )}

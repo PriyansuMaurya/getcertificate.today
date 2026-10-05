@@ -1,10 +1,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 import { db } from '@/utils/db/db';
 import { usersTable, credentialsTable, attemptsTable, learningItemsTable } from '@/utils/db/schema';
 import { requireAdmin } from '../require-admin';
+import { safeAdminReturnPath, withDeletedNotice } from '../return-path';
 
 export type AdminUserActionState = { message: string; success?: boolean };
 
@@ -137,5 +139,8 @@ export async function deleteUser(
 
   revalidatePath('/admin/users');
   revalidatePath(`/admin/users/${userId}`);
-  return { message: 'Account and all associated activity deleted.', success: true };
+  // The deleted row unmounts on revalidation, so a row-level success message
+  // would go with it. Redirect back to the list instead (filters preserved),
+  // where AdminNotice confirms the deletion.
+  redirect(withDeletedNotice(safeAdminReturnPath(formData.get('returnTo'), '/admin/users')));
 }

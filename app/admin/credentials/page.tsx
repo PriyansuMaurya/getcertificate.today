@@ -9,6 +9,8 @@ import {
   type CredentialStatusFilter,
   type CredentialSort,
 } from './credentials-data';
+import CredentialActions from '@/components/admin/CredentialActions';
+import AdminNotice from '@/components/admin/AdminNotice';
 
 export const metadata: Metadata = {
   title: 'Credentials',
@@ -42,7 +44,13 @@ function credentialsUrl(
 export default async function AdminCredentialsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; page?: string; status?: string; sort?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    page?: string;
+    status?: string;
+    sort?: string;
+    deleted?: string;
+  }>;
 }) {
   await requireAdmin();
 
@@ -67,6 +75,8 @@ export default async function AdminCredentialsPage({
           Search issued credentials, check their status, and open the public record.
         </p>
       </div>
+
+      {sp.deleted === '1' && <AdminNotice message="Credential deleted." />}
 
       {/* Search + status + sort - GET form so results are shareable URLs. */}
       <form
@@ -119,7 +129,7 @@ export default async function AdminCredentialsPage({
         </select>
         <button
           type="submit"
-          className="flex h-10 items-center justify-center rounded-lg bg-ink px-4 text-sm font-bold text-cream transition-colors hover:bg-ink/90"
+          className="flex h-10 items-center justify-center rounded-lg bg-ink px-4 text-sm font-bold text-cream transition-colors hover:bg-ink/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
         >
           Apply
         </button>
@@ -157,27 +167,33 @@ export default async function AdminCredentialsPage({
         <>
           {/* Desktop table / mobile cards: one list, two presentations. */}
           <div className="mt-6 overflow-hidden rounded-2xl border border-sandline bg-paper">
-            <div className="hidden overflow-x-auto md:block">
-              <table className="w-full min-w-[980px] text-left text-sm">
+            {/* `relative` contains the absolutely-positioned sr-only "Actions" header
+                span, which would otherwise escape this scroll container and widen
+                the page past the viewport. */}
+            <div className="relative hidden overflow-x-auto xl:block">
+              <table className="w-full min-w-[900px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-sandline text-xs text-clay">
-                    <th scope="col" className="px-4 py-3 font-bold">
+                  <tr className="border-b border-sandline text-xs text-clay [&>th]:whitespace-nowrap">
+                    <th scope="col" className="px-3 py-3 font-bold">
                       Credential
                     </th>
-                    <th scope="col" className="px-4 py-3 font-bold">
+                    <th scope="col" className="px-3 py-3 font-bold">
                       Holder
                     </th>
-                    <th scope="col" className="px-4 py-3 font-bold">
+                    <th scope="col" className="px-3 py-3 font-bold">
                       Course
                     </th>
-                    <th scope="col" className="px-4 py-3 text-right font-bold">
+                    <th scope="col" className="px-3 py-3 text-right font-bold">
                       Score
                     </th>
-                    <th scope="col" className="px-4 py-3 font-bold">
+                    <th scope="col" className="px-3 py-3 font-bold">
                       Status
                     </th>
-                    <th scope="col" className="px-4 py-3 font-bold">
+                    <th scope="col" className="px-3 py-3 font-bold">
                       Issued
+                    </th>
+                    <th scope="col" className="px-3 py-3 text-right font-bold">
+                      <span className="sr-only">Actions</span>
                     </th>
                   </tr>
                 </thead>
@@ -185,9 +201,9 @@ export default async function AdminCredentialsPage({
                   {rows.map((c) => (
                     <tr
                       key={c.id}
-                      className="last:border-b-none border-b border-sandline hover:bg-linen/60"
+                      className="border-b border-sandline last:border-b-0 hover:bg-linen/60"
                     >
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-3">
                         <Link
                           href={`/certificates/${c.id}`}
                           title={c.id}
@@ -196,7 +212,7 @@ export default async function AdminCredentialsPage({
                           {c.id}
                         </Link>
                       </td>
-                      <td className="max-w-[220px] px-4 py-3">
+                      <td className="max-w-[200px] px-3 py-3">
                         <Link
                           href={`/admin/users/${c.userId}`}
                           className="block truncate font-semibold text-ink underline-offset-4 hover:underline"
@@ -209,9 +225,11 @@ export default async function AdminCredentialsPage({
                             : c.userEmail}
                         </span>
                       </td>
-                      <td className="max-w-[240px] truncate px-4 py-3 text-clay">{c.itemTitle}</td>
-                      <td className="px-4 py-3 text-right font-semibold text-ink">{c.score}%</td>
-                      <td className="px-4 py-3">
+                      <td className="max-w-[220px] truncate px-3 py-3 text-clay">{c.itemTitle}</td>
+                      <td className="px-3 py-3 text-right font-semibold tabular-nums text-ink">
+                        {c.score}%
+                      </td>
+                      <td className="px-3 py-3">
                         <span
                           className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ${
                             c.status === 'revoked' ? 'bg-red-600 text-white' : 'bg-linen text-clay'
@@ -220,8 +238,17 @@ export default async function AdminCredentialsPage({
                           {c.status === 'revoked' ? 'Revoked' : 'Active'}
                         </span>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-clay">
+                      <td className="whitespace-nowrap px-3 py-3 text-clay">
                         {fmtDate(c.issuedAt)}
+                      </td>
+                      <td className="px-3 py-3">
+                        <CredentialActions
+                          credentialId={c.id}
+                          holderName={c.holderName}
+                          status={c.status}
+                          returnTo={credentialsUrl(query, safePage, status, sort)}
+                          compact
+                        />
                       </td>
                     </tr>
                   ))}
@@ -230,7 +257,7 @@ export default async function AdminCredentialsPage({
             </div>
 
             {/* Stacked cards below md - same data, no horizontal scrolling. */}
-            <ul className="divide-y divide-sandline md:hidden">
+            <ul className="divide-y divide-sandline xl:hidden">
               {rows.map((c) => (
                 <li key={c.id} className="flex flex-col gap-3 p-4">
                   <div className="flex items-start justify-between gap-3">
@@ -268,6 +295,12 @@ export default async function AdminCredentialsPage({
                   >
                     {c.id}
                   </Link>
+                  <CredentialActions
+                    credentialId={c.id}
+                    holderName={c.holderName}
+                    status={c.status}
+                    returnTo={credentialsUrl(query, safePage, status, sort)}
+                  />
                 </li>
               ))}
             </ul>

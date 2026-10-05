@@ -37,8 +37,8 @@ export default function AdminNavLinks() {
             aria-current={active ? 'page' : undefined}
             className={
               active
-                ? 'flex h-11 items-center gap-3 rounded-lg bg-linen px-4 text-sm font-bold text-ink'
-                : 'flex h-11 items-center gap-3 rounded-lg px-4 text-sm font-semibold text-clay transition-colors hover:bg-cream hover:text-ink'
+                ? 'flex h-11 items-center gap-3 rounded-lg bg-linen px-4 text-sm font-bold text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper'
+                : 'flex h-11 items-center gap-3 rounded-lg px-4 text-sm font-semibold text-clay transition-colors hover:bg-cream hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper'
             }
           >
             <Icon aria-hidden="true" className="h-5 w-5" />

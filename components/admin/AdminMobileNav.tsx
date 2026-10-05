@@ -41,6 +41,7 @@ export default function AdminMobileNav() {
         type="button"
         aria-label="Toggle admin navigation"
         aria-expanded={open}
+        aria-controls="admin-mobile-nav"
         onClick={() => setOpen((v) => !v)}
         className="flex h-10 w-10 items-center justify-center rounded-lg text-ink transition-colors hover:bg-linen focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
       >
@@ -53,6 +54,7 @@ export default function AdminMobileNav() {
 
       {open && (
         <nav
+          id="admin-mobile-nav"
           aria-label="Admin navigation"
           className="absolute inset-x-0 top-full z-50 flex flex-col gap-2 border-b border-sandline bg-cream px-6 pb-6 pt-4 shadow-figma-pro"
         >
@@ -68,8 +70,8 @@ export default function AdminMobileNav() {
                 aria-current={active ? 'page' : undefined}
                 className={
                   active
-                    ? 'flex h-11 items-center gap-3 rounded-lg bg-linen px-4 text-sm font-bold text-ink'
-                    : 'flex h-11 items-center gap-3 rounded-lg px-4 text-sm font-semibold text-ink transition-colors hover:bg-linen'
+                    ? 'flex h-11 items-center gap-3 rounded-lg bg-linen px-4 text-sm font-bold text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-cream'
+                    : 'flex h-11 items-center gap-3 rounded-lg px-4 text-sm font-semibold text-ink transition-colors hover:bg-linen focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-cream'
                 }
               >
                 <Icon aria-hidden="true" className="h-5 w-5" />

@@ -7,33 +7,45 @@ export async function updateSession(request: NextRequest) {
     request,
   });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
+  // A forged or truncated auth cookie can make @supabase/ssr throw while it
+  // decodes the cookie. That must read as "signed out" (and drop the bad
+  // cookie), never as a 500 on a protected route.
+  let user: { id: string } | null = null;
+  try {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
+            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+            supabaseResponse = NextResponse.next({
+              request,
+            });
+            cookiesToSet.forEach(({ name, value, options }) =>
+              supabaseResponse.cookies.set(name, value, options)
+            );
+          },
         },
-        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          supabaseResponse = NextResponse.next({
-            request,
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
+      }
+    );
 
-  // IMPORTANT: Avoid writing any logic between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    // IMPORTANT: keep this immediately after createServerClient. Logic in
+    // between can make it hard to debug users being randomly logged out.
+    ({
+      data: { user },
+    } = await supabase.auth.getUser());
+  } catch {
+    // Deliberately do NOT clear cookies here. A genuine auth outage surfaces as
+    // an error RESULT from getUser() (not a throw), so a throw here means an
+    // undecodable cookie; treating it as signed-out already prevents the 500.
+    // Clearing cookies on error could sign users out during a transient
+    // failure, and the next successful sign-in overwrites a forged cookie.
+    user = null;
+  }
   const url = request.nextUrl.clone();
 
   if (request.nextUrl.pathname.startsWith('/webhook')) {

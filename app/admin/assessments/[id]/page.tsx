@@ -74,7 +74,11 @@ export default async function AdminAssessmentDetailPage({
           </p>
         </div>
 
-        <AssessmentActions assessmentId={assessment.id} courseTitle={assessment.courseTitle} />
+        <AssessmentActions
+          assessmentId={assessment.id}
+          courseTitle={assessment.courseTitle}
+          returnTo="/admin/assessments"
+        />
       </div>
 
       {assessment.status === 'failed' && (

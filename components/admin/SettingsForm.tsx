@@ -69,7 +69,7 @@ const inputClass =
 const inputOk = 'border-sandline focus:border-ink focus:ring-ink';
 const inputError = 'border-red-600 focus:border-red-600 focus:ring-red-600';
 const secondaryButton =
-  'inline-flex h-11 items-center justify-center rounded-lg border border-sandline bg-paper px-5 text-sm font-bold text-ink transition-colors hover:bg-ink/5';
+  'inline-flex h-11 items-center justify-center rounded-lg border border-sandline bg-paper px-5 text-sm font-bold text-ink transition-colors hover:bg-ink/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-cream';
 
 function Field({
   id,
@@ -107,7 +107,7 @@ function SubmitButton({ label, disabled }: { label: string; disabled?: boolean }
     <button
       type="submit"
       disabled={pending || disabled}
-      className="inline-flex h-11 items-center justify-center rounded-lg bg-ink px-6 text-sm font-bold text-cream transition-colors hover:bg-ink/90 disabled:cursor-not-allowed disabled:opacity-50"
+      className="inline-flex h-11 items-center justify-center rounded-lg bg-ink px-6 text-sm font-bold text-cream transition-colors hover:bg-ink/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-cream disabled:cursor-not-allowed disabled:opacity-50"
     >
       {pending ? 'Saving…' : label}
     </button>

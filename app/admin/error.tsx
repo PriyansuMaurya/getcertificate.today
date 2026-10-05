@@ -2,10 +2,10 @@
 
 import { AlertTriangle } from 'lucide-react';
 
-// Catches data-loading failures from admin pages (queries, requireAdmin DB
+// Catches data-loading failures from any /admin page (queries, requireAdmin DB
 // errors in the page). Layout-level auth redirects are unaffected: Next
-// handles redirect()/notFound() before this boundary. The internal console
-// shows the message + digest so an operator can act on it.
+// handles redirect()/notFound() before this boundary. Copy stays generic so it
+// reads correctly on every route, and the raw error message is never rendered.
 export default function AdminError({
   error,
   reset,
@@ -18,11 +18,10 @@ export default function AdminError({
       <div className="flex flex-col gap-2">
         <p className="text-[13px] font-bold uppercase tracking-wider text-sand">Admin</p>
         <h1 className="font-fraunces text-3xl font-black text-ink sm:text-4xl">
-          Overview unavailable
+          Admin console unavailable
         </h1>
         <p className="text-sm text-clay sm:text-base">
-          The dashboard data could not be loaded. This is usually a temporary database or connection
-          problem.
+          This page could not be loaded. It is usually a temporary database or connection problem.
         </p>
       </div>
 

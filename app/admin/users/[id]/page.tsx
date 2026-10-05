@@ -82,6 +82,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
           userId={user.id}
           email={user.email}
           isSuspended={user.status === 'suspended'}
+          returnTo="/admin/users"
         />
       </div>
 
