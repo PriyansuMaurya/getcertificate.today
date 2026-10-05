@@ -188,8 +188,12 @@ export default function LandingPage() {
                   Turn what you
                   <br className="hidden md:inline" /> learn into
                   <br className="hidden md:inline" />{' '}
+                  {/* background-clip:text paints only inside the element box, so
+                      the italic overhang past the last glyph renders transparent.
+                      0.2em covers Fraunces italic overhang at the clamp() max size;
+                      clone gives every wrapped line its own padded background box. */}
                   <em
-                    className="bg-clip-text font-normal italic text-transparent [-webkit-box-decoration-break:clone] [box-decoration-break:clone]"
+                    className="bg-clip-text pr-[0.2em] font-normal italic text-transparent [-webkit-box-decoration-break:clone] [box-decoration-break:clone]"
                     style={{
                       backgroundImage:
                         'linear-gradient(95deg, #cfa578 0%, #b68a5e 45%, #9a6c45 100%)',
