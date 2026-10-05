@@ -166,14 +166,21 @@ export default function LandingPage() {
         {/* ============ Hero (revamped: editorial split, oversized serif headline,
             certificate showcase with offset accent shadow) ============ */}
         <section className="bg-cream">
-          <div className="mx-auto grid max-w-[1440px] items-center gap-12 px-4 pb-16 pt-12 sm:px-6 lg:grid-cols-[0.7fr_1.3fr] lg:gap-32 lg:pb-24 lg:pt-24 xl:gap-36 xl:px-20">
+          <div className="mx-auto grid max-w-[1440px] items-center gap-12 px-4 pb-16 pt-12 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:gap-24 lg:pb-24 lg:pt-24 xl:px-20">
             <div className="relative z-10 min-w-0 max-w-2xl">
               <p className="mb-8 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.28em] text-sand">
                 <span aria-hidden="true" className="h-px w-12 bg-sand" />
                 Learn. Certify. Grow.
               </p>
-              <h1 className="max-w-2xl text-balance font-fraunces text-[clamp(3.8rem,6.5vw,8.4rem)] font-black leading-[0.84] tracking-[-0.075em] text-ink">
-                Your next skill deserves <em className="font-normal text-clay">proof.</em>
+              {/* Line breaks match the reference placement (Your / next skill /
+                  deserves / proof.) from lg up; below lg the headline wraps
+                  naturally so narrow screens stay fluid. */}
+              <h1 className="max-w-2xl text-balance font-fraunces text-[clamp(3.8rem,7vw,8.4rem)] font-black leading-[0.84] tracking-[-0.075em] text-ink">
+                Your
+                <br className="hidden lg:inline" /> next skill
+                <br className="hidden lg:inline" /> deserves
+                <br className="hidden lg:inline" />{' '}
+                <em className="font-normal text-clay">proof.</em>
               </h1>
               <p className="mt-9 max-w-lg text-lg leading-8 text-clay">
                 Turn the things you learn online into credentials that feel as real as the work
@@ -201,7 +208,7 @@ export default function LandingPage() {
                   width={1520}
                   height={1013}
                   priority
-                  sizes="(max-width: 1024px) 100vw, 740px"
+                  sizes="(max-width: 1024px) 100vw, 710px"
                   className="block h-auto w-full shadow-[18px_22px_0_rgba(181,160,142,0.35)]"
                 />
               </div>
