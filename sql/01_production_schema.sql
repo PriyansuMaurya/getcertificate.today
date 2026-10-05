@@ -109,6 +109,28 @@ BEGIN
                    AND column_name = 'dob') THEN
     ALTER TABLE public.users_table ADD COLUMN dob date;
   END IF;
+  -- Columns from migrations 0004-0006. They are backfilled here (like the 0001
+  -- columns above) because the admin-console indexes created later in this
+  -- file reference terms_consented_at: bootstrapping from scratch must create
+  -- the column before the index exists.
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_schema = 'public' AND table_name = 'users_table'
+                   AND column_name = 'terms_consented_at') THEN
+    ALTER TABLE public.users_table
+      ADD COLUMN terms_consented_at timestamp with time zone;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_schema = 'public' AND table_name = 'users_table'
+                   AND column_name = 'role') THEN
+    ALTER TABLE public.users_table
+      ADD COLUMN "role" text DEFAULT 'user' NOT NULL;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_schema = 'public' AND table_name = 'users_table'
+                   AND column_name = 'suspended_at') THEN
+    ALTER TABLE public.users_table
+      ADD COLUMN suspended_at timestamp with time zone;
+  END IF;
   -- Migration 0001's unique constraint, if it was never applied.
   IF NOT EXISTS (SELECT 1 FROM pg_constraint
                  WHERE conrelid = 'public.users_table'::regclass
@@ -128,9 +150,10 @@ END $$;
 
 -- Columns added by later migrations (terms_consented_at from 0004, role from
 -- 0005, suspended_at from 0006) are intentionally NOT in the CREATE TABLE
--- above: only journal
--- entries 0000-0003 are marked applied below, so `drizzle-kit migrate`
--- (npm run build) adds them to bootstrapped databases. See Section 9.
+-- above; the guarded block backfills them like the 0001 columns, so a
+-- bootstrapped database already has them. Section 9 therefore marks journal
+-- entries 0000-0007 as applied, keeping `drizzle-kit migrate` (npm run build)
+-- a no-op. See Section 9.
 
 -- NOTE: users_table.stripe_id intentionally has NO unique constraint.
 -- Migration 0002 drops users_table_stripe_id_unique and schema.ts does not
@@ -589,7 +612,7 @@ CREATE INDEX IF NOT EXISTS credentials_status_passed_at_idx
 -- error on a database where the dropped constraint never existed. Meanwhile
 -- migration 0001 would fail on any database that already has the profile
 -- columns. (0003 creates the `transcripts` cache table - see utils/transcripts.ts.)
--- Marking all four journal entries as applied (hash = sha256 of the
+-- Marking every journal entry as applied (hash = sha256 of the
 -- exact file bytes, created_at = journal `when`, matching drizzle-orm's
 -- migrator: SELECT ... ORDER BY created_at DESC LIMIT 1) makes
 -- `drizzle-kit migrate` (npm run build) a no-op against this schema.
@@ -610,6 +633,25 @@ WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at = 
 INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
 SELECT '77d3c91110d6dd1832cccc1f7e9c51f212b1fc93e05d58510d804aeeca391f7e', 1790784869180
 WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at = 1790784869180);
+
+-- 0004-0007 are also embodied by this file's idempotent DDL above, so mark them
+-- applied too - otherwise `drizzle-kit migrate` re-runs them against a
+-- bootstrapped DB and fails with "... already exists".
+INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
+SELECT '688fbf78325303ca67d0750f80f14de1985a3310dec143a07b725dc917601203', 1791129828120
+WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at = 1791129828120);
+
+INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
+SELECT '9d23aa5f974c463f1f59884bb7f627f9354235ed9f995fda2f67c494acdcb526', 1791225848126
+WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at = 1791225848126);
+
+INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
+SELECT '7d711d0430eabecab0bf997a3e07a9e77756f4c7a1ca7b9ed01b99a8a865b2f2', 1791228250704
+WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at = 1791228250704);
+
+INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
+SELECT '099917e791d1e097ffa130856e9f395301726ff2947d5ed9ddfdb779e19d62b3', 1791234575470
+WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at = 1791234575470);
 
 -- -----------------------------------------------------------------------------
 -- SECTION 10 - Post-run verification queries (read-only, for manual check).

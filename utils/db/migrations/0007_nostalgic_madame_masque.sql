@@ -1,4 +1,4 @@
-CREATE TABLE "app_settings" (
+CREATE TABLE IF NOT EXISTS "app_settings" (
 	"id" text PRIMARY KEY DEFAULT 'global' NOT NULL,
 	"pass_score" integer DEFAULT 70 NOT NULL,
 	"assessment_question_count" integer DEFAULT 2 NOT NULL,

@@ -1,1 +1,1 @@
-ALTER TABLE "users_table" ADD COLUMN "terms_consented_at" timestamp with time zone;
+ALTER TABLE "users_table" ADD COLUMN IF NOT EXISTS "terms_consented_at" timestamp with time zone;

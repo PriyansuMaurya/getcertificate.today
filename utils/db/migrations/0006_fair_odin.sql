@@ -1,1 +1,1 @@
-ALTER TABLE "users_table" ADD COLUMN "suspended_at" timestamp with time zone;
+ALTER TABLE "users_table" ADD COLUMN IF NOT EXISTS "suspended_at" timestamp with time zone;
