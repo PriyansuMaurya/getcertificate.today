@@ -1,0 +1,167 @@
+<!--
+  getcertificate.today · Email verification
+  Provider : Supabase Auth — template "Confirm signup"
+  Install  : Supabase Dashboard > Authentication > Email Templates > Confirm signup.
+             Paste this entire file into the message body.
+  Subject  : Confirm your email for getcertificate.today
+  Variables: {{ .ConfirmationURL }}  {{ .Email }}  {{ .Token }}  {{ .SiteURL }}
+             (Supabase uses Go template syntax; these resolve server-side.)
+-->
+<!DOCTYPE html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no" />
+    <meta name="color-scheme" content="only light" />
+    <meta name="supported-color-schemes" content="only light" />
+    <title>Confirm your email</title>
+    <!--[if mso]>
+    <xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml>
+    <style type="text/css">table,td,h1,h2,h3,p,a,span,strong{font-family:Arial,Helvetica,sans-serif !important;}</style>
+    <![endif]-->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,900&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      html,body{margin:0 !important;padding:0 !important;width:100% !important;}
+      body{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;background-color:#F5F0EB;}
+      table{border-collapse:collapse !important;border-spacing:0;mso-table-lspace:0pt;mso-table-rspace:0pt;}
+      img{border:0;height:auto;line-height:100%;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic;}
+      a{text-decoration:none;}
+      .wrapper{width:100%;}
+      .container{width:600px;max-width:600px;}
+      h1,h2,h3,p{margin:0;}
+      @media screen and (max-width:620px){
+        .container{width:100% !important;max-width:100% !important;}
+        .px{padding-left:20px !important;padding-right:20px !important;}
+        .card{padding:28px 22px !important;}
+        .h1{font-size:27px !important;line-height:1.12 !important;}
+        .h2{font-size:19px !important;}
+        .btn{width:100% !important;}
+        .btn a{display:block !important;width:100% !important;padding-left:0 !important;padding-right:0 !important;}
+        .score{font-size:40px !important;}
+        .code{font-size:24px !important;letter-spacing:0.14em !important;}
+      }
+    </style>
+  </head>
+
+  <body style="margin:0;padding:0;background-color:#F5F0EB;">
+    <!-- Preheader -->
+    <div style="display:none;font-size:1px;color:#F5F0EB;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">Confirm your email address to activate your account and earn your first verifiable credential.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>
+
+    <table role="presentation" class="wrapper" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F5F0EB;">
+      <tr>
+        <td align="center" style="padding:28px 16px 40px 16px;">
+          <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+            <!-- Logo -->
+            <tr>
+              <td class="px" style="padding:0 40px 18px 40px;">
+                <a href="{{ .SiteURL }}" style="text-decoration:none;">
+                  <img src="https://getcertificate.today/figma/logo.png" width="180" height="40" alt="getcertificate.today" style="display:block;width:180px;height:40px;border:0;" />
+                </a>
+              </td>
+            </tr>
+
+            <!-- Card -->
+            <tr>
+              <td class="px" style="padding:0 40px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background-color:#FAF8F5;border:1px solid #E3DCD5;border-radius:16px;">
+                  <tr>
+                    <td class="card" style="padding:40px;">
+                      <p style="font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;font-weight:700;line-height:1.4;color:#B5A08E;margin:0 0 10px 0;">Confirm your email</p>
+                      <h1 class="h1" style="font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:34px;font-weight:900;line-height:1.1;letter-spacing:-0.02em;color:#1A1A1A;margin:0;">Verify your email to get started.</h1>
+                      <p style="font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#6B6059;margin:18px 0 0 0;">Tap the button below to confirm <strong style="color:#1A1A1A;font-weight:700;">{{ .Email }}</strong> and activate your getcertificate.today account.</p>
+
+                      <!-- Primary button -->
+                      <table role="presentation" class="btn" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 0 0;">
+                        <tr>
+                          <td align="center" bgcolor="#1A1A1A" style="border-radius:8px;">
+                            <!--[if mso]>
+                            <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ .ConfirmationURL }}" style="height:50px;v-text-anchor:middle;width:220px;" arcsize="17%" stroke="f" fillcolor="#1A1A1A">
+                              <w:anchorlock />
+                              <center style="color:#F5F0EB;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;">Verify email</center>
+                            </v:roundrect>
+                            <![endif]-->
+                            <!--[if !mso]><!-->
+                            <a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;background-color:#1A1A1A;color:#F5F0EB;font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:50px;text-align:center;text-decoration:none;padding:0 28px;border-radius:8px;mso-hide:all;">Verify email</a>
+                            <!--<![endif]-->
+                          </td>
+                        </tr>
+                      </table>
+
+                      <p style="font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:#6B6059;margin:22px 0 0 0;">Button not working? Paste this link into your browser:<br /><a href="{{ .ConfirmationURL }}" style="color:#1A1A1A;font-weight:600;text-decoration:underline;word-break:break-all;">{{ .ConfirmationURL }}</a></p>
+                      <p style="font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:#6B6059;margin:16px 0 0 0;">Prefer a code? Enter this in the app:</p>
+                      <span class="code" style="display:inline-block;margin:8px 0 0 0;padding:10px 16px;background-color:#EAE3DC;border-radius:8px;font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:20px;font-weight:800;letter-spacing:0.18em;color:#1A1A1A;">{{ .Token }}</span>
+
+                      <!-- Divider -->
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:32px 0 0 0;">
+                        <tr><td style="border-top:1px solid #E3DCD5;font-size:0;line-height:0;height:0;">&nbsp;</td></tr>
+                      </table>
+
+                      <p style="font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;font-weight:700;line-height:1.4;color:#B5A08E;margin:28px 0 0 0;">What happens next</p>
+                      <h2 class="h2" style="font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;line-height:1.2;color:#1A1A1A;margin:6px 0 0 0;">From video to credential in three steps.</h2>
+
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 0 0;">
+                        <tr>
+                          <td style="padding:16px 0 4px 0;border-top:1px solid #E3DCD5;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                              <tr>
+                                <td width="42" valign="top" style="width:42px;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:22px;font-weight:600;line-height:1.2;color:#B5A08E;padding-top:2px;">01</td>
+                                <td valign="top">
+                                  <p style="font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.4;color:#1A1A1A;margin:0;">Watch a video</p>
+                                  <p style="font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.55;color:#6B6059;margin:4px 0 0 0;">The player tracks your progress as you learn.</p>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:16px 0 4px 0;border-top:1px solid #E3DCD5;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                              <tr>
+                                <td width="42" valign="top" style="width:42px;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:22px;font-weight:600;line-height:1.2;color:#B5A08E;padding-top:2px;">02</td>
+                                <td valign="top">
+                                  <p style="font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.4;color:#1A1A1A;margin:0;">Pass the assessment</p>
+                                  <p style="font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.55;color:#6B6059;margin:4px 0 0 0;">At 80% watched, an AI assessment unlocks. Score at or above the pass mark to qualify.</p>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding:16px 0 4px 0;border-top:1px solid #E3DCD5;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                              <tr>
+                                <td width="42" valign="top" style="width:42px;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:22px;font-weight:600;line-height:1.2;color:#B5A08E;padding-top:2px;">03</td>
+                                <td valign="top">
+                                  <p style="font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.4;color:#1A1A1A;margin:0;">Earn your credential</p>
+                                  <p style="font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.55;color:#6B6059;margin:4px 0 0 0;">Get a shareable certificate with a public verification link.</p>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td class="px" style="padding:22px 40px 0 40px;">
+                <p style="font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:#6B6059;margin:0;">Turning YouTube video minutes into verifiable professional credentials. Learn Today. Go Further.</p>
+                <p style="font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:#6B6059;margin:12px 0 0 0;"><a href="{{ .SiteURL }}/privacy" style="color:#6B6059;text-decoration:underline;margin-right:18px;">Privacy Policy</a><a href="{{ .SiteURL }}/terms" style="color:#6B6059;text-decoration:underline;margin-right:18px;">Terms of Service</a><a href="{{ .SiteURL }}/cookie-policy" style="color:#6B6059;text-decoration:underline;">Cookie Policy</a></p>
+                <p style="font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#B5A08E;margin:12px 0 0 0;">You received this email because someone used this address to create a getcertificate.today account. If that wasn't you, you can safely ignore this email. Questions? Contact maurya.builds+getcertificate@gmail.com.</p>
+                <p style="font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#B5A08E;margin:8px 0 0 0;">© 2026 getcertificate.today. All rights reserved.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

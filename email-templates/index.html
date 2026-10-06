@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Email templates · getcertificate.today</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,900&family=Manrope:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --cream: #f5f0eb;
+        --paper: #faf8f5;
+        --ink: #1a1a1a;
+        --clay: #6b6059;
+        --sand: #b5a08e;
+        --linen: #eae3dc;
+        --sandline: #e3dcd5;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--cream);
+        color: var(--ink);
+        font-family: 'Manrope', -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      header {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 48px 24px 8px;
+      }
+      .eyebrow {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--sand);
+        margin: 0 0 10px;
+      }
+      h1 {
+        font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+        font-size: clamp(30px, 4vw, 44px);
+        font-weight: 900;
+        line-height: 1.08;
+        letter-spacing: -0.02em;
+        margin: 0;
+      }
+      .lede {
+        max-width: 62ch;
+        margin: 16px 0 0;
+        color: var(--clay);
+        font-size: 16px;
+        line-height: 1.6;
+      }
+      .note {
+        max-width: 62ch;
+        margin: 18px 0 0;
+        padding: 14px 18px;
+        background: var(--linen);
+        border-radius: 10px;
+        color: var(--clay);
+        font-size: 14px;
+        line-height: 1.55;
+      }
+      .note[hidden] {
+        display: none;
+      }
+      main {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 32px 24px 80px;
+        display: flex;
+        flex-direction: column;
+        gap: 40px;
+      }
+      .group-title {
+        font-family: 'Fraunces', Georgia, serif;
+        font-size: 22px;
+        font-weight: 700;
+        margin: 8px 0 0;
+      }
+      .group-sub {
+        margin: 6px 0 0;
+        color: var(--clay);
+        font-size: 14px;
+      }
+      .card {
+        background: var(--paper);
+        border: 1px solid var(--sandline);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px 0 rgba(107, 96, 89, 0.08);
+      }
+      .card__bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 6px 14px;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--sandline);
+      }
+      .card__name {
+        font-weight: 800;
+        font-size: 15px;
+      }
+      .card__file {
+        font-family: 'SFMono-Regular', Menlo, Consolas, monospace;
+        font-size: 12px;
+        color: var(--clay);
+      }
+      .pill {
+        margin-left: auto;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--ink);
+        background: var(--linen);
+        border-radius: 999px;
+        padding: 4px 10px;
+      }
+      .card__subject {
+        padding: 12px 20px 0;
+        font-size: 13px;
+        color: var(--clay);
+      }
+      .card__subject strong {
+        color: var(--ink);
+      }
+      iframe {
+        display: block;
+        width: 100%;
+        height: 900px;
+        border: 0;
+        background: var(--paper);
+        margin-top: 16px;
+      }
+      footer {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 0 24px 64px;
+        color: var(--sand);
+        font-size: 13px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <p class="eyebrow">getcertificate.today</p>
+      <h1>Email template gallery.</h1>
+      <p class="lede">
+        Local preview of every template with sample data substituted. Supabase auth emails use Go
+        variables; Resend app emails use Handlebars variables. Rendering here is approximate — always
+        confirm in a real client before shipping.
+      </p>
+      <p class="note" id="fallback-note" hidden>
+        Couldn't read the template files (browsers block <code>fetch()</code> on <code>file://</code>).
+        Serve this folder over HTTP to see them rendered with sample data:<br />
+        <code>npx serve email-templates</code> or
+        <code>python3 -m http.server 8080 -d email-templates</code>
+      </p>
+    </header>
+
+    <main id="gallery"></main>
+    <footer>© 2026 getcertificate.today — internal template preview.</footer>
+
+    <script>
+      const TEMPLATES = [
+        {
+          file: 'supabase/confirm-signup.html',
+          provider: 'Supabase',
+          name: 'Confirm signup',
+          subject: 'Confirm your email for getcertificate.today',
+          vars: {
+            SiteURL: 'https://getcertificate.today',
+            Email: 'learner@example.com',
+            Token: '482913',
+            ConfirmationURL:
+              'https://getcertificate.today/auth/confirm?token_hash=demo&type=signup',
+          },
+        },
+        {
+          file: 'supabase/reset-password.html',
+          provider: 'Supabase',
+          name: 'Reset password',
+          subject: 'Reset your getcertificate.today password',
+          vars: {
+            SiteURL: 'https://getcertificate.today',
+            Email: 'learner@example.com',
+            ConfirmationURL: 'https://getcertificate.today/forgot-password/reset?code=demo',
+          },
+        },
+        {
+          file: 'supabase/magic-link.html',
+          provider: 'Supabase',
+          name: 'Magic link',
+          subject: 'Your sign-in link for getcertificate.today',
+          vars: {
+            SiteURL: 'https://getcertificate.today',
+            Email: 'learner@example.com',
+            Token: '738204',
+            ConfirmationURL:
+              'https://getcertificate.today/auth/confirm?token_hash=demo&type=magiclink',
+          },
+        },
+        {
+          file: 'supabase/change-email.html',
+          provider: 'Supabase',
+          name: 'Change email',
+          subject: 'Confirm your new email address',
+          vars: {
+            SiteURL: 'https://getcertificate.today',
+            Email: 'old@example.com',
+            NewEmail: 'new@example.com',
+            ConfirmationURL:
+              'https://getcertificate.today/auth/confirm?token_hash=demo&type=email_change',
+          },
+        },
+        {
+          file: 'supabase/reauthentication.html',
+          provider: 'Supabase',
+          name: 'Reauthentication',
+          subject: 'Your getcertificate.today verification code',
+          vars: {
+            SiteURL: 'https://getcertificate.today',
+            Email: 'learner@example.com',
+            Token: '915372',
+          },
+        },
+        {
+          file: 'supabase/invite.html',
+          provider: 'Supabase',
+          name: 'Invite user',
+          subject: "You've been invited to getcertificate.today",
+          vars: {
+            SiteURL: 'https://getcertificate.today',
+            Email: 'invitee@example.com',
+            ConfirmationURL: 'https://getcertificate.today/auth/confirm?token_hash=demo&type=invite',
+          },
+        },
+        {
+          file: 'resend/certificate-earned.html',
+          provider: 'Resend',
+          name: 'Certificate earned',
+          subject: 'Your certificate for Advanced TypeScript is ready',
+          vars: {
+            HOLDER_NAME: 'Priya Maurya',
+            ITEM_TITLE: 'Advanced TypeScript',
+            SCORE: 92,
+            PASS_SCORE: 70,
+            ISSUED_DATE: 'October 6, 2026',
+            CREDENTIAL_ID: 'cred_8F21K9P4XM',
+            CERTIFICATE_URL: 'https://getcertificate.today/certificates/8F21K9P4',
+            VERIFY_URL: 'https://getcertificate.today/verify/8F21K9P4',
+            PREFERENCES_URL: 'https://getcertificate.today/dashboard/settings',
+          },
+        },
+        {
+          file: 'resend/assessment-ready.html',
+          provider: 'Resend',
+          name: 'Assessment ready',
+          subject: 'Your assessment for Advanced TypeScript is ready',
+          vars: {
+            LEARNER_NAME: 'Priya',
+            ITEM_TITLE: 'Advanced TypeScript',
+            WATCH_PERCENT: 84,
+            QUESTION_COUNT: 8,
+            PASS_SCORE: 70,
+            ASSESSMENT_URL: 'https://getcertificate.today/learn/lrn_2f9/assessment',
+            PREFERENCES_URL: 'https://getcertificate.today/dashboard/settings',
+          },
+        },
+        {
+          file: 'resend/assessment-results-passed.html',
+          provider: 'Resend',
+          name: 'Assessment results — passed',
+          subject: 'You passed the Advanced TypeScript assessment',
+          vars: {
+            LEARNER_NAME: 'Priya',
+            ITEM_TITLE: 'Advanced TypeScript',
+            SCORE: 92,
+            PASS_SCORE: 70,
+            CERTIFICATE_URL: 'https://getcertificate.today/certificates/8F21K9P4',
+            VIEW_RESULT_URL: 'https://getcertificate.today/learn/lrn_2f9/assessment/result',
+            PREFERENCES_URL: 'https://getcertificate.today/dashboard/settings',
+          },
+        },
+        {
+          file: 'resend/assessment-results-not-passed.html',
+          provider: 'Resend',
+          name: 'Assessment results — not passed',
+          subject: 'Your Advanced TypeScript assessment result',
+          vars: {
+            LEARNER_NAME: 'Priya',
+            ITEM_TITLE: 'Advanced TypeScript',
+            SCORE: 55,
+            PASS_SCORE: 70,
+            RETAKE_URL: 'https://getcertificate.today/learn/lrn_2f9',
+            PREFERENCES_URL: 'https://getcertificate.today/dashboard/settings',
+          },
+        },
+        {
+          file: 'resend/notification.html',
+          provider: 'Resend',
+          name: 'Notification (generic)',
+          subject: 'Your Professional plan is active.',
+          vars: {
+            EYEBROW: 'Subscription confirmed',
+            NOTIFICATION_TITLE: 'Your Professional plan is active.',
+            NOTIFICATION_MESSAGE:
+              'Thanks for subscribing. You can now mint unlimited credentials and keep every certificate you earn.',
+            DETAIL_LABEL: 'Plan',
+            DETAIL_VALUE: 'Professional · Monthly',
+            ACTION_LABEL: 'Manage billing',
+            ACTION_URL: 'https://getcertificate.today/dashboard/settings',
+            FOOTER_NOTE: 'Your next invoice will be charged to the card on file.',
+            PREFERENCES_URL: 'https://getcertificate.today/dashboard/settings',
+          },
+        },
+        {
+          file: 'resend/credential-revoked.html',
+          provider: 'Resend',
+          name: 'Credential revoked',
+          subject: 'Your Advanced TypeScript credential was revoked',
+          vars: {
+            HOLDER_NAME: 'Priya Maurya',
+            ITEM_TITLE: 'Advanced TypeScript',
+            REVOKED_DATE: 'October 6, 2026',
+            REASON: 'The assessment result could not be validated.',
+            VERIFY_URL: 'https://getcertificate.today/verify/8F21K9P4',
+            PREFERENCES_URL: 'https://getcertificate.today/dashboard/settings',
+          },
+        },
+      ];
+
+      /** HTML-escapes a sample value (Resend inserts variables raw, so we escape). */
+      function esc(value) {
+        return String(value ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      /** Substitutes Supabase Go variables and Resend triple-brace variables. */
+      function render(html, vars) {
+        return html
+          .replace(/\{\{\{\s*([A-Za-z0-9_]+)\s*\}\}\}/g, (_m, k) => esc(vars[k]))
+          .replace(/\{\{\s*\.([A-Za-z0-9_]+)\s*\}\}/g, (_m, k) => esc(vars[k]));
+      }
+
+      function card(tpl, html) {
+        const el = document.createElement('article');
+        el.className = 'card';
+
+        const bar = document.createElement('div');
+        bar.className = 'card__bar';
+        const name = document.createElement('span');
+        name.className = 'card__name';
+        name.textContent = tpl.name;
+        const file = document.createElement('span');
+        file.className = 'card__file';
+        file.textContent = tpl.file;
+        const pill = document.createElement('span');
+        pill.className = 'pill';
+        pill.textContent = tpl.provider;
+        bar.append(name, file, pill);
+
+        const subject = document.createElement('p');
+        subject.className = 'card__subject';
+        subject.innerHTML = '<strong>Subject:</strong> ';
+        subject.append(document.createTextNode(tpl.subject));
+
+        const frame = document.createElement('iframe');
+        frame.title = tpl.name;
+        frame.setAttribute('sandbox', '');
+        if (html) frame.srcdoc = html;
+        else frame.src = tpl.file;
+
+        el.append(bar, subject, frame);
+        return el;
+      }
+
+      async function build() {
+        const gallery = document.getElementById('gallery');
+        let canFetch = true;
+
+        const groups = [
+          {
+            key: 'supabase',
+            title: 'Supabase auth emails',
+            sub: 'Paste into Supabase Dashboard → Authentication → Email Templates. Go template variables.',
+          },
+          {
+            key: 'resend',
+            title: 'Resend app emails',
+            sub: 'Upload to Resend or send as raw HTML. Handlebars variables.',
+          },
+        ];
+
+        for (const group of groups) {
+          const heading = document.createElement('h2');
+          heading.className = 'group-title';
+          heading.textContent = group.title;
+          const sub = document.createElement('p');
+          sub.className = 'group-sub';
+          sub.textContent = group.sub;
+          gallery.append(heading, sub);
+
+          for (const tpl of TEMPLATES.filter((t) => tpl.file.startsWith(group.key + '/'))) {
+            let html = null;
+            if (canFetch) {
+              try {
+                const res = await fetch(tpl.file);
+                if (!res.ok) throw new Error(String(res.status));
+                html = render(await res.text(), tpl.vars);
+              } catch {
+                canFetch = false;
+              }
+            }
+            gallery.append(card(tpl, html));
+          }
+        }
+
+        if (!canFetch) {
+          document.getElementById('fallback-note').hidden = false;
+        }
+      }
+
+      build();
+    </script>
+  </body>
+</html>

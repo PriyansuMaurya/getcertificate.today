@@ -1,0 +1,4 @@
+# Email templates are hand-authored HTML. Prettier reflows whitespace between
+# table cells and mangles MSO conditional comments (<!--[if mso]> ... VML),
+# which changes how Gmail/Outlook render them. Keep them out of formatting.
+email-templates/

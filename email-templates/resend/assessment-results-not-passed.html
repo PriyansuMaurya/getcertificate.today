@@ -1,0 +1,131 @@
+<!--
+  getcertificate.today - Assessment results, not passed
+  Provider : Resend Templates API, or send as raw HTML (see README.md).
+  Subject  : Your {{{ITEM_TITLE}}} assessment result
+  Variables: {{{LEARNER_NAME}}} {{{ITEM_TITLE}}} {{{SCORE}}} {{{PASS_SCORE}}}
+             {{{RETAKE_URL}}} {{{PREFERENCES_URL}}}
+  Notes    : Resend uses triple-brace variables and has no
+             conditionals or loops, so every variable listed is required.
+             Values are inserted raw - HTML-escape user-provided text
+             (holder names, video titles) before passing it in.
+-->
+<!DOCTYPE html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no" />
+    <meta name="color-scheme" content="only light" />
+    <meta name="supported-color-schemes" content="only light" />
+    <title>Your assessment result</title>
+    <!--[if mso]>
+    <xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml>
+    <style type="text/css">table,td,h1,h2,h3,p,a,span,strong{font-family:Arial,Helvetica,sans-serif !important;}</style>
+    <![endif]-->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,900&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      html,body{margin:0 !important;padding:0 !important;width:100% !important;}
+      body{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;background-color:#F5F0EB;}
+      table{border-collapse:collapse !important;border-spacing:0;mso-table-lspace:0pt;mso-table-rspace:0pt;}
+      img{border:0;height:auto;line-height:100%;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic;}
+      a{text-decoration:none;}
+      .wrapper{width:100%;}
+      .container{width:600px;max-width:600px;}
+      h1,h2,h3,p{margin:0;}
+      @media screen and (max-width:620px){
+        .container{width:100% !important;max-width:100% !important;}
+        .px{padding-left:20px !important;padding-right:20px !important;}
+        .card{padding:28px 22px !important;}
+        .h1{font-size:27px !important;line-height:1.12 !important;}
+        .h2{font-size:19px !important;}
+        .btn{width:100% !important;}
+        .btn a{display:block !important;width:100% !important;padding-left:0 !important;padding-right:0 !important;}
+        .score{font-size:40px !important;}
+        .code{font-size:24px !important;letter-spacing:0.14em !important;}
+      }
+    </style>
+  </head>
+
+  <body style="margin:0;padding:0;background-color:#F5F0EB;">
+    <!-- Preheader -->
+    <div style="display:none;font-size:1px;color:#F5F0EB;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">You scored {{{SCORE}}}%. The pass mark is {{{PASS_SCORE}}}% - you can retake it any time.&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>
+
+    <table role="presentation" class="wrapper" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F5F0EB;">
+      <tr>
+        <td align="center" style="padding:28px 16px 40px 16px;">
+          <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+            <!-- Logo -->
+            <tr>
+              <td class="px" style="padding:0 40px 18px 40px;">
+                <a href="https://getcertificate.today" style="text-decoration:none;">
+                  <img src="https://getcertificate.today/figma/logo.png" width="180" height="40" alt="getcertificate.today" style="display:block;width:180px;height:40px;border:0;" />
+                </a>
+              </td>
+            </tr>
+
+            <!-- Card -->
+            <tr>
+              <td class="px" style="padding:0 40px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background-color:#FAF8F5;border:1px solid #E3DCD5;border-radius:16px;">
+                  <tr>
+                    <td class="card" style="padding:40px;">
+                      <p style="font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;font-weight:700;line-height:1.4;color:#B5A08E;margin:0 0 10px 0;">Not quite there yet</p>
+                      <h1 class="h1" style="font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:34px;font-weight:900;line-height:1.1;letter-spacing:-0.02em;color:#1A1A1A;margin:0;">Almost, {{{LEARNER_NAME}}}.</h1>
+                      <p style="font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#6B6059;margin:18px 0 0 0;">You scored {{{SCORE}}}% on the {{{ITEM_TITLE}}} assessment. The pass mark is {{{PASS_SCORE}}}%. Review the video and try again - your progress is saved and the assessment stays unlocked.</p>
+
+                      <!-- Score panel -->
+                      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:26px 0 0 0;">
+                        <tr>
+                          <td valign="bottom" style="padding-right:32px;">
+                            <p class="score" style="font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:52px;font-weight:900;line-height:1;letter-spacing:-0.02em;color:#1A1A1A;margin:0;">{{{SCORE}}}%</p>
+                            <p style="font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.4;color:#6B6059;margin:8px 0 0 0;">Your score</p>
+                          </td>
+                          <td valign="bottom" style="border-left:1px solid #E3DCD5;padding-left:32px;">
+                            <p class="score" style="font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:52px;font-weight:900;line-height:1;letter-spacing:-0.02em;color:#1A1A1A;margin:0;">{{{PASS_SCORE}}}%</p>
+                            <p style="font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.4;color:#6B6059;margin:8px 0 0 0;">Pass mark</p>
+                          </td>
+                        </tr>
+                      </table>
+
+                      <!-- Primary button -->
+                      <table role="presentation" class="btn" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 0 0;">
+                        <tr>
+                          <td align="center" bgcolor="#1A1A1A" style="border-radius:8px;">
+                            <!--[if mso]>
+                            <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{{RETAKE_URL}}}" style="height:50px;v-text-anchor:middle;width:250px;" arcsize="17%" stroke="f" fillcolor="#1A1A1A">
+                              <w:anchorlock />
+                              <center style="color:#F5F0EB;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;">Review course and retake</center>
+                            </v:roundrect>
+                            <![endif]-->
+                            <!--[if !mso]><!-->
+                            <a href="{{{RETAKE_URL}}}" target="_blank" style="display:inline-block;background-color:#1A1A1A;color:#F5F0EB;font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;line-height:50px;text-align:center;text-decoration:none;padding:0 28px;border-radius:8px;mso-hide:all;">Review course and retake</a>
+                            <!--<![endif]-->
+                          </td>
+                        </tr>
+                      </table>
+
+                      <p style="font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:#6B6059;margin:16px 0 0 0;">There's no penalty for retaking - the assessment stays unlocked whenever you're ready.</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td class="px" style="padding:22px 40px 0 40px;">
+                <p style="font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:#6B6059;margin:0;">Turning YouTube video minutes into verifiable professional credentials. Learn Today. Go Further.</p>
+                <p style="font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:#6B6059;margin:12px 0 0 0;"><a href="https://getcertificate.today/privacy" style="color:#6B6059;text-decoration:underline;margin-right:18px;">Privacy Policy</a><a href="https://getcertificate.today/terms" style="color:#6B6059;text-decoration:underline;margin-right:18px;">Terms of Service</a><a href="{{{PREFERENCES_URL}}}" style="color:#6B6059;text-decoration:underline;">Email preferences</a></p>
+                <p style="font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#B5A08E;margin:12px 0 0 0;">You received this email because you completed an assessment on getcertificate.today. Questions? Contact maurya.builds+getcertificate@gmail.com.</p>
+                <p style="font-family:'Manrope',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#B5A08E;margin:8px 0 0 0;">© 2026 getcertificate.today. All rights reserved.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
