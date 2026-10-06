@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { generateStripeBillingPortalLink, getStripePlan } from '@/utils/stripe/api';
 import SettingsProfileForm from '@/components/settings/SettingsProfileForm';
 import SettingsPasswordForm from '@/components/settings/SettingsPasswordForm';
+import SettingsPasswordResetButton from '@/components/settings/SettingsPasswordResetButton';
 import SettingsSignOutButton from '@/components/settings/SettingsSignOutButton';
 import DeleteAccountButton from '@/components/settings/DeleteAccountButton';
 import Link from 'next/link';
@@ -133,8 +134,9 @@ export default async function SettingsPage() {
             </div>
           </div>
 
-          <div className="mt-5">
+          <div className="mt-5 flex flex-col gap-5">
             <SettingsPasswordForm />
+            <SettingsPasswordResetButton />
           </div>
         </section>
 

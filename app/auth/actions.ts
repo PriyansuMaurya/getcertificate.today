@@ -274,6 +274,18 @@ export async function resetPassword(currentState: { message: string }, formData:
   if (error) {
     return { message: error.message };
   }
+
+  // The reset link is one-time: Supabase consumes its OTP when we exchanged the
+  // code above. Ending the session that exchange created as well means a replayed
+  // link (or a back-button revisit of this page) can never change the password
+  // again - the user signs in fresh with the new password. A failed/offline
+  // sign-out is logged only: the password is already updated, so it must never
+  // block the success redirect.
+  const { error: signOutError } = await supabase.auth.signOut({ scope: 'local' });
+  if (signOutError) {
+    console.error('[auth] post-reset sign-out failed:', signOutError.message);
+  }
+
   redirect(`/forgot-password/reset/success`);
 }
 

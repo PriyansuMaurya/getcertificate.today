@@ -9,7 +9,18 @@ export const metadata = {
   alternates: { canonical: '/login' },
 };
 
-export default function Login() {
+export default async function Login({
+  searchParams,
+}: {
+  searchParams: Promise<{ passwordChanged?: string; signOutFailed?: string }>;
+}) {
+  // Set by the Settings password-change action after it signs the user out
+  // everywhere (scope 'global'). `signOutFailed` records that the server-side
+  // revocation errored, so we warn instead of implying the account is fully clear.
+  const { passwordChanged, signOutFailed } = await searchParams;
+  const showPasswordChanged = passwordChanged === '1';
+  const showSignOutWarning = showPasswordChanged && signOutFailed === '1';
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-cream px-4 py-12 text-ink">
       <div className="w-full max-w-[480px] rounded-2xl border border-sandline bg-paper p-8 shadow-figma-hero sm:p-12 lg:min-h-[698px] lg:p-[47px]">
@@ -31,6 +42,25 @@ export default function Login() {
         </div>
 
         <div className="mt-8 grid gap-5">
+          {showPasswordChanged && (
+            <p
+              role="status"
+              className="rounded-lg border border-green-600/20 bg-green-500/10 p-3 text-center text-sm font-medium text-green-800"
+            >
+              Your password has been updated. Sign in with your new password.
+            </p>
+          )}
+
+          {showSignOutWarning && (
+            <p
+              role="alert"
+              className="rounded-lg border border-amber-600/30 bg-amber-500/10 p-3 text-center text-sm font-medium text-amber-800"
+            >
+              We couldn&apos;t sign out all of your other devices. If you don&apos;t recognize this
+              activity, contact support right away.
+            </p>
+          )}
+
           <LoginForm />
 
           <div className="relative my-2">

@@ -23,6 +23,24 @@ export default function SettingsPasswordForm() {
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <label
+          htmlFor="current-password"
+          className="text-xs font-bold uppercase tracking-wider text-clay"
+        >
+          Current password
+        </label>
+        <input
+          id="current-password"
+          type="password"
+          name="current_password"
+          placeholder="••••••••"
+          required
+          autoComplete="current-password"
+          className="h-11 rounded-lg border border-sandline bg-cream px-3.5 text-sm text-ink placeholder:text-clay/60 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
+        />
+      </div>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <label
@@ -66,14 +84,7 @@ export default function SettingsPasswordForm() {
       <div className="flex items-center gap-3">
         <SubmitButton />
         {formState.message && (
-          <p
-            role="status"
-            className={
-              formState.success
-                ? 'text-sm font-medium text-green-700'
-                : 'text-sm font-medium text-red-600'
-            }
-          >
+          <p role="status" className="text-sm font-medium text-red-600">
             {formState.message}
           </p>
         )}

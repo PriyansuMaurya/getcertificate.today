@@ -2,14 +2,20 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { and, eq, ne } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { createClient } from '@/utils/supabase/server';
 import { db } from '@/utils/db/db';
 import { usersTable, credentialsTable, attemptsTable, learningItemsTable } from '@/utils/db/schema';
 
+const PUBLIC_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || 'http://localhost:3000';
+
 export type SettingsActionState = { message: string; success?: boolean };
 
-/** Update profile fields editable after onboarding (FR-A5 extension). */
+/**
+ * Update the profile fields editable after onboarding (FR-A5 extension).
+ * Email and username are shown read-only in Settings, so only the name is
+ * written here - the form intentionally does not submit a username.
+ */
 export async function updateProfile(
   _currentState: SettingsActionState,
   formData: FormData
@@ -20,42 +26,26 @@ export async function updateProfile(
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const username = (formData.get('username') as string | null)?.trim() ?? '';
   const firstName = (formData.get('firstName') as string | null)?.trim() ?? '';
   const lastName = (formData.get('lastName') as string | null)?.trim() ?? '';
 
-  if (!username || !firstName || !lastName) {
-    return { message: 'Username and name are required.' };
+  if (!firstName || !lastName) {
+    return { message: 'First name and surname are required.' };
   }
   if (firstName.length > 100 || lastName.length > 100) {
     return { message: 'Name must be 100 characters or fewer.' };
-  }
-  if (!/^[a-z0-9_]{3,20}$/.test(username)) {
-    return {
-      message: 'Username must be 3-20 characters: lowercase letters, numbers, underscores only.',
-    };
-  }
-
-  // Advisory pre-check; the unique constraint in the DB is the source of truth.
-  const conflict = await db
-    .select({ id: usersTable.id })
-    .from(usersTable)
-    .where(and(eq(usersTable.username, username), ne(usersTable.id, user.id)));
-  if (conflict.length > 0) {
-    return { message: 'That username is already taken. Please choose another one.' };
   }
 
   try {
     await db
       .update(usersTable)
-      .set({ username, first_name: firstName, last_name: lastName })
+      .set({ first_name: firstName, last_name: lastName })
       .where(eq(usersTable.id, user.id));
   } catch (err) {
-    const msg = err instanceof Error ? err.message : '';
-    if (msg.includes('unique') || msg.includes('duplicate')) {
-      return { message: 'That username is already taken. Please choose another one.' };
-    }
-    console.error('[settings] profile update failed:', msg || 'unknown error');
+    console.error(
+      '[settings] profile update failed:',
+      err instanceof Error ? err.message : 'unknown error'
+    );
     return { message: 'Could not save your profile. Please try again.' };
   }
 
@@ -63,7 +53,44 @@ export async function updateProfile(
   return { message: 'Profile saved.', success: true };
 }
 
-/** Change password for email/password accounts (Supabase-managed). */
+/**
+ * Emails a password reset link for the signed-in user (Supabase-managed).
+ * Mirrors forgotPassword() but sources the address from the session so the
+ * user never has to retype it, and reports inline instead of redirecting away
+ * from Settings.
+ */
+export async function sendPasswordResetEmail(): Promise<SettingsActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
+
+  if (!user.email) {
+    return { message: 'Your account has no email address. Please contact support.' };
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+    redirectTo: `${PUBLIC_URL}/forgot-password/reset`,
+  });
+  if (error) {
+    console.error('[settings] password reset email failed:', error.message);
+    return { message: 'Could not send the reset email. Please try again.' };
+  }
+
+  return {
+    message: `We emailed a password reset link to ${user.email}.`,
+    success: true,
+  };
+}
+
+/**
+ * Change password for email/password accounts (Supabase-managed).
+ * Requires the current password: updateUser({ password }) alone would let
+ * anyone holding a hijacked session take over the account, so we re-verify the
+ * current password with signInWithPassword first. Social-only accounts have no
+ * password to confirm and are pointed at the reset-link flow instead.
+ */
 export async function changePassword(
   _currentState: SettingsActionState,
   formData: FormData
@@ -74,22 +101,76 @@ export async function changePassword(
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
+  const currentPassword = formData.get('current_password');
   const password = formData.get('password');
   const confirm = formData.get('confirm_password');
 
-  if (typeof password !== 'string' || typeof confirm !== 'string') {
-    return { message: 'Please fill in both password fields.' };
+  if (
+    typeof currentPassword !== 'string' ||
+    typeof password !== 'string' ||
+    typeof confirm !== 'string' ||
+    !currentPassword ||
+    !password ||
+    !confirm
+  ) {
+    return { message: 'Please fill in all password fields.' };
   }
-  if (!password || !confirm) return { message: 'Please fill in both password fields.' };
   if (password !== confirm) return { message: 'Passwords do not match.' };
   if (password.length < 8) return { message: 'Password must be at least 8 characters.' };
+
+  if (!user.email) {
+    return { message: 'Your account has no email address. Please contact support.' };
+  }
+
+  // Verify the current password before allowing the change - updateUser({ password })
+  // alone would let anyone holding a hijacked session take over the account.
+  // Side effect: this refreshes the session cookies, harmless for the signed-in user.
+  const { error: verifyError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword,
+  });
+  if (verifyError) {
+    if (verifyError.code !== 'invalid_credentials') {
+      console.error('[settings] current-password verification failed:', verifyError.message);
+    }
+    // A social-only account has no password to confirm. Classified here (not
+    // before verifying) so an unpopulated identities array can never block a
+    // real email/password user whose password is correct.
+    const hasPasswordIdentity =
+      user.identities?.some((identity) => identity.provider === 'email') ?? false;
+    if (!hasPasswordIdentity) {
+      return {
+        message:
+          'Your account signs in with a social provider. Use "Email me a reset link" below to set a password.',
+      };
+    }
+    return { message: 'Current password is incorrect.' };
+  }
+
+  // Checked after verification so a wrong "current" still reads as incorrect
+  // rather than as a reused password.
+  if (password === currentPassword) {
+    return { message: 'Your new password must be different from your current password.' };
+  }
 
   const { error } = await supabase.auth.updateUser({ password });
   if (error) {
     return { message: error.message };
   }
 
-  return { message: 'Password updated.', success: true };
+  // End every session for this account, including this device: a password change
+  // is exactly when a hijacked session must be ejected, so scope 'global' (not
+  // 'others'). signOut() clears the local session even when the server call
+  // fails, so either way the user lands on the login page and signs back in with
+  // the new password. A failed server-side revocation is surfaced there as a
+  // warning rather than silently swallowed.
+  const { error: signOutError } = await supabase.auth.signOut({ scope: 'global' });
+  if (signOutError) {
+    console.error('[settings] post-change sign-out failed:', signOutError.message);
+    redirect('/login?passwordChanged=1&signOutFailed=1');
+  }
+
+  redirect('/login?passwordChanged=1');
 }
 
 /**
