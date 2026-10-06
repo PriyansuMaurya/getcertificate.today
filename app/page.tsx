@@ -147,7 +147,7 @@ export default function LandingPage() {
           </nav>
           <div className="flex items-center gap-4">
             <Link
-              href="/signup"
+              href="/login"
               className="group inline-flex items-center gap-2 bg-ink px-5 py-3 text-sm font-semibold text-cream transition-colors hover:bg-sand hover:text-ink"
             >
               Earn yours
