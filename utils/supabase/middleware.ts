@@ -53,6 +53,8 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Public, no-auth routes (FR-F1 verification, FR-E3 certificate sharing).
+  // The certificate PAGE is public; only the certificate document inside it is
+  // gated (see app/certificates/[id]/page.tsx - holder or admin only).
   // Kept as exact prefixes per RULES §9.5 - add new ones narrowly.
   // robots.txt and sitemap.xml are served by app/robots.ts and app/sitemap.ts;
   // redirecting them to /login would hide crawler directives from Google.

@@ -6,6 +6,10 @@
 // in lib/certificate-draw.ts is client-only, so this reproduces the design's
 // key content in satori JSX at LinkedIn's 1.91:1 size.
 //
+// The card IS the certificate document, so it is gated: only the holder (or an
+// admin) gets the personalised card; everyone else - including every anonymous
+// social scraper - gets a neutral brand card (see viewerMayViewCertificate).
+//
 // Structure: all I/O (DB, fonts, assets, QR) happens in gather() behind a
 // try/catch; JSX construction happens strictly outside it (React lint rule:
 // errors thrown while constructing JSX would not be caught by that catch).
@@ -15,7 +19,8 @@ import path from 'node:path';
 import { eq } from 'drizzle-orm';
 import QRCode from 'qrcode';
 import { db } from '@/utils/db/db';
-import { credentialsTable } from '@/utils/db/schema';
+import { credentialsTable, usersTable } from '@/utils/db/schema';
+import { createClient } from '@/utils/supabase/server';
 import { verifyCredentialHash } from '@/utils/credentials';
 import { getSettings } from '@/utils/settings';
 import { formatCertDate } from '@/lib/certificate-draw';
@@ -134,7 +139,9 @@ function assetUri(file: string, mime: string): Promise<string | null> {
 }
 
 type CardData =
-  | { found: false }
+  // `reason` is the neutral message the fallback card shows; "not found" and
+  // "restricted" are the two ways a credential yields no certificate card.
+  | { found: false; reason: string }
   | {
       found: true;
       name: string;
@@ -149,11 +156,42 @@ type CardData =
       fonts: OgFont[];
     };
 
+/**
+ * True only when the signed-in viewer is the credential's holder or an admin.
+ *
+ * The certificate document is private (see app/certificates/[id]/page.tsx), and
+ * this card IS that document - so it must not be handed to the public. Social
+ * scrapers (LinkedIn et al.) request it unauthenticated and therefore always
+ * get the neutral fallback card. A malformed/absent session reads as anonymous
+ * (never as an error) so a bad cookie can't break the preview.
+ */
+async function viewerMayViewCertificate(holderId: string): Promise<boolean> {
+  const supabase = await createClient();
+  const user = await supabase.auth
+    .getUser()
+    .then(({ data }) => data.user)
+    .catch(() => null);
+  if (!user) return false;
+  if (user.id === holderId) return true;
+
+  const adminRows = await db
+    .select({ role: usersTable.role, suspendedAt: usersTable.suspended_at })
+    .from(usersTable)
+    .where(eq(usersTable.id, user.id));
+  return adminRows[0]?.role === 'admin' && adminRows[0]?.suspendedAt === null;
+}
+
 /** All I/O for the card - the only part allowed inside a try/catch. */
 async function gather(id: string): Promise<CardData> {
   const rows = await db.select().from(credentialsTable).where(eq(credentialsTable.id, id));
   const cred = rows[0];
-  if (!cred) return { found: false };
+  if (!cred) return { found: false, reason: 'Certificate not found' };
+
+  // Gate before any certificate data is assembled: the public gets a neutral
+  // brand card, never the document.
+  if (!(await viewerMayViewCertificate(cred.user_id))) {
+    return { found: false, reason: 'Certificate of completion' };
+  }
 
   const hashValid = verifyCredentialHash(cred);
   const validity: 'valid' | 'revoked' | 'invalid' = !hashValid
@@ -566,7 +604,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
       card = data;
       passScore = settings.passScore;
     } else {
-      failureReason = 'Certificate not found';
+      failureReason = data.reason;
     }
   } catch (err) {
     console.error('[og] certificate image failed:', err instanceof Error ? err.message : err);

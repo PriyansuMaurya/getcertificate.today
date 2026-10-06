@@ -4,7 +4,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 import { db } from '@/utils/db/db';
-import { credentialsTable } from '@/utils/db/schema';
+import { credentialsTable, usersTable } from '@/utils/db/schema';
+import { createClient } from '@/utils/supabase/server';
 import { verifyCredentialHash } from '@/utils/credentials';
 import { getSettings } from '@/utils/settings';
 import CertificateCanvas from '@/components/certificates/CertificateCanvas';
@@ -23,7 +24,7 @@ function clamp(value: string, max: number): string {
   return `${cut.slice(0, cut.lastIndexOf(' '))}…`;
 }
 
-// Holder/course-specific social card: these pages are the artifact shared to
+// Holder/course-specific social card: this page is the artifact shared to
 // LinkedIn, so the OG title/description must describe THIS certificate, not
 // inherit the homepage card. The page body re-queries below (force-dynamic,
 // so no stale-cache risk; the extra read is one indexed primary-key lookup).
@@ -103,17 +104,38 @@ export async function generateMetadata({
 const PUBLIC_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || 'http://localhost:3000';
 
 /**
- * Public certificate presentation (FR-E3). No auth required - this page is the
- * artifact shared with employers. Follows DESIGN.md §12: brand tokens, full
- * data set, monochrome QR with adjacent URL text, explicit validity state,
- * print-friendly (rules in globals.css `@media print`).
+ * Public certificate presentation (FR-E3). The page itself is public - anyone
+ * who holds the link can open it and read the verification summary - but the
+ * certificate DOCUMENT (the canvas plus its Download/Share controls) is
+ * private: only its holder, or an admin, may render it. Follows DESIGN.md §12:
+ * brand tokens, full data set, monochrome QR with adjacent URL text, explicit
+ * validity state, print-friendly (rules in globals.css `@media print`).
  */
 export default async function CertificatePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
+  // Anonymous viewers are simply not the holder: the page never redirects, the
+  // details panel below stays public (same trust model as the /verify page).
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const rows = await db.select().from(credentialsTable).where(eq(credentialsTable.id, id));
   const cred = rows[0];
   if (!cred) notFound();
+
+  // Gate for the certificate document only: the holder always, admins (for
+  // moderation) too. The role is read server-side from the DB on every render -
+  // never trusted from anything the client sends.
+  let canViewCertificate = Boolean(user && cred.user_id === user.id);
+  if (user && !canViewCertificate) {
+    const adminRows = await db
+      .select({ role: usersTable.role, suspendedAt: usersTable.suspended_at })
+      .from(usersTable)
+      .where(eq(usersTable.id, user.id));
+    canViewCertificate = adminRows[0]?.role === 'admin' && adminRows[0]?.suspendedAt === null;
+  }
 
   // Live admin pass mark for the details panel.
   const { passScore } = await getSettings();
@@ -205,15 +227,19 @@ export default async function CertificatePage({ params }: { params: Promise<{ id
           </p>
         </div>
 
-        {/* Certificate document: exact canvas replica of the generator design */}
+        {/* Certificate document: exact canvas replica of the generator design.
+            Rendered only for the holder/admin - the public gets the details
+            panel below instead (the document itself is the private part). */}
         <article className="print:w-full">
-          <CertificateCanvas
-            content={certificateContent}
-            validityLabel={validityBanner.text}
-            validityVariant={validity}
-            shareUrl={validity === 'valid' ? certificateUrl : undefined}
-            shareText={validity === 'valid' ? linkedinShareText : undefined}
-          />
+          {canViewCertificate && (
+            <CertificateCanvas
+              content={certificateContent}
+              validityLabel={validityBanner.text}
+              validityVariant={validity}
+              shareUrl={validity === 'valid' ? certificateUrl : undefined}
+              shareText={validity === 'valid' ? linkedinShareText : undefined}
+            />
+          )}
 
           <h1 className="sr-only">
             Certificate of completion for {cred.holder_name} - {cred.item_title}
