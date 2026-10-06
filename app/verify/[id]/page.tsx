@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import type { Metadata } from 'next';
 import { eq } from 'drizzle-orm';
 import { db } from '@/utils/db/db';
@@ -141,8 +142,16 @@ export default async function VerifyPage({ params }: { params: Promise<{ id: str
     <main className="min-h-screen bg-cream text-ink">
       <header className="sticky top-0 z-40 h-20 border-b border-sandline bg-cream/95 backdrop-blur">
         <div className="mx-auto flex h-full max-w-[1440px] items-center justify-between px-4 sm:px-6 xl:px-20">
-          <Link href="/" className="text-sm font-bold text-ink">
-            getcertificate.today
+          <Link href="/" className="flex shrink-0 items-center">
+            <Image
+              src="/figma/logo-no-tagline.svg"
+              alt="getcertificate.today logo"
+              width={1339}
+              height={767}
+              priority
+              unoptimized
+              className="h-8 w-auto sm:h-10"
+            />
           </Link>
           <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-sand">
             <ShieldCheck aria-hidden="true" className="h-4 w-4" />
