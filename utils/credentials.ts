@@ -88,17 +88,40 @@ export function monthWindowStart(now: Date = new Date()): Date {
 }
 
 /**
+ * Shared admin rule: role 'admin' and not suspended. Pure, so call sites that
+ * already hold a users row (the credential-mint transactions and the
+ * assessment-result page) can reuse it without a second query, and so it stays
+ * unit-testable without importing the DB/Next modules. utils/auth.ts's
+ * isAdminUser composes it from the DB row. A suspended admin is intentionally
+ * not an admin for entitlement purposes: suspension revokes the
+ * unlimited-certificate exception, matching every other admin gate.
+ */
+export function isAdminAccount(
+  role: string | null | undefined,
+  suspendedAt: Date | null | undefined
+): boolean {
+  return role === 'admin' && !suspendedAt;
+}
+
+/**
  * Free plan quota check: at most `freeCredentialsPerMonth` credentials per
  * calendar month (UTC). `plan` is 'none' for free users (existing sentinel);
  * any other value is a Stripe subscription ID and counts as Professional until
  * the webhook resets it. The limit defaults to the static constant but callers
- * pass the live value from getSettings().
+ * pass the live value from getSettings(), so an admin change applies immediately.
+ *
+ * Admins (`isAdmin`) are always unlimited - regardless of the configured limit
+ * or subscription status - so the admin console can never be locked out of
+ * certificate generation. Callers pass the role they read server-side from the
+ * database; nothing the client sends can influence it.
  */
 export function hasFreeQuotaRemaining(
   credsThisMonth: number,
   plan: string | null,
-  freeCredentialsPerMonth: number = FREE_CREDENTIALS_PER_MONTH
+  freeCredentialsPerMonth: number = FREE_CREDENTIALS_PER_MONTH,
+  isAdmin = false
 ): boolean {
+  if (isAdmin) return true; // Admin: unlimited regardless of limit or plan
   if (plan && plan !== 'none') return true; // Professional: unlimited
   return credsThisMonth < freeCredentialsPerMonth;
 }

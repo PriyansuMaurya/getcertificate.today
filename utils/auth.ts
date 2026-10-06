@@ -16,6 +16,7 @@ import { eq } from 'drizzle-orm';
 import { createClient } from '@/utils/supabase/server';
 import { db } from '@/utils/db/db';
 import { usersTable } from '@/utils/db/schema';
+import { isAdminAccount } from './credentials';
 
 /** Shared copy for a suspended account (matches app/auth/actions.ts). */
 export const SUSPENDED_MESSAGE = 'This account has been suspended. Please contact support.';
@@ -30,17 +31,18 @@ export async function isAccountSuspended(userId: string): Promise<boolean> {
 }
 
 /**
- * True only when the user's row has role 'admin' and is not suspended. The rule
- * lives in one place so the admin console (requireAdmin) and the certificate
- * page / OG-image gates can't drift apart. The role is read server-side from the
- * database on every call - nothing the client sends can influence it.
+ * True only when the user's row has role 'admin' and is not suspended. Reads the
+ * role server-side from the database on every call - nothing the client sends
+ * can influence it. Composes the shared isAdminAccount rule (utils/credentials)
+ * so the admin console (requireAdmin), the certificate gates, and the
+ * credential-quota bypass can't drift apart.
  */
 export async function isAdminUser(userId: string): Promise<boolean> {
   const rows = await db
     .select({ role: usersTable.role, suspendedAt: usersTable.suspended_at })
     .from(usersTable)
     .where(eq(usersTable.id, userId));
-  return rows[0]?.role === 'admin' && rows[0]?.suspendedAt === null;
+  return isAdminAccount(rows[0]?.role, rows[0]?.suspendedAt);
 }
 
 /**

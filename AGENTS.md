@@ -19,7 +19,8 @@ Verify every change with the applicable checks - real `package.json` scripts:
 ```bash
 npm run lint          # ESLint 9 flat config
 npm run format:check  # Prettier (run `npm run format` to fix)
-npx tsc --noEmit      # no "typecheck" script exists; run directly
+npm run typecheck     # tsc --noEmit
+npm test              # Node's built-in test runner via tsx (test files are listed in package.json)
 npm run build         # db-preflight && drizzle-kit migrate && next build - requires reachable DATABASE_URL
 ```
 

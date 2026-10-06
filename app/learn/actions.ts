@@ -19,6 +19,7 @@ import {
   attemptWindowCutoff,
   computeCredentialHash,
   hasFreeQuotaRemaining,
+  isAdminAccount,
   monthWindowStart,
   newCredentialId,
 } from '@/utils/credentials';
@@ -339,6 +340,7 @@ export async function submitAssessment(
 
   // Live admin settings: pass mark, attempt limit and free quota all come from
   // app_settings so a change at /admin/settings takes effect on the next submit.
+  // Admins bypass the free quota entirely (unlimited).
   const { passScore, maxAttemptsPerWindow, freeCredentialsPerMonth } = await getSettings();
 
   const windowAttempts = await attemptsInWindow(assessment.id, user.id);
@@ -425,6 +427,10 @@ export async function submitAssessment(
 
       const profileRows = await tx.select().from(usersTable).where(eq(usersTable.id, user.id));
       const profile = profileRows[0];
+      // Admins are exempt from the free quota: unlimited regardless of the
+      // configured limit or subscription status. The row is already in hand, so
+      // reuse the shared admin rule instead of a second query.
+      const isAdmin = isAdminAccount(profile?.role, profile?.suspended_at);
 
       const monthStart = monthWindowStart();
       const credsThisMonth = await tx
@@ -437,7 +443,8 @@ export async function submitAssessment(
         !hasFreeQuotaRemaining(
           credsThisMonth.length,
           profile?.plan ?? 'none',
-          freeCredentialsPerMonth
+          freeCredentialsPerMonth,
+          isAdmin
         )
       )
         return;
@@ -516,7 +523,8 @@ export async function mintFromAttempt(
   const item = await getOwnedItem(attempt.learning_item_id, user.id);
   if (!item) return { message: 'That course was not found.' };
 
-  // Live admin setting: the free monthly credential quota.
+  // Live admin setting: the free monthly credential quota. Admins are exempt
+  // (unlimited) regardless of the configured limit or subscription status.
   const { freeCredentialsPerMonth } = await getSettings();
 
   let mintedId: string | null = null;
@@ -540,6 +548,10 @@ export async function mintFromAttempt(
 
       const profileRows = await tx.select().from(usersTable).where(eq(usersTable.id, user.id));
       const profile = profileRows[0];
+      // Admins are exempt from the free quota: unlimited regardless of the
+      // configured limit or subscription status. The row is already in hand, so
+      // reuse the shared admin rule instead of a second query.
+      const isAdmin = isAdminAccount(profile?.role, profile?.suspended_at);
 
       const credsThisMonth = await tx
         .select({ id: credentialsTable.id })
@@ -554,7 +566,8 @@ export async function mintFromAttempt(
         !hasFreeQuotaRemaining(
           credsThisMonth.length,
           profile?.plan ?? 'none',
-          freeCredentialsPerMonth
+          freeCredentialsPerMonth,
+          isAdmin
         )
       )
         return;

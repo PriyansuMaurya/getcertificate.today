@@ -3,7 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { and, eq, gte } from 'drizzle-orm';
 import { db } from '@/utils/db/db';
 import { attemptsTable, credentialsTable, learningItemsTable, usersTable } from '@/utils/db/schema';
-import { hasFreeQuotaRemaining, monthWindowStart } from '@/utils/credentials';
+import { hasFreeQuotaRemaining, isAdminAccount, monthWindowStart } from '@/utils/credentials';
 import { getSettings } from '@/utils/settings';
 import { requireActiveUser } from '@/utils/auth';
 import MintCredentialButton from '@/components/learn/MintCredentialButton';
@@ -62,10 +62,14 @@ export default async function AssessmentResultPage({
           gte(credentialsTable.passed_at, monthWindowStart())
         )
       );
+    // Admins are exempt from the free quota (unlimited), so they never see the
+    // upgrade prompt - mirrors the enforcement in app/learn/actions.ts using the
+    // shared admin rule (requireActiveUser already gated suspended accounts).
     quotaBlocked = !hasFreeQuotaRemaining(
       credsThisMonth.length,
       profile?.plan ?? 'none',
-      freeCredentialsPerMonth
+      freeCredentialsPerMonth,
+      isAdminAccount(profile?.role, profile?.suspended_at)
     );
   }
 
