@@ -12,7 +12,7 @@ import { generateStripeBillingPortalLink } from '@/utils/stripe/api';
 export const metadata = {
   title: 'Pricing & Plans | getcertificate.today',
   description:
-    'Unlimited certificates, transcript-based AI assessments, and public verification pages.',
+    'Free, Starter, and Pro plans - AI assessments from every video transcript, verifiable certificates, and public verification pages.',
   alternates: { canonical: '/subscribe' },
 };
 
@@ -92,8 +92,8 @@ export default async function Subscribe({
             Pick your plan
           </h1>
           <p className="mt-3 text-base text-clay sm:text-lg">
-            Unlimited certificates, AI assessments generated from each video transcript, and public
-            verification pages.
+            AI assessments generated from each video transcript, verifiable certificates, and
+            public verification pages - on a plan that fits how much you learn.
           </p>
         </div>
 

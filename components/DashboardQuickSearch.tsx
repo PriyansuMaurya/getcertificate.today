@@ -38,9 +38,9 @@ const DESTINATIONS: Destination[] = [
   },
   {
     label: 'Plans & Pricing',
-    description: 'Upgrade to Professional',
+    description: 'Compare plans & pricing',
     href: '/subscribe',
-    keywords: 'upgrade pro subscription price',
+    keywords: 'upgrade starter pro subscription price',
   },
 ];
 

@@ -1,9 +1,12 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { eq } from 'drizzle-orm';
 import { createClient } from '@/utils/supabase/server';
+import { db } from '@/utils/db/db';
+import { usersTable } from '@/utils/db/schema';
+import { planLabel } from '@/utils/plans';
 import DashboardHeaderProfileDropdown from './DashboardHeaderProfileDropdown';
 import DashboardQuickSearch from './DashboardQuickSearch';
-import { getStripePlan } from '@/utils/stripe/api';
 
 export default async function DashboardHeader() {
   const supabase = await createClient();
@@ -11,16 +14,22 @@ export default async function DashboardHeader() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  let stripePlan = 'Plan unavailable';
-  if (user?.email) {
+  // Plan label from the locally stored entitlement key (utils/plans.ts) - no
+  // Stripe round-trip needed.
+  let plan = 'Free';
+  if (user) {
     try {
-      const plan = await getStripePlan(user.email);
-      stripePlan = plan === 'none' || !plan ? 'Free Explorer' : plan;
+      const rows = await db
+        .select({ plan: usersTable.plan })
+        .from(usersTable)
+        .where(eq(usersTable.id, user.id));
+      plan = planLabel(rows[0]?.plan);
     } catch (error) {
       console.error(
         'Dashboard plan lookup failed:',
         error instanceof Error ? error.message : 'Unknown error'
       );
+      plan = 'Plan unavailable';
     }
   }
 
@@ -45,7 +54,7 @@ export default async function DashboardHeader() {
           </Link>
           <DashboardQuickSearch />
           <span className="hidden rounded-full border border-sandline bg-paper px-3 py-1 text-xs font-bold text-clay md:inline-flex">
-            {stripePlan === 'none' || !stripePlan ? 'Free Explorer' : stripePlan}
+            {plan}
           </span>
         </div>
 

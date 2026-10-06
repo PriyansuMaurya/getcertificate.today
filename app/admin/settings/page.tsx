@@ -21,7 +21,8 @@ export default async function AdminSettingsPage() {
         <h1 className="font-fraunces text-3xl font-black text-ink sm:text-4xl">Settings</h1>
         <p className="max-w-2xl text-sm text-clay sm:text-base">
           Platform-wide values that drive assessment generation, scoring, attempt limits, and the
-          free plan. They apply to every user and take effect immediately.
+          free plan. They apply to every user and take effect immediately. Paid tier allowances
+          (Starter 10/month, Pro 30/month, Pro yearly unlimited) are fixed by the pricing tiers.
         </p>
       </div>
 

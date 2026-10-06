@@ -3,52 +3,66 @@ import assert from 'node:assert/strict';
 
 import {
   FREE_CREDENTIALS_PER_MONTH,
-  hasFreeQuotaRemaining,
+  hasCredentialQuotaRemaining,
   isAdminAccount,
   monthWindowStart,
 } from './credentials';
 
-describe('hasFreeQuotaRemaining', () => {
+describe('hasCredentialQuotaRemaining', () => {
   it('defaults the free limit to the static constant (1)', () => {
     assert.equal(FREE_CREDENTIALS_PER_MONTH, 1);
     // Omitted limit argument falls back to the constant.
-    assert.equal(hasFreeQuotaRemaining(0, 'none'), true);
-    assert.equal(hasFreeQuotaRemaining(1, 'none'), false);
+    assert.equal(hasCredentialQuotaRemaining(0, 'none'), true);
+    assert.equal(hasCredentialQuotaRemaining(1, 'none'), false);
   });
 
   it('allows a free user below the configured limit', () => {
-    assert.equal(hasFreeQuotaRemaining(0, 'none', 1), true);
-    assert.equal(hasFreeQuotaRemaining(2, 'none', 3), true);
+    assert.equal(hasCredentialQuotaRemaining(0, 'none', 1), true);
+    assert.equal(hasCredentialQuotaRemaining(2, 'none', 3), true);
   });
 
   it('blocks a free user at or above the configured limit', () => {
-    assert.equal(hasFreeQuotaRemaining(1, 'none', 1), false);
-    assert.equal(hasFreeQuotaRemaining(5, 'none', 3), false);
+    assert.equal(hasCredentialQuotaRemaining(1, 'none', 1), false);
+    assert.equal(hasCredentialQuotaRemaining(5, 'none', 3), false);
   });
 
   it('treats a null plan as free', () => {
-    assert.equal(hasFreeQuotaRemaining(0, null, 1), true);
-    assert.equal(hasFreeQuotaRemaining(1, null, 1), false);
+    assert.equal(hasCredentialQuotaRemaining(0, null, 1), true);
+    assert.equal(hasCredentialQuotaRemaining(1, null, 1), false);
   });
 
   it('treats a limit of 0 as no free certificates at all', () => {
-    assert.equal(hasFreeQuotaRemaining(0, 'none', 0), false);
+    assert.equal(hasCredentialQuotaRemaining(0, 'none', 0), false);
   });
 
   it('uses the live limit value an admin sets', () => {
     // Same usage, different configured limit -> different outcome.
-    assert.equal(hasFreeQuotaRemaining(3, 'none', 3), false);
-    assert.equal(hasFreeQuotaRemaining(3, 'none', 4), true);
+    assert.equal(hasCredentialQuotaRemaining(3, 'none', 3), false);
+    assert.equal(hasCredentialQuotaRemaining(3, 'none', 4), true);
   });
 
-  it('allows a paid subscriber regardless of usage', () => {
-    assert.equal(hasFreeQuotaRemaining(999, 'sub_abc123', 1), true);
+  it('caps Starter at 10 certificates per month', () => {
+    assert.equal(hasCredentialQuotaRemaining(9, 'starter', 1), true);
+    assert.equal(hasCredentialQuotaRemaining(10, 'starter', 1), false);
+  });
+
+  it('caps Pro at 30 certificates per month', () => {
+    assert.equal(hasCredentialQuotaRemaining(29, 'pro', 1), true);
+    assert.equal(hasCredentialQuotaRemaining(30, 'pro', 1), false);
+  });
+
+  it('allows unlimited certificates on Pro yearly', () => {
+    assert.equal(hasCredentialQuotaRemaining(999, 'pro_yearly', 1), true);
+  });
+
+  it('grandfathers legacy subscription ids as unlimited', () => {
+    assert.equal(hasCredentialQuotaRemaining(999, 'sub_abc123', 1), true);
   });
 
   it('allows admins even with the free sentinel plan and a zero limit', () => {
-    assert.equal(hasFreeQuotaRemaining(0, 'none', 0, true), true);
-    assert.equal(hasFreeQuotaRemaining(10, 'none', 1, true), true);
-    assert.equal(hasFreeQuotaRemaining(999, 'none', 3, true), true);
+    assert.equal(hasCredentialQuotaRemaining(0, 'none', 0, true), true);
+    assert.equal(hasCredentialQuotaRemaining(10, 'none', 1, true), true);
+    assert.equal(hasCredentialQuotaRemaining(999, 'none', 3, true), true);
   });
 });
 
@@ -76,8 +90,8 @@ describe('isAdminAccount', () => {
   });
 
   it('drives the quota bypass: only a non-suspended admin is unlimited', () => {
-    assert.equal(hasFreeQuotaRemaining(5, 'none', 1, isAdminAccount('admin', new Date())), false);
-    assert.equal(hasFreeQuotaRemaining(5, 'none', 1, isAdminAccount('admin', null)), true);
+    assert.equal(hasCredentialQuotaRemaining(5, 'none', 1, isAdminAccount('admin', new Date())), false);
+    assert.equal(hasCredentialQuotaRemaining(5, 'none', 1, isAdminAccount('admin', null)), true);
   });
 });
 

@@ -119,3 +119,122 @@
     -webkit-print-color-adjust: exact;
   }
 }
+
+/* Landing hero badge ("From YouTube to Verifiable Credentials").
+   Rare/first-view marketing element: a one-time entrance plus a slow
+   breathing halo and a twinkling star. Only opacity/transform animate (GPU,
+   off the main thread); the global prefers-reduced-motion rule above
+   collapses this to a single frame, so no separate override is needed. */
+.hero-badge-wrap {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Warm halo that breathes behind the pill. A layered span (not a box-shadow)
+   because animating box-shadow/filter repaints; opacity+transform stay on the
+   compositor. */
+.hero-badge-halo {
+  position: absolute;
+  inset: -8px;
+  z-index: -1;
+  border-radius: 9999px;
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side,
+    rgba(207, 165, 120, 0.6),
+    rgba(207, 165, 120, 0.25) 60%,
+    rgba(207, 165, 120, 0) 100%
+  );
+  filter: blur(8px);
+  opacity: 0.5;
+  transform: scale(0.97);
+  will-change: opacity, transform;
+  animation: hero-badge-glow 3.6s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+}
+
+.hero-badge {
+  animation: hero-badge-in 0.6s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+/* The star glyph emits a warm gold flare. The corona is a blurred
+   radial-gradient pseudo-element behind the glyph: opacity/transform only, so
+   it stays on the compositor, and it peaks in phase with the twinkle so the
+   star reads as one flare rather than two competing pulses. */
+.hero-badge-star {
+  position: relative;
+  z-index: 0;
+  display: inline-block;
+  /* Tighten the line box to the glyph so the corona below centres on the
+     star instead of the taller default line-height. */
+  line-height: 1;
+  will-change: opacity, transform;
+  /* Static bloom hugging the glyph edges; it seems to pulse for free because
+     the parent opacity animation applies to the whole rendered star. */
+  text-shadow: 0 0 8px rgba(224, 172, 92, 0.75);
+  animation: hero-badge-twinkle 3.6s cubic-bezier(0.77, 0, 0.175, 1) -1.8s infinite;
+}
+
+.hero-badge-star::before {
+  content: '';
+  position: absolute;
+  inset: -0.55em;
+  z-index: -1;
+  border-radius: 9999px;
+  background: radial-gradient(
+    closest-side,
+    rgba(242, 193, 112, 0.95),
+    rgba(224, 172, 92, 0.45) 55%,
+    rgba(224, 172, 92, 0) 100%
+  );
+  filter: blur(4px);
+  opacity: 0.4;
+  transform: scale(0.8);
+  will-change: opacity, transform;
+  animation: hero-badge-star-glow 3.6s cubic-bezier(0.77, 0, 0.175, 1) -1.8s infinite;
+}
+
+@keyframes hero-badge-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes hero-badge-glow {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.97);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes hero-badge-twinkle {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.18) rotate(12deg);
+  }
+}
+@keyframes hero-badge-star-glow {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}

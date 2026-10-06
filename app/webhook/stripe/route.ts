@@ -1,7 +1,7 @@
 import { db } from '@/utils/db/db';
 import { usersTable } from '@/utils/db/schema';
 import { eq } from 'drizzle-orm';
-import { stripe } from '@/utils/stripe/api';
+import { resolveSubscriptionTier, stripe } from '@/utils/stripe/api';
 import type Stripe from 'stripe';
 
 // Stripe webhook: signature-verified (RULES §9.1), idempotent updates for
@@ -43,13 +43,31 @@ export async function POST(req: Request) {
       case 'customer.subscription.created':
       case 'customer.subscription.updated': {
         const sub = event.data.object;
-        // Store the subscription ID for active/trialing; reset to the 'none'
-        // sentinel when the subscription is no longer live (updated event).
+        const customerId = customerIdOf(sub);
         const live = sub.status === 'active' || sub.status === 'trialing';
+        if (!live) {
+          // No longer live (canceled/past_due/unpaid): reset to the free sentinel.
+          await db
+            .update(usersTable)
+            .set({ plan: 'none' })
+            .where(eq(usersTable.stripe_id, customerId));
+          break;
+        }
+        // Live: store the plan tier key ('starter' | 'pro' | 'pro_yearly') so
+        // quota enforcement and labels read it locally (utils/plans.ts). When
+        // the price/product cannot be mapped, leave the stored plan untouched
+        // rather than downgrading a paying subscriber.
+        const tier = await resolveSubscriptionTier(sub);
+        if (!tier) {
+          console.error(
+            `[stripe-webhook] could not resolve plan tier for subscription ${sub.id}; plan unchanged`
+          );
+          break;
+        }
         await db
           .update(usersTable)
-          .set({ plan: live ? sub.id : 'none' })
-          .where(eq(usersTable.stripe_id, customerIdOf(sub)));
+          .set({ plan: tier })
+          .where(eq(usersTable.stripe_id, customerId));
         break;
       }
       case 'customer.subscription.deleted': {

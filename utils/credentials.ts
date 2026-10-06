@@ -5,6 +5,7 @@
 // SERVER ONLY.
 import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
 import type { SelectCredential } from '@/utils/db/schema';
+import { monthlyCertificateLimit } from '@/utils/plans';
 
 export const HASH_VERSION = 'sha256-v1';
 
@@ -104,24 +105,29 @@ export function isAdminAccount(
 }
 
 /**
- * Free plan quota check: at most `freeCredentialsPerMonth` credentials per
- * calendar month (UTC). `plan` is 'none' for free users (existing sentinel);
- * any other value is a Stripe subscription ID and counts as Professional until
- * the webhook resets it. The limit defaults to the static constant but callers
- * pass the live value from getSettings(), so an admin change applies immediately.
+ * Certificate quota check: whether the user may mint another credential this
+ * calendar month (UTC). The allowance comes from the plan tier
+ * (utils/plans.ts): Free uses the admin-tunable `freeCredentialsPerMonth`,
+ * Starter is capped at 10/month, Pro at 30/month, and Pro yearly (plus any
+ * grandfathered legacy subscription) is unlimited. `plan` is the stored
+ * entitlement key ('none' for free).
  *
- * Admins (`isAdmin`) are always unlimited - regardless of the configured limit
- * or subscription status - so the admin console can never be locked out of
- * certificate generation. Callers pass the role they read server-side from the
- * database; nothing the client sends can influence it.
+ * The free limit defaults to the static constant but callers pass the live
+ * value from getSettings(), so an admin change applies immediately.
+ *
+ * Admins (`isAdmin`) are always unlimited - regardless of plan or limit - so
+ * the admin console can never be locked out of certificate generation. Callers
+ * pass the role they read server-side from the database; nothing the client
+ * sends can influence it.
  */
-export function hasFreeQuotaRemaining(
+export function hasCredentialQuotaRemaining(
   credsThisMonth: number,
   plan: string | null,
   freeCredentialsPerMonth: number = FREE_CREDENTIALS_PER_MONTH,
   isAdmin = false
 ): boolean {
-  if (isAdmin) return true; // Admin: unlimited regardless of limit or plan
-  if (plan && plan !== 'none') return true; // Professional: unlimited
-  return credsThisMonth < freeCredentialsPerMonth;
+  if (isAdmin) return true; // Admin: unlimited regardless of plan or limit
+  const limit = monthlyCertificateLimit(plan, freeCredentialsPerMonth);
+  if (limit === null) return true; // Unlimited tier (Pro yearly / grandfathered)
+  return credsThisMonth < limit;
 }

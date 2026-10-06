@@ -2,8 +2,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { ArrowUpRight } from 'lucide-react';
-import { BrainIcon, ShieldIcon, ChartColumnIcon, CheckIcon } from '@/components/icons';
-import { PLANS } from '@/components/SubscribePricingCards';
+import { BrainIcon, ShieldIcon, ChartColumnIcon } from '@/components/icons';
+import LandingPricingCards from '@/components/LandingPricingCards';
 
 // Sections below implement the Figma landing-page frame 6:9 (getcertificate.today), except
 // the navbar and hero, which follow the revamp-hero-section reference: borderless nav with
@@ -168,11 +168,14 @@ export default function LandingPage() {
           <div className="mx-auto flex max-w-[1440px] items-center px-4 pb-14 pt-4 sm:px-6 lg:min-h-[calc(100dvh-7rem)] lg:pb-24 xl:px-20">
             <div className="grid w-full items-center gap-8 lg:grid-cols-[43fr_57fr] lg:gap-12 xl:gap-10">
               <div className="relative z-10 min-w-0">
-                <div className="mb-[31px] inline-flex items-center gap-2.5 rounded-full bg-[#fbecd9] px-4 py-2.5 text-sm font-bold text-clay">
-                  <span aria-hidden="true" className="text-clay">
+                <div className="hero-badge-wrap mb-[31px] inline-flex">
+                  <span aria-hidden="true" className="hero-badge-halo" />
+                  <div className="hero-badge inline-flex items-center gap-2.5 rounded-full bg-[#fbecd9] px-4 py-2.5 text-sm font-bold text-clay">
+                    <span aria-hidden="true" className="hero-badge-star text-clay">
                     ✦
-                  </span>
-                  From YouTube to Verifiable Credentials
+                    </span>
+                    From YouTube to Verifiable Credentials
+                  </div>
                 </div>
                 {/* Fraunces black carries the headline; the italic "proof." lands
                     on its own line at lg+ so the serif turn feels deliberate. */}
@@ -312,91 +315,7 @@ export default function LandingPage() {
                 Simple, honest tiers.
               </h2>
             </div>
-            {/* Tiers shared with /subscribe (PLANS in SubscribePricingCards). Card shell
-                keeps the Figma landing styles: paper card, ink card for the popular tier. */}
-            <div className="flex flex-col items-center gap-6 md:gap-8 lg:flex-row lg:items-start lg:justify-center">
-              {PLANS.map((plan) => (
-                <div
-                  key={plan.key}
-                  className={[
-                    'flex w-full flex-col gap-8 rounded-2xl p-6 sm:p-8 md:p-12',
-                    plan.popular
-                      ? 'max-w-[420px] bg-ink shadow-figma-pro'
-                      : 'max-w-[400px] border border-sandline bg-cream',
-                  ].join(' ')}
-                >
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <h3
-                        className={[
-                          'text-lg font-bold leading-[1.366]',
-                          plan.popular ? 'text-cream' : 'text-ink',
-                        ].join(' ')}
-                      >
-                        {plan.name}
-                      </h3>
-                      {plan.popular && (
-                        <span className="rounded-full bg-sand px-3 py-1 text-[11px] font-bold leading-[1.366] text-ink">
-                          POPULAR
-                        </span>
-                      )}
-                    </div>
-                    <p
-                      className={[
-                        'text-sm leading-[1.366]',
-                        plan.popular ? 'text-sand' : 'text-clay',
-                      ].join(' ')}
-                    >
-                      {plan.tagline}
-                    </p>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span
-                      className={[
-                        'font-fraunces text-[48px] font-black leading-[1.233]',
-                        plan.popular ? 'text-cream' : 'text-ink',
-                      ].join(' ')}
-                    >
-                      ${plan.price}
-                    </span>
-                    <span
-                      className={[
-                        'text-[15px] leading-[1.366]',
-                        plan.popular ? 'text-sand' : 'text-clay',
-                      ].join(' ')}
-                    >
-                      / month
-                    </span>
-                  </div>
-                  <ul className="flex flex-col gap-4">
-                    {plan.features.map((feat) => (
-                      <li key={feat} className="flex items-center gap-3">
-                        <CheckIcon className="h-4 w-4 shrink-0 text-sand" />
-                        <span
-                          className={[
-                            'text-sm leading-[1.366]',
-                            plan.popular ? 'text-cream' : 'text-ink',
-                          ].join(' ')}
-                        >
-                          {feat}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Link
-                    href="/subscribe"
-                    className={[
-                      'flex h-12 items-center justify-center rounded-lg px-6 py-3.5 text-[15px] font-bold leading-[1.366] transition-colors',
-                      plan.popular
-                        ? 'bg-sand text-cream hover:bg-sand/90'
-                        : 'border-[1.5px] border-ink text-ink hover:bg-ink/5',
-                    ].join(' ')}
-                  >
-                    Get Started
-                  </Link>
-                </div>
-              ))}
-            </div>
+            <LandingPricingCards />
           </div>
         </section>
         {/* ============ CTA (Figma: bg #FAF8F5, border top+bottom #E3DCD5, pad 120/80, gap 32) ============ */}

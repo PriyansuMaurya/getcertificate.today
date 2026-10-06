@@ -3,7 +3,8 @@ import { createClient } from '@/utils/supabase/server';
 import { db } from '@/utils/db/db';
 import { usersTable } from '@/utils/db/schema';
 import { eq } from 'drizzle-orm';
-import { generateStripeBillingPortalLink, getStripePlan } from '@/utils/stripe/api';
+import { generateStripeBillingPortalLink } from '@/utils/stripe/api';
+import { planLabel } from '@/utils/plans';
 import SettingsProfileForm from '@/components/settings/SettingsProfileForm';
 import SettingsPasswordForm from '@/components/settings/SettingsPasswordForm';
 import SettingsPasswordResetButton from '@/components/settings/SettingsPasswordResetButton';
@@ -27,14 +28,9 @@ export default async function SettingsPage() {
   const rows = await db.select().from(usersTable).where(eq(usersTable.id, user.id));
   const profile = rows[0];
 
-  let planLabel = 'Free Explorer';
+  // Plan label from the locally stored entitlement key (utils/plans.ts).
+  const planName = planLabel(profile?.plan);
   let billingPortalURL: string | null = null;
-  try {
-    const plan = await getStripePlan(user.email!);
-    planLabel = plan === 'none' || !plan ? 'Free Explorer' : plan;
-  } catch {
-    planLabel = 'Plan unavailable';
-  }
   try {
     billingPortalURL = await generateStripeBillingPortalLink(user.email!);
   } catch {
@@ -161,9 +157,9 @@ export default async function SettingsPage() {
             <div className="flex items-center gap-3">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-sandline bg-cream px-3 py-1 text-xs font-bold text-ink">
                 <BadgeCheck aria-hidden="true" className="h-3.5 w-3.5 text-sand" />
-                {planLabel}
+                {planName}
               </span>
-              {isSubscribed && <span className="text-xs text-clay">Professional subscriber</span>}
+              {isSubscribed && <span className="text-xs text-clay">{planName} subscriber</span>}
             </div>
 
             <div className="flex flex-wrap items-center gap-3">

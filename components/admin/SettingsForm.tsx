@@ -61,7 +61,7 @@ const FIELD_IMPACT: Record<FieldKey, string> = {
   transcriptProvider:
     'Affects how transcripts are fetched for new assessments. Videos already cached keep their stored transcript.',
   freeCredentialsPerMonth:
-    'How many credentials a free (non-subscriber) user can mint each month. 0 blocks free minting.',
+    'How many credentials a free user can mint each month. 0 blocks free minting. Paid tiers use fixed allowances: Starter 10/month, Pro 30/month, Pro yearly unlimited.',
 };
 
 const inputClass =
@@ -346,7 +346,10 @@ export default function SettingsForm({ initialSettings }: { initialSettings: App
         <h2 id="plan-settings-heading" className="font-fraunces text-xl font-bold text-ink">
           Plans
         </h2>
-        <p className="mt-1 text-sm text-clay">Limits applied to free accounts.</p>
+        <p className="mt-1 text-sm text-clay">
+          The free allowance is tunable here. Paid tiers use fixed limits: Starter 10 certificates a
+          month, Pro 30 a month, and Pro yearly unlimited.
+        </p>
 
         <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
           <Field

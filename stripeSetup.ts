@@ -12,7 +12,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 // Types
 interface Plan {
   name: string;
-  price: number;
+  price: number; // in cents
+  interval: 'month' | 'year';
   description: string;
   features: string[];
 }
@@ -31,48 +32,49 @@ interface WebhookEndpoint {
 
 // Configuration
 const PUBLIC_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || 'http://localhost:3000';
-const CURRENCY = 'usd';
+const CURRENCY = 'eur';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 // Product Plans
-// Tiers must match components/SubscribePricingCards.tsx and the STRIPE_PRICE_*
-// env price IDs. Product names are exact matches so re-running the script
-// updates the existing products instead of creating duplicates.
+// Tiers must match utils/plans.ts (PRICING_PLANS) and the STRIPE_PRICE_* env
+// price IDs; product names map to tiers in utils/plans.ts tierFromProductName.
+// Product names are exact matches so re-running the script updates the
+// existing products instead of creating duplicates.
 // Features must list only capabilities that exist in the app (see
 // docs/LEGAL_COMPLIANCE_AUDIT.md): advertising unimplemented features
 // (mentor sessions, webinars, reports) is a deceptive-claims risk.
 const plans: Plan[] = [
   {
-    name: 'Basic',
-    price: 900, // $9/mo, price in cents
-    description: 'Perfect for beginners',
+    name: 'Starter',
+    price: 499, // €4.99/mo
+    interval: 'month',
+    description: 'For steady learners',
     features: [
-      'AI-generated assessments for any video',
-      'Progress-tracking learning player',
-      'Unlimited verified certificates with QR + share links',
+      'Everything in Free',
+      '10 verified certificates per month',
       'Cancel anytime from settings',
     ],
   },
   {
-    name: 'Most Popular',
-    price: 1900, // $19/mo
-    description: 'Best for consistent learners',
+    name: 'Pro',
+    price: 999, // €9.99/mo
+    interval: 'month',
+    description: 'Everything, monthly',
     features: [
-      'Everything in Basic',
-      'Public credential verification pages',
-      'Unlimited verified certificates',
+      'Everything in Starter',
+      '30 verified certificates per month',
       'Cancel anytime from settings',
     ],
   },
   {
-    name: 'Premium',
-    price: 3900, // $39/mo
-    description: 'For ambitious learners',
+    name: 'Pro Yearly',
+    price: 4999, // €49.99/yr (save 58% vs. monthly)
+    interval: 'year',
+    description: 'Unlimited certificates, billed yearly',
     features: [
-      'Everything in Most Popular',
-      'All platform features included',
+      'Everything in Pro',
       'Unlimited verified certificates',
-      'Cancel anytime from settings',
+      'Save 58% vs. monthly billing',
     ],
   },
 ];
@@ -120,7 +122,7 @@ async function createPrice(product: StripeProduct, plan: Plan): Promise<void> {
       product: product.id,
       unit_amount: plan.price,
       currency: CURRENCY,
-      recurring: { interval: 'month' },
+      recurring: { interval: plan.interval },
     });
 
     // Set as default price

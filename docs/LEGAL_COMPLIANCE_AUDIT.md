@@ -87,11 +87,9 @@ you rely on them._
   `stripeSetup.ts` were rewritten to only advertise features that exist in
   the codebase (mentor sessions, webinars, weekly reports, community/priority
   support were removed).
-- **⚠️ PRODUCT**: the three paid tiers are currently functionally identical
-  in code (any paid plan = unlimited certificates; see
-  `utils/credentials.ts`). Either build real tier differentiation or collapse
-  to a single paid plan — selling three prices for the same features is a
-  consumer-protection risk even when every bullet is true.
+- **✅ PRODUCT (resolved)**: the paid tiers now differentiate by certificate
+  allowance: Starter 10/month, Pro 30/month, and Pro yearly unlimited
+  (`utils/plans.ts`). Each price maps to a real entitlement.
 
 ## ⚠️ Items that need a lawyer
 

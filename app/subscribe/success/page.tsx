@@ -26,11 +26,11 @@ export default function SubscribeSuccess() {
             <CheckIcon className="h-7 w-7" />
           </div>
           <h1 className="mt-4 font-fraunces text-2xl font-bold leading-tight text-ink sm:text-3xl">
-            Welcome to Professional!
+            Your plan is active!
           </h1>
           <p className="mt-2 text-sm text-clay">
-            Your plan is active. Certificates are unlimited now, and every credential gets a public
-            verification page.
+            Your new certificate allowance is ready, and every credential gets a public verification
+            page.
           </p>
         </div>
 

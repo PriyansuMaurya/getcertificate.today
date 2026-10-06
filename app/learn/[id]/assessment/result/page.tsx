@@ -3,7 +3,8 @@ import { notFound, redirect } from 'next/navigation';
 import { and, eq, gte } from 'drizzle-orm';
 import { db } from '@/utils/db/db';
 import { attemptsTable, credentialsTable, learningItemsTable, usersTable } from '@/utils/db/schema';
-import { hasFreeQuotaRemaining, isAdminAccount, monthWindowStart } from '@/utils/credentials';
+import { hasCredentialQuotaRemaining, isAdminAccount, monthWindowStart } from '@/utils/credentials';
+import { monthlyCertificateLimit, planLabel } from '@/utils/plans';
 import { getSettings } from '@/utils/settings';
 import { requireActiveUser } from '@/utils/auth';
 import MintCredentialButton from '@/components/learn/MintCredentialButton';
@@ -65,13 +66,17 @@ export default async function AssessmentResultPage({
     // Admins are exempt from the free quota (unlimited), so they never see the
     // upgrade prompt - mirrors the enforcement in app/learn/actions.ts using the
     // shared admin rule (requireActiveUser already gated suspended accounts).
-    quotaBlocked = !hasFreeQuotaRemaining(
+    quotaBlocked = !hasCredentialQuotaRemaining(
       credsThisMonth.length,
       profile?.plan ?? 'none',
       freeCredentialsPerMonth,
       isAdminAccount(profile?.role, profile?.suspended_at)
     );
   }
+
+  // Plan-aware copy for the quota-blocked state (Free / Starter / Pro).
+  const planName = planLabel(profile?.plan);
+  const monthlyLimit = monthlyCertificateLimit(profile?.plan, freeCredentialsPerMonth);
 
   const passed = attempt.passed;
 
@@ -134,9 +139,9 @@ export default async function AssessmentResultPage({
               <div className="rounded-xl border border-sandline bg-cream p-5 text-left">
                 <p className="text-sm font-semibold text-ink">Passed - credential pending quota</p>
                 <p className="mt-1.5 text-sm text-clay">
-                  Your free plan includes {freeCredentialsPerMonth} credential per month and this
-                  month&apos;s is already issued. Upgrade to Professional to mint this credential
-                  now, or wait until next month.
+                  You have used your {planName} plan allowance of {monthlyLimit}{' '}
+                  {monthlyLimit === 1 ? 'certificate' : 'certificates'} this month. Upgrade your
+                  plan to mint this credential now, or wait until next month.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-3">
                   <Link

@@ -2,6 +2,7 @@ import { count, desc, eq, ilike, or, sql, inArray, type SQL } from 'drizzle-orm'
 import { db } from '@/utils/db/db';
 import { attemptsTable, credentialsTable, learningItemsTable, usersTable } from '@/utils/db/schema';
 import { ilikeContains } from '@/utils/db/like';
+import { planLabel } from '@/utils/plans';
 
 // Deliberately NOT a 'use server' file: every export of a server-actions
 // module becomes a publicly callable endpoint (same rule as
@@ -119,7 +120,7 @@ export async function getAdminUsers(
       id: u.id,
       displayName: full || u.username || u.name || u.email,
       email: u.email,
-      planLabel: !u.plan || u.plan === 'none' ? 'Free' : u.plan,
+      planLabel: planLabel(u.plan),
       isAdmin: u.role === 'admin',
       status: u.suspendedAt ? 'suspended' : 'active',
       joinedAt: u.joinedAt,
@@ -274,7 +275,7 @@ export async function getAdminUserDetail(id: string): Promise<AdminUserDetail | 
     fullName: fullName || user.name,
     email: user.email,
     username: user.username,
-    planLabel: !user.plan || user.plan === 'none' ? 'Free' : user.plan,
+    planLabel: planLabel(user.plan),
     isAdmin: user.role === 'admin',
     status: user.suspended_at ? 'suspended' : 'active',
     joinedAt: user.terms_consented_at,

@@ -10,7 +10,7 @@
 --
 -- Journey matrix (every state the app can render):
 --   ada  - COMPLETED: two finished courses; one active credential (this month,
---          Professional plan), one REVOKED credential (previous month),
+--          Pro plan), one REVOKED credential (previous month),
 --          one in-progress course (45%).
 --   ben  - FREE/quota: passed attempt with credential minted this month (free
 --          monthly quota now used), one course parked at 79% (assessment gate
@@ -159,17 +159,17 @@ ON CONFLICT DO NOTHING;
 
 -- -----------------------------------------------------------------------------
 -- SECTION 3 - users_table profiles.
---   ada  Professional: plan stores a Stripe subscription id (any value other
---        than the 'none' sentinel = Professional - utils/credentials.ts:90,
---        app/webhook/stripe/route.ts:51). Settings page tolerates the fake id
---        (getStripePlan is wrapped in try/catch -> 'Plan unavailable').
+--   ada  Pro: plan stores the tier key ('pro'); the 'none' sentinel = Free.
+--        The webhook writes it from the subscription price (utils/plans.ts,
+--        app/webhook/stripe/route.ts); legacy subscription ids are
+--        grandfathered as unlimited Pro.
 --   cara Onboarding PENDING: username/first_name/last_name/dob NULL -> the
 --        middleware onboarding gate and the empty onboarding form render.
 -- -----------------------------------------------------------------------------
 INSERT INTO public.users_table (id, name, email, plan, stripe_id, username, first_name, last_name, dob)
 VALUES
   ('a0000000-0000-4000-8000-000000000001', 'Ada Lovelace', 'ada@example.com',
-   'sub_gct_seed_pro_0001', 'cus_gct_seed_ada', 'ada', 'Ada', 'Lovelace', DATE '1990-12-10'),
+   'pro', 'cus_gct_seed_ada', 'ada', 'Ada', 'Lovelace', DATE '1990-12-10'),
   ('b0000000-0000-4000-8000-000000000002', 'Ben Carter', 'ben.carter@example.com',
    'none', 'cus_gct_seed_ben', 'benc', 'Ben', 'Carter', DATE '1996-04-22'),
   ('c0000000-0000-4000-8000-000000000003', 'Cara Silva', 'cara.silva@example.com',

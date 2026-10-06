@@ -77,8 +77,8 @@ export default function LearnPlayerPanel({
         </div>
         <p className="mt-2 text-xs text-clay">
           <span className="font-semibold text-ink">{watchedMinutes(watched)} min watched</span>
-          {totalMinutes > 0 ? ` of ${totalMinutes} min` : ''} · only time you actually play counts,
-          so skipping ahead does not add credit. Progress saves automatically and survives reloads.
+          {totalMinutes > 0 ? ` of ${totalMinutes} min` : ''} · Skipping ahead doesn&apos;t count. Progress
+          saves automatically.
         </p>
       </div>
     </div>

@@ -7,6 +7,7 @@ import {
   learningItemsTable,
   usersTable,
 } from '@/utils/db/schema';
+import { planLabel } from '@/utils/plans';
 
 // Deliberately NOT a 'use server' file: every export of a server-actions
 // module becomes a publicly callable endpoint (same rule as
@@ -198,7 +199,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
         id: u.id,
         displayName: full || u.username || u.name || u.email,
         email: u.email,
-        planLabel: !u.plan || u.plan === 'none' ? 'Free' : u.plan,
+        planLabel: planLabel(u.plan),
         isAdmin: u.role === 'admin',
         joinedAt: u.joinedAt,
       };

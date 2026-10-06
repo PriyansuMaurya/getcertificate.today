@@ -18,12 +18,13 @@ import {
   UNLOCK_PERCENT,
   attemptWindowCutoff,
   computeCredentialHash,
-  hasFreeQuotaRemaining,
+  hasCredentialQuotaRemaining,
   isAdminAccount,
   monthWindowStart,
   newCredentialId,
 } from '@/utils/credentials';
 import { getSettings } from '@/utils/settings';
+import { monthlyCertificateLimit, planLabel } from '@/utils/plans';
 import { SUSPENDED_MESSAGE, isAccountSuspended } from '@/utils/auth';
 import {
   AIUnavailableError,
@@ -440,7 +441,7 @@ export async function submitAssessment(
           and(eq(credentialsTable.user_id, user.id), gte(credentialsTable.passed_at, monthStart))
         );
       if (
-        !hasFreeQuotaRemaining(
+        !hasCredentialQuotaRemaining(
           credsThisMonth.length,
           profile?.plan ?? 'none',
           freeCredentialsPerMonth,
@@ -563,7 +564,7 @@ export async function mintFromAttempt(
           )
         );
       if (
-        !hasFreeQuotaRemaining(
+        !hasCredentialQuotaRemaining(
           credsThisMonth.length,
           profile?.plan ?? 'none',
           freeCredentialsPerMonth,
@@ -618,7 +619,27 @@ export async function mintFromAttempt(
     redirect(`/certificates/${mintedId}`);
   }
 
+  // Quota was the only reason nothing was minted: report the user's real plan
+  // allowance (Free/Starter/Pro) from the stored entitlement key. The lookup is
+  // best-effort - a failure here must not replace the quota message with a 500.
+  let limitedPlan: string | null = null;
+  try {
+    const [profilePlanRow] = await db
+      .select({ plan: usersTable.plan })
+      .from(usersTable)
+      .where(eq(usersTable.id, user.id));
+    limitedPlan = profilePlanRow?.plan ?? null;
+  } catch (err) {
+    console.error(
+      '[credential] quota message lookup failed:',
+      err instanceof Error ? err.message : 'unknown error'
+    );
+  }
+  const limit = monthlyCertificateLimit(limitedPlan, freeCredentialsPerMonth);
+  const limitText = limit === null ? 'unlimited' : `${limit}`;
   return {
-    message: `Free plan includes ${freeCredentialsPerMonth} credential per month. Upgrade to Professional to mint this one now.`,
+    message: `You have reached your monthly certificate limit (${limitText}) on the ${planLabel(
+      limitedPlan
+    )} plan. Upgrade your plan to mint this one now, or wait until next month.`,
   };
 }

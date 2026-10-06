@@ -27,7 +27,7 @@ const SECTIONS: { heading: string; body: string[] }[] = [
   {
     heading: 'Subscriptions and billing',
     body: [
-      'Paid plans are billed monthly through Stripe and renew automatically until you cancel. Cancel anytime from the billing portal linked in dashboard settings; access continues until the end of the paid period.',
+      'Paid plans are billed monthly or yearly through Stripe and renew automatically until you cancel. Cancel anytime from the billing portal linked in dashboard settings; access continues until the end of the paid period.',
       'Prices are listed in US dollars and exclude any taxes your jurisdiction may add.',
     ],
   },

@@ -9,7 +9,7 @@ A single [Next.js 16](https://nextjs.org/) application (App Router) that turns Y
 1. **Add a video.** Paste a YouTube URL (`watch`, `youtu.be`, or `shorts`); the system validates it and creates a learning item.
 2. **Learn.** Watch in the embedded player; progress is persisted server-side (client-reported, clamped and ownership-checked) and the assessment unlocks at **≥ 80% completion**.
 3. **Assess.** "Generate & start assessment" fetches the transcript through [TranscriptAPI](https://transcriptapi.com/docs/api/) (server-side, cached per video ID in the `transcripts` table), with best-effort YouTube captions (`utils/youtube.ts`) as the fallback source, then sends it to an OpenAI-compatible LLM, and generates multiple-choice questions strictly from that content. Answers are graded **server-side**; each question shows instant feedback with the selected answer, the correct answer, and why each is right/wrong. The question count, pass score (70% default), and attempt limit (3 per 7-day window default) are administered at `/admin/settings`.
-4. **Certify.** Passing mints a credential transactionally: score, unique credential ID, `sha256-v1:` hash over immutable fields, free-tier quota enforced (1 credential/month on Free, unlimited on Pro).
+4. **Certify.** Passing mints a credential transactionally: score, unique credential ID, `sha256-v1:` hash over immutable fields, quota enforced (Free 1/month, Starter 10/month, Pro 30/month, Pro yearly unlimited).
 5. **Verify.** The certificate page renders an SVG QR code; the public `/verify/<id>` page rechecks the hash and shows valid / revoked / invalid states for anyone, without logging in.
 
 ## Features
@@ -94,9 +94,9 @@ UPDATE users_table SET role = 'admin' WHERE email = 'you@example.com';
 
 ### 3. Stripe (optional but recommended)
 
-1. [Register](https://dashboard.stripe.com/register) and add `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, plus `STRIPE_PRICE_BASIC`, `STRIPE_PRICE_POPULAR`, and `STRIPE_PRICE_PREMIUM` (the price IDs behind the `/subscribe` pricing cards).
+1. [Register](https://dashboard.stripe.com/register) and add `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, plus `STRIPE_PRICE_STARTER`, `STRIPE_PRICE_PRO`, and `STRIPE_PRICE_PRO_YEARLY` (the price IDs behind the `/subscribe` pricing cards).
 2. Add `STRIPE_WEBHOOK_SECRET`. The webhook **fails closed** without it (raw-body signature verification). Locally, `npm run stripe:listen` prints the secret and forwards events to `http://localhost:3000/webhook/stripe`.
-3. `npm run stripe:setup` seeds the $9/$19/$39 products/prices and (in production mode) the webhook endpoint. `/subscribe` renders its own pricing cards - no Stripe-hosted Pricing Table involved - and returns to `/subscribe?checkout=success|canceled`.
+3. `npm run stripe:setup` seeds the €4.99/€9.99/€49.99 products/prices (Starter monthly, Pro monthly, Pro yearly) and (in production mode) the webhook endpoint. `/subscribe` renders its own pricing cards - no Stripe-hosted Pricing Table involved - and returns to `/subscribe?checkout=success|canceled`.
 
 Subscribing is optional for users; the dashboard only shows a voluntary upgrade card.
 
@@ -174,5 +174,5 @@ Deploy with the [Vercel Platform](https://vercel.com/new). Set the environment v
 ## Known gaps
 
 - No committed test suite or CI yet. Playwright is installed but only used by dev-only scripts (`docs/TASK.md` Phase 0).
-- `stripeSetup.ts` seeds placeholder plans that do not match the Free/Pro tiers shown on the landing page.
+- The Stripe price IDs (`STRIPE_PRICE_STARTER`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_PRO_YEARLY`) must be created and wired before /subscribe checkout works; `npm run stripe:setup` seeds the matching Starter/Pro/Pro Yearly products.
 - Legal pages live at /privacy, /terms, and /cookie-policy (see docs/LEGAL_COMPLIANCE_AUDIT.md).

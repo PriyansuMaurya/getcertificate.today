@@ -9,10 +9,13 @@ import { stripe } from '@/utils/stripe/api';
 
 const PUBLIC_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || 'http://localhost:3000';
 
+// Checkout keys used by the pricing cards (utils/plans.ts PlanCheckout.key).
+// Keep this allowlist in sync with the STRIPE_PRICE_* env wiring in
+// utils/stripe/api.ts and stripeSetup.ts.
 const PRICE_ENV: Record<string, string> = {
-  basic: 'STRIPE_PRICE_BASIC',
-  popular: 'STRIPE_PRICE_POPULAR',
-  premium: 'STRIPE_PRICE_PREMIUM',
+  starter: 'STRIPE_PRICE_STARTER',
+  pro: 'STRIPE_PRICE_PRO',
+  pro_yearly: 'STRIPE_PRICE_PRO_YEARLY',
 };
 
 export type PlanKey = keyof typeof PRICE_ENV;

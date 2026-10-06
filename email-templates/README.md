@@ -199,7 +199,7 @@ conditionals, pass every variable each time:
 
 | Trigger                | EYEBROW                | NOTIFICATION_TITLE                | DETAIL_LABEL / ACTION_LABEL                            |
 | ---------------------- | ---------------------- | --------------------------------- | ------------------------------------------------------ |
-| Subscription confirmed | Subscription confirmed | Your Professional plan is active. | `Plan` / `Manage billing` → `/dashboard/settings`      |
+| Subscription confirmed | Subscription confirmed | Your Pro plan is active. | `Plan` / `Manage billing` → `/dashboard/settings`      |
 | Payment failed         | Payment issue          | We could not process your payment.| `Card` / `Update payment` → `/subscribe`               |
 | Password changed       | Security notice        | Your password was changed.        | `When` / `Review account security` → `/dashboard/settings` |
 | Account suspended      | Account notice         | Your account has been suspended.  | `Status` / `Contact support` → mailto support          |
