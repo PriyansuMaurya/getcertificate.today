@@ -4,7 +4,9 @@
 // `users_table.plan` stores the entitlement key: 'none' for free accounts, or a
 // paid tier key ('starter' | 'pro' | 'pro_yearly'). The Stripe webhook writes
 // the key from the subscription's price (app/webhook/stripe/route.ts), so quota
-// enforcement and plan labels read it locally - no Stripe round-trip.
+// enforcement and plan labels read it locally - no Stripe round-trip. Rows from
+// the pre-tier schema (a Stripe subscription id, or the retired USD plan keys)
+// are still recognised and grandfathered (see paidTierOf).
 //
 // Deliberately free of server-only imports so it can also be imported from
 // client components (the pricing cards). It imports nothing from
@@ -31,16 +33,35 @@ export function isPaidPlanTier(value: unknown): value is PaidPlanTier {
   return typeof value === 'string' && (PAID_PLAN_TIERS as readonly string[]).includes(value);
 }
 
+/** Retired plan names from the earlier USD tiers; grandfathered as unlimited Pro. */
+const RETIRED_PLAN_KEYS = ['basic', 'popular', 'premium'] as const;
+
+/**
+ * True for the Stripe subscription ids written by the pre-tier schema (every
+ * subscription id begins with `sub_`). Those accounts were sold unlimited
+ * certificates, so they keep them.
+ */
+function isLegacySubscriptionId(value: string): boolean {
+  return value.startsWith('sub_');
+}
+
 /**
  * Resolves a stored `plan` value to a paid tier, or null for free/unknown.
  *
- * Legacy non-'none' values - the old Stripe subscription ids (and the retired
- * 'basic'/'popular'/'premium' keys) - are grandfathered as unlimited Pro: those
- * accounts were sold unlimited certificates and keep them.
+ * Recognised: the current tier keys, the legacy Stripe subscription ids (any
+ * `sub_` value is trusted as one) and the retired USD plan keys. The last two
+ * were sold as unlimited Pro, so they stay grandfathered. Any other non-'none'
+ * value is unexpected - a typo or a hand-edited row - and falls back to free
+ * rather than silently granting unlimited Pro.
  */
 export function paidTierOf(plan: string | null | undefined): PaidPlanTier | null {
   if (isPaidPlanTier(plan)) return plan;
-  if (plan && plan !== 'none') return 'pro_yearly';
+  if (typeof plan !== 'string' || plan === '' || plan === 'none') return null;
+  // Grandfather the two legacy shapes: a stored Stripe subscription id and the
+  // retired USD plan keys.
+  if (isLegacySubscriptionId(plan) || (RETIRED_PLAN_KEYS as readonly string[]).includes(plan)) {
+    return 'pro_yearly';
+  }
   return null;
 }
 

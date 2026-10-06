@@ -59,6 +59,11 @@ describe('hasCredentialQuotaRemaining', () => {
     assert.equal(hasCredentialQuotaRemaining(999, 'sub_abc123', 1), true);
   });
 
+  it('does not grandfather an unexpected plan value (falls back to free)', () => {
+    assert.equal(hasCredentialQuotaRemaining(999, 'paid', 1), false);
+    assert.equal(hasCredentialQuotaRemaining(0, 'paid', 1), true);
+  });
+
   it('allows admins even with the free sentinel plan and a zero limit', () => {
     assert.equal(hasCredentialQuotaRemaining(0, 'none', 0, true), true);
     assert.equal(hasCredentialQuotaRemaining(10, 'none', 1, true), true);

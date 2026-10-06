@@ -40,18 +40,25 @@ describe('paidTierOf', () => {
     assert.equal(paidTierOf('sub_gct_seed_pro_0001'), 'pro_yearly');
   });
 
-  it('grandfathers retired plan keys as unlimited Pro', () => {
-    // Whatever a legacy row holds, any non-'none' value keeps its old unlimited
-    // entitlement (utils/plans.ts comment).
+  it('grandfathers the retired USD plan keys as unlimited Pro', () => {
     assert.equal(paidTierOf('basic'), 'pro_yearly');
     assert.equal(paidTierOf('popular'), 'pro_yearly');
     assert.equal(paidTierOf('premium'), 'pro_yearly');
   });
 
-  it('grandfathers any other unknown non-"none" value (values are server-written)', () => {
-    // Not case-normalized on purpose: only the webhook writes this column.
-    assert.equal(paidTierOf('Starter'), 'pro_yearly');
-    assert.equal(paidTierOf('paid'), 'pro_yearly');
+  it('falls back to free for any other unexpected value', () => {
+    // A typo or hand-edited row must not silently grant unlimited Pro. Note
+    // 'subscriber' does not match the 'sub_' subscription-id prefix.
+    assert.equal(paidTierOf('paid'), null);
+    assert.equal(paidTierOf('enterprise'), null);
+    assert.equal(paidTierOf('subscriber'), null);
+  });
+
+  it('is an exact match on the tier keys (a mis-cased value is not a tier)', () => {
+    // 'Starter' is not a tier key, not a retired key and not a 'sub_' id, so it
+    // is unexpected and falls back to free. This is the gap the whitelist closes.
+    assert.equal(paidTierOf('Starter'), null);
+    assert.equal(paidTierOf('PRO'), null);
   });
 });
 
@@ -71,6 +78,10 @@ describe('planLabel', () => {
     assert.equal(planLabel('pro_yearly'), 'Pro');
     assert.equal(planLabel('sub_legacy_123'), 'Pro');
     assert.equal(planLabel('premium'), 'Pro');
+  });
+
+  it('labels an unexpected plan value as Free', () => {
+    assert.equal(planLabel('paid'), 'Free');
   });
 });
 
@@ -94,6 +105,10 @@ describe('monthlyCertificateLimit', () => {
   it('ignores the free allowance for paid tiers', () => {
     assert.equal(monthlyCertificateLimit('starter', 99), 10);
     assert.equal(monthlyCertificateLimit('pro', 99), 30);
+  });
+
+  it('gives an unexpected plan value the free allowance, not unlimited', () => {
+    assert.equal(monthlyCertificateLimit('paid', 3), 3);
   });
 });
 
