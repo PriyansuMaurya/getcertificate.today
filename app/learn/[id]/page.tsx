@@ -78,6 +78,8 @@ export default async function LearnPage({ params }: { params: Promise<{ id: stri
                 startSeconds={item.position_seconds}
                 title={title}
                 initialPercent={item.progress_percent}
+                initialWatchedSeconds={item.watched_seconds}
+                durationSeconds={item.duration_seconds}
               />
             </div>
           </div>

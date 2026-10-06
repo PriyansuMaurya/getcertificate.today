@@ -1,6 +1,11 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import {
+  PLAYER_SAMPLE_INTERVAL_MS,
+  detectPlayedSpan,
+  type WatchRange,
+} from '@/utils/watch-progress';
 
 declare global {
   interface Window {
@@ -15,8 +20,23 @@ type YTPlayer = {
   destroy: () => void;
   getCurrentTime: () => number;
   getDuration: () => number;
+  getPlayerState: () => number;
   addEventListener: (event: string, handler: () => void) => void;
 };
+
+/** A single progress sample handed to the parent for server persistence. */
+export type PlayerSample = {
+  position: number;
+  duration: number;
+  /**
+   * The contiguous span played since the previous sample, or null when nothing
+   * was played (paused, rewound, or a seek too large to be real playback).
+   */
+  watched: WatchRange | null;
+};
+
+// YT.PlayerState.PLAYING
+const PLAYING = 1;
 
 // Loads the YouTube IFrame API once per page. Progress is sampled from the
 // player and handed to the parent, which owns server persistence.
@@ -51,8 +71,8 @@ export default function YouTubePlayer({
   youtubeId: string;
   startSeconds: number;
   title: string;
-  /** Called with (positionSeconds, durationSeconds) while playing. */
-  onSample: (position: number, duration: number) => void;
+  /** Called once per poll while the player is alive. */
+  onSample: (sample: PlayerSample) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YTPlayer | null>(null);
@@ -65,6 +85,10 @@ export default function YouTubePlayer({
   useEffect(() => {
     let cancelled = false;
     let sampleTimer: ReturnType<typeof setInterval> | null = null;
+    // Per-player anchor: the last observed position and the wall clock at that
+    // observation. A gap that outruns real elapsed time is a seek, not watching.
+    let lastPosition: number | null = null;
+    let lastTickAt = Date.now();
 
     loadYouTubeApi()
       .then(() => {
@@ -81,17 +105,41 @@ export default function YouTubePlayer({
           events: {
             onReady: (event: { target: YTPlayer }) => {
               const player = event.target;
-              // Sample every 5s while the tab is visible (throttled server writes).
+              lastPosition = null;
+              lastTickAt = Date.now();
+              // Sample every few seconds while the tab is visible (throttled writes).
               sampleTimer = setInterval(() => {
-                if (document.hidden) return;
+                if (document.hidden) {
+                  // No credit while backgrounded, and drop the anchor so the
+                  // return from the background is not bridged as watching.
+                  lastPosition = null;
+                  return;
+                }
                 try {
                   const position = player.getCurrentTime();
                   const duration = player.getDuration();
-                  if (duration > 0) onSampleRef.current(position, duration);
+                  if (!(duration > 0)) return;
+
+                  const now = Date.now();
+                  const elapsedSeconds = Math.max(0, (now - lastTickAt) / 1000);
+
+                  // Only a forward move no faster than real playback (up to the
+                  // max rate) counts as continuous watching. A larger jump is a
+                  // seek and contributes no span (see detectPlayedSpan).
+                  const watched = detectPlayedSpan({
+                    prevPosition: lastPosition,
+                    position,
+                    elapsedSeconds,
+                    isPlaying: player.getPlayerState() === PLAYING,
+                  });
+
+                  lastPosition = position;
+                  lastTickAt = now;
+                  onSampleRef.current({ position, duration, watched });
                 } catch {
                   // Player torn down mid-sample - ignore.
                 }
-              }, 5000);
+              }, PLAYER_SAMPLE_INTERVAL_MS);
             },
           },
         });

@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import LearnPlayer from './LearnPlayer';
+import { watchedMinutes } from '@/utils/watch-progress';
 
 /**
  * Client wrapper around the player: keeps a live progress bar and calls
@@ -15,19 +16,25 @@ export default function LearnPlayerPanel({
   startSeconds,
   title,
   initialPercent,
+  initialWatchedSeconds,
+  durationSeconds,
 }: {
   youtubeId: string;
   itemId: string;
   startSeconds: number;
   title: string;
   initialPercent: number;
+  initialWatchedSeconds: number;
+  durationSeconds: number;
 }) {
   const router = useRouter();
   const [percent, setPercent] = useState(initialPercent);
+  const [watched, setWatched] = useState(initialWatchedSeconds);
   const lastRefreshedRef = useRef(initialPercent);
 
-  function handleProgress(next: number) {
+  function handleProgress(next: number, nextWatchedSeconds: number) {
     setPercent(next);
+    setWatched(nextWatchedSeconds);
     // Refresh the RSC tree at most every 5% so the gate unlocks promptly
     // without spamming the server on each sample.
     if (next >= lastRefreshedRef.current + 5 || (next >= 80 && lastRefreshedRef.current < 80)) {
@@ -35,6 +42,8 @@ export default function LearnPlayerPanel({
       router.refresh();
     }
   }
+
+  const totalMinutes = durationSeconds > 0 ? Math.round(durationSeconds / 60) : 0;
 
   return (
     <div>
@@ -44,6 +53,7 @@ export default function LearnPlayerPanel({
         startSeconds={startSeconds}
         title={title}
         initialPercent={initialPercent}
+        initialWatchedSeconds={initialWatchedSeconds}
         onProgress={handleProgress}
       />
 
@@ -66,7 +76,9 @@ export default function LearnPlayerPanel({
           />
         </div>
         <p className="mt-2 text-xs text-clay">
-          Progress is saved automatically every few seconds and survives reloads.
+          <span className="font-semibold text-ink">{watchedMinutes(watched)} min watched</span>
+          {totalMinutes > 0 ? ` of ${totalMinutes} min` : ''} · only time you actually play counts,
+          so skipping ahead does not add credit. Progress saves automatically and survives reloads.
         </p>
       </div>
     </div>

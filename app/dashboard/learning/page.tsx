@@ -4,6 +4,7 @@ import { createClient } from '@/utils/supabase/server';
 import { db } from '@/utils/db/db';
 import { learningItemsTable } from '@/utils/db/schema';
 import { eq, desc } from 'drizzle-orm';
+import { watchedMinutes } from '@/utils/watch-progress';
 import AddLearningForm from '@/components/learning/AddLearningForm';
 import DeleteLearningItemButton from '@/components/learning/DeleteLearningItemButton';
 import { ArrowRight, BookOpen, Clock3, ExternalLink } from 'lucide-react';
@@ -13,12 +14,14 @@ export const metadata = {
   description: 'Your YouTube courses and progress.',
 };
 
-function statusLabel(item: { progress_percent: number; position_seconds: number }): {
+function statusLabel(item: { progress_percent: number }): {
   text: string;
   tone: 'done' | 'active' | 'new';
 } {
+  // progress_percent is derived from unique watched seconds, so a seek alone
+  // (which moves position but not watched time) correctly stays "Not started".
   if (item.progress_percent >= 100) return { text: 'Completed', tone: 'done' };
-  if (item.progress_percent > 0 || item.position_seconds > 0) {
+  if (item.progress_percent > 0) {
     return { text: `${item.progress_percent}% watched`, tone: 'active' };
   }
   return { text: 'Not started', tone: 'new' };
@@ -165,7 +168,9 @@ export default async function MyLearningPage() {
                     <p className="mt-3 flex items-center gap-1.5 text-xs text-clay">
                       <Clock3 aria-hidden="true" className="h-3.5 w-3.5" />
                       {item.duration_seconds > 0
-                        ? `${Math.round(item.duration_seconds / 60)} min video`
+                        ? `${watchedMinutes(item.watched_seconds)} min watched · ${Math.round(
+                            item.duration_seconds / 60
+                          )} min video`
                         : 'Duration loads on open'}
                     </p>
                   </li>

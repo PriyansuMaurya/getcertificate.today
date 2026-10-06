@@ -182,6 +182,8 @@ ON CONFLICT (id) DO NOTHING;
 -- SECTION 4 - learning_items (8 rows, one per journey state).
 -- progress/position/duration are consistent: completed items have
 -- position = duration and progress = 100; 79% item = floor(0.79 * 1200) etc.
+-- The unique-watched-time columns (migration 0008) are derived from the same
+-- percent just below, so seeded rows report real watched minutes.
 -- -----------------------------------------------------------------------------
 INSERT INTO public.learning_items (
   id, user_id, kind, source_url, youtube_id, title, author, status,
@@ -245,6 +247,30 @@ VALUES
    1800, 0, 0,
    now() - interval '1 hour', now() - interval '1 hour')
 ON CONFLICT (id) DO NOTHING;
+
+-- Derive unique watched seconds/spans from the seeded percent (mirrors the
+-- migration 0008 backfill) so demo data reports real watched minutes.
+UPDATE public.learning_items
+SET watched_seconds = LEAST(duration_seconds,
+                            CEIL(duration_seconds * progress_percent / 100.0)::integer),
+    watched_ranges = CASE
+      WHEN duration_seconds > 0 AND progress_percent > 0
+      THEN jsonb_build_array(jsonb_build_object(
+        'start', 0,
+        'end', LEAST(duration_seconds,
+                     CEIL(duration_seconds * progress_percent / 100.0)::integer)))
+      ELSE '[]'::jsonb
+    END
+WHERE id IN (
+  'aa000000-0000-4000-8000-000000000001',
+  'aa000000-0000-4000-8000-000000000002',
+  'aa000000-0000-4000-8000-000000000003',
+  'aa000000-0000-4000-8000-000000000004',
+  'aa000000-0000-4000-8000-000000000005',
+  'aa000000-0000-4000-8000-000000000006',
+  'aa000000-0000-4000-8000-000000000007',
+  'aa000000-0000-4000-8000-000000000008'
+);
 
 -- -----------------------------------------------------------------------------
 -- SECTION 5 - assessments (5 rows; every gated course except ben's 79% and

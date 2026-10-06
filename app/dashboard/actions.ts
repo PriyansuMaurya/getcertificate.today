@@ -8,6 +8,7 @@ import { createClient } from '@/utils/supabase/server';
 import { db } from '@/utils/db/db';
 import { learningItemsTable } from '@/utils/db/schema';
 import { getVideoMeta, parseYouTubeVideoId } from '@/utils/youtube';
+import { reconcileWatchProgress, type WatchRange } from '@/utils/watch-progress';
 
 export type LearningActionState = { message: string; success?: boolean };
 
@@ -111,22 +112,43 @@ export async function deleteLearningItem(
   return { message: '' };
 }
 
+export type ProgressResult = {
+  ok: boolean;
+  percent: number;
+  watchedSeconds: number;
+  /** True when the failure is temporary (over budget) and worth retrying. */
+  retryable: boolean;
+};
+
 /**
- * Persist watch progress from the embedded player (FR-C4). The client supplies
- * position/duration; the server clamps both and keeps progress monotonic so a
- * rewind can never lower the recorded percentage. The ≥80% assessment gate is
- * re-checked server-side from this stored value (FR-C5 AC3).
+ * Persist unique watch progress from the embedded player (FR-C4).
+ *
+ * The client reports the contiguous spans it actually played (`segments`), not
+ * a single current timestamp. The server keeps the canonical union of those
+ * spans on the item - so a forward seek contributes nothing, scrubbing back and
+ * forth never double-counts, and `progress_percent` (derived from unique
+ * watched seconds, never from `position_seconds`) cannot be forged by posting a
+ * large position. A multiplicative wall-clock budget bounds how much new credit
+ * one request may claim, defeating a single "I watched everything" payload and
+ * request flooding alike.
+ *
+ * The ≥80% assessment gate is re-checked server-side from the stored value
+ * (FR-C5 AC3).
+ *
+ * `retryable` distinguishes a temporary over-budget rejection (keep the spans,
+ * retry) from a terminal failure (unauthenticated/malformed/missing item).
  */
 export async function saveProgress(
   itemId: string,
   positionSeconds: number,
-  durationSeconds: number
-): Promise<{ ok: boolean; percent: number }> {
+  durationSeconds: number,
+  segments: WatchRange[] = []
+): Promise<ProgressResult> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { ok: false, percent: 0 };
+  if (!user) return { ok: false, percent: 0, watchedSeconds: 0, retryable: false };
 
   if (
     typeof itemId !== 'string' ||
@@ -135,36 +157,72 @@ export async function saveProgress(
     !Number.isFinite(positionSeconds) ||
     !Number.isFinite(durationSeconds)
   ) {
-    return { ok: false, percent: 0 };
+    return { ok: false, percent: 0, watchedSeconds: 0, retryable: false };
   }
 
-  const rows = await db
-    .select({
-      id: learningItemsTable.id,
-      progress_percent: learningItemsTable.progress_percent,
-    })
-    .from(learningItemsTable)
-    .where(and(eq(learningItemsTable.id, itemId), eq(learningItemsTable.user_id, user.id)));
-  if (rows.length === 0) return { ok: false, percent: 0 };
+  // Row-locked read-modify-write: two concurrent saves (e.g. two tabs) must not
+  // clobber each other's watched_ranges and lose real credit.
+  return db.transaction(async (tx) => {
+    const rows = await tx
+      .select({
+        id: learningItemsTable.id,
+        duration_seconds: learningItemsTable.duration_seconds,
+        progress_percent: learningItemsTable.progress_percent,
+        watched_seconds: learningItemsTable.watched_seconds,
+        watched_ranges: learningItemsTable.watched_ranges,
+        last_watched_at: learningItemsTable.last_watched_at,
+      })
+      .from(learningItemsTable)
+      .where(and(eq(learningItemsTable.id, itemId), eq(learningItemsTable.user_id, user.id)))
+      .for('update');
+    if (rows.length === 0) {
+      return { ok: false, percent: 0, watchedSeconds: 0, retryable: false };
+    }
+    const row = rows[0];
 
-  const duration = Math.max(0, Math.floor(durationSeconds));
-  const position =
-    duration > 0
-      ? Math.min(duration, Math.max(0, Math.floor(positionSeconds)))
-      : Math.max(0, Math.floor(positionSeconds));
+    const incomingDuration = Math.max(0, Math.floor(durationSeconds));
+    // Keep the largest duration seen; a torn-down player can report 0 mid-session.
+    const duration = Math.max(row.duration_seconds, incomingDuration);
+    const position =
+      duration > 0
+        ? Math.min(duration, Math.max(0, Math.floor(positionSeconds)))
+        : Math.max(0, Math.floor(positionSeconds));
 
-  const computed = duration > 0 ? Math.min(100, Math.floor((position / duration) * 100)) : 0;
-  const percent = Math.max(rows[0].progress_percent, computed);
+    // Reconcile the client's proposed spans against the canonical set and the
+    // anti-forgery budget (pure + unit-tested: utils/watch-progress.ts
+    // reconcileWatchProgress). Overlaps merge so unique seconds are counted
+    // once, and a single "I watched the whole video" span is rejected.
+    const outcome = reconcileWatchProgress({
+      storedRanges: row.watched_ranges,
+      storedWatchedSeconds: row.watched_seconds,
+      duration,
+      segments,
+      elapsedSeconds: row.last_watched_at
+        ? (Date.now() - row.last_watched_at.getTime()) / 1000
+        : null,
+    });
+    const percent = Math.max(row.progress_percent, outcome.percent);
 
-  await db
-    .update(learningItemsTable)
-    .set({
-      position_seconds: position,
-      duration_seconds: duration,
-      progress_percent: percent,
-      updated_at: new Date(),
-    })
-    .where(eq(learningItemsTable.id, itemId));
+    await tx
+      .update(learningItemsTable)
+      .set({
+        position_seconds: position,
+        duration_seconds: duration,
+        progress_percent: percent,
+        watched_seconds: outcome.watchedSeconds,
+        watched_ranges: outcome.ranges,
+        // Advance the rate-limit clock on every sample (accepted or not) so a
+        // burst of requests cannot bank budget.
+        last_watched_at: new Date(),
+        updated_at: new Date(),
+      })
+      .where(eq(learningItemsTable.id, itemId));
 
-  return { ok: true, percent };
+    return {
+      ok: outcome.accepted,
+      percent,
+      watchedSeconds: outcome.watchedSeconds,
+      retryable: !outcome.accepted,
+    } satisfies ProgressResult;
+  });
 }

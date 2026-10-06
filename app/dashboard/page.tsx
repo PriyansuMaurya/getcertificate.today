@@ -25,6 +25,7 @@ export default async function Dashboard() {
         progress_percent: learningItemsTable.progress_percent,
         duration_seconds: learningItemsTable.duration_seconds,
         position_seconds: learningItemsTable.position_seconds,
+        watched_seconds: learningItemsTable.watched_seconds,
         updated_at: learningItemsTable.updated_at,
       })
       .from(learningItemsTable)
@@ -58,10 +59,8 @@ export default async function Dashboard() {
       : (profile?.username ?? data.user.email);
 
   const inProgress = items.filter((i) => i.progress_percent > 0 && i.progress_percent < 100).length;
-  const totalSeconds = items.reduce((sum, i) => {
-    if (i.duration_seconds <= 0) return sum;
-    return sum + Math.round((i.duration_seconds * i.progress_percent) / 100);
-  }, 0);
+  // Sum the unique watched seconds the server recorded (not a percent estimate).
+  const totalSeconds = items.reduce((sum, i) => sum + Math.max(0, i.watched_seconds), 0);
   const hoursLearned = Math.round((totalSeconds / 3600) * 10) / 10;
 
   const stats = [
@@ -81,7 +80,7 @@ export default async function Dashboard() {
       label: 'Hours Learned',
       value: hoursLearned > 0 ? `${hoursLearned}h` : '0h',
       icon: Clock3,
-      help: 'Estimated from tracked watch progress',
+      help: 'From your tracked watch time',
     },
   ];
 

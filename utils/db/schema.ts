@@ -8,6 +8,7 @@ import {
   timestamp,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
+import type { WatchRange } from '../watch-progress';
 
 export const usersTable = pgTable('users_table', {
   id: text('id').primaryKey(),
@@ -56,6 +57,16 @@ export const learningItemsTable = pgTable(
     duration_seconds: integer('duration_seconds').notNull().default(0),
     position_seconds: integer('position_seconds').notNull().default(0),
     progress_percent: integer('progress_percent').notNull().default(0),
+    // Unique seconds actually watched - the sum of the disjoint spans in
+    // `watched_ranges`. `progress_percent` is derived from this, never from
+    // `position_seconds`, so skipping ahead cannot bank completion (FR-C4).
+    watched_seconds: integer('watched_seconds').notNull().default(0),
+    // Canonical union of the played spans, server-merged on every sample. The
+    // client can propose spans but never sets a total directly.
+    watched_ranges: jsonb('watched_ranges').$type<WatchRange[]>().notNull().default([]),
+    // Server clock of the last accepted sample; bounds how much new credit a
+    // single request may claim (anti-forgery rate limit).
+    last_watched_at: timestamp('last_watched_at', { withTimezone: true }),
     created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updated_at: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

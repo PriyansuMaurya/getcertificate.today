@@ -151,9 +151,11 @@ END $$;
 -- Columns added by later migrations (terms_consented_at from 0004, role from
 -- 0005, suspended_at from 0006) are intentionally NOT in the CREATE TABLE
 -- above; the guarded block backfills them like the 0001 columns, so a
--- bootstrapped database already has them. Section 9 therefore marks journal
--- entries 0000-0007 as applied, keeping `drizzle-kit migrate` (npm run build)
--- a no-op. See Section 9.
+-- bootstrapped database already has them. The unique-watched-time columns
+-- (migration 0008, watched_seconds/watched_ranges/last_watched_at) are added to
+-- the CREATE TABLE above and backfilled for older databases. Section 9 therefore
+-- marks journal entries 0000-0008 as applied, keeping `drizzle-kit migrate`
+-- (npm run build) a no-op. See Section 9.
 
 -- NOTE: users_table.stripe_id intentionally has NO unique constraint.
 -- Migration 0002 drops users_table_stripe_id_unique and schema.ts does not
@@ -173,11 +175,50 @@ CREATE TABLE IF NOT EXISTS public.learning_items (
   duration_seconds integer NOT NULL DEFAULT 0,
   position_seconds integer NOT NULL DEFAULT 0,
   progress_percent integer NOT NULL DEFAULT 0,
+  watched_seconds integer NOT NULL DEFAULT 0,
+  watched_ranges jsonb NOT NULL DEFAULT '[]'::jsonb,
+  last_watched_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE UNIQUE INDEX IF NOT EXISTS learning_items_user_youtube_unique
   ON public.learning_items (user_id, youtube_id);
+
+-- Backfill the unique-watched-time columns (migration 0008) on databases
+-- provisioned before it existed. Fresh databases already get them from the
+-- CREATE TABLE above; existing rows keep their progress by folding the legacy
+-- percent into a single watched span.
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_schema = 'public' AND table_name = 'learning_items'
+                   AND column_name = 'watched_seconds') THEN
+    ALTER TABLE public.learning_items
+      ADD COLUMN watched_seconds integer NOT NULL DEFAULT 0;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_schema = 'public' AND table_name = 'learning_items'
+                   AND column_name = 'watched_ranges') THEN
+    ALTER TABLE public.learning_items
+      ADD COLUMN watched_ranges jsonb NOT NULL DEFAULT '[]'::jsonb;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_schema = 'public' AND table_name = 'learning_items'
+                   AND column_name = 'last_watched_at') THEN
+    ALTER TABLE public.learning_items
+      ADD COLUMN last_watched_at timestamp with time zone;
+  END IF;
+  -- Mirrors migration 0008's backfill; the `= 0` guard keeps it idempotent.
+  UPDATE public.learning_items
+  SET watched_seconds = LEAST(duration_seconds,
+                              CEIL(duration_seconds * progress_percent / 100.0)::integer),
+      watched_ranges = jsonb_build_array(jsonb_build_object(
+        'start', 0,
+        'end', LEAST(duration_seconds,
+                     CEIL(duration_seconds * progress_percent / 100.0)::integer)
+      ))
+  WHERE progress_percent > 0 AND duration_seconds > 0 AND watched_seconds = 0;
+END $$;
 
 -- 3.3 assessments (one per learning item; questions JSONB holds
 -- {prompt, choices[], correct} - utils/db/schema.ts AssessmentQuestion)
@@ -422,6 +463,23 @@ BEGIN
   END IF;
 END $$;
 
+-- learning_items.watched_seconds: sum of non-negative watched spans
+-- (utils/watch-progress.ts totalWatchedSeconds)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint
+                 WHERE conrelid = 'public.learning_items'::regclass
+                   AND conname = 'learning_items_watched_seconds_check') THEN
+    IF EXISTS (SELECT 1 FROM public.learning_items WHERE watched_seconds < 0) THEN
+      RAISE NOTICE 'skipping learning_items_watched_seconds_check: violating rows exist';
+    ELSE
+      ALTER TABLE public.learning_items
+        ADD CONSTRAINT learning_items_watched_seconds_check
+        CHECK (watched_seconds >= 0);
+    END IF;
+  END IF;
+END $$;
+
 -- -----------------------------------------------------------------------------
 -- SECTION 5 - updated_at maintenance trigger (functions + triggers).
 -- App code sets updated_at explicitly on update (app/dashboard/actions.ts:158);
@@ -653,6 +711,11 @@ INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
 SELECT '099917e791d1e097ffa130856e9f395301726ff2947d5ed9ddfdb779e19d62b3', 1791234575470
 WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at = 1791234575470);
 
+-- 0008 (unique watched-time tracking) is embodied by the DDL + backfill above.
+INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
+SELECT '2d451ce9ef600baf32b11c1d558a80269f9acbb3a1931a751a7e13fea69b5676', 1791317223039
+WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at = 1791317223039);
+
 -- -----------------------------------------------------------------------------
 -- SECTION 10 - Post-run verification queries (read-only, for manual check).
 -- -----------------------------------------------------------------------------
@@ -662,6 +725,5 @@ WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at = 
 -- SELECT schemaname, tablename, policyname FROM pg_policies
 --   WHERE schemaname = 'public' ORDER BY tablename, policyname;
 -- SELECT hash, created_at FROM drizzle.__drizzle_migrations ORDER BY created_at;
---   rows for 0000-0003 exist from Section 9; 0004+ are added by
---   `drizzle-kit migrate`, so the last row must match the latest `when` in
---   utils/db/migrations/meta/_journal.json.
+--   rows for 0000-0008 are inserted by Section 9; the last row must match the
+--   latest `when` in utils/db/migrations/meta/_journal.json.
