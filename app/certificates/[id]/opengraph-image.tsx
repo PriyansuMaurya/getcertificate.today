@@ -19,8 +19,9 @@ import path from 'node:path';
 import { eq } from 'drizzle-orm';
 import QRCode from 'qrcode';
 import { db } from '@/utils/db/db';
-import { credentialsTable, usersTable } from '@/utils/db/schema';
+import { credentialsTable } from '@/utils/db/schema';
 import { createClient } from '@/utils/supabase/server';
+import { isAdminUser } from '@/utils/auth';
 import { verifyCredentialHash } from '@/utils/credentials';
 import { getSettings } from '@/utils/settings';
 import { formatCertDate } from '@/lib/certificate-draw';
@@ -174,11 +175,7 @@ async function viewerMayViewCertificate(holderId: string): Promise<boolean> {
   if (!user) return false;
   if (user.id === holderId) return true;
 
-  const adminRows = await db
-    .select({ role: usersTable.role, suspendedAt: usersTable.suspended_at })
-    .from(usersTable)
-    .where(eq(usersTable.id, user.id));
-  return adminRows[0]?.role === 'admin' && adminRows[0]?.suspendedAt === null;
+  return isAdminUser(user.id);
 }
 
 /** All I/O for the card - the only part allowed inside a try/catch. */

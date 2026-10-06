@@ -4,8 +4,9 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 import { db } from '@/utils/db/db';
-import { credentialsTable, usersTable } from '@/utils/db/schema';
+import { credentialsTable } from '@/utils/db/schema';
 import { createClient } from '@/utils/supabase/server';
+import { isAdminUser } from '@/utils/auth';
 import { verifyCredentialHash } from '@/utils/credentials';
 import { getSettings } from '@/utils/settings';
 import CertificateCanvas from '@/components/certificates/CertificateCanvas';
@@ -130,11 +131,7 @@ export default async function CertificatePage({ params }: { params: Promise<{ id
   // never trusted from anything the client sends.
   let canViewCertificate = Boolean(user && cred.user_id === user.id);
   if (user && !canViewCertificate) {
-    const adminRows = await db
-      .select({ role: usersTable.role, suspendedAt: usersTable.suspended_at })
-      .from(usersTable)
-      .where(eq(usersTable.id, user.id));
-    canViewCertificate = adminRows[0]?.role === 'admin' && adminRows[0]?.suspendedAt === null;
+    canViewCertificate = await isAdminUser(user.id);
   }
 
   // Live admin pass mark for the details panel.

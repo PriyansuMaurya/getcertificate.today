@@ -1,4 +1,5 @@
-// Server-only account-state helper shared by the learner routes/actions.
+// Server-only account-state helpers shared by the learner routes/actions, the
+// admin guard (requireAdmin), and the certificate page / OG-image gates.
 //
 // Admin suspension is written to users_table.suspended_at by
 // app/admin/users/actions.ts. It is enforced at login, OAuth sign-in, the
@@ -26,6 +27,20 @@ export async function isAccountSuspended(userId: string): Promise<boolean> {
     .from(usersTable)
     .where(eq(usersTable.id, userId));
   return Boolean(rows[0]?.suspendedAt);
+}
+
+/**
+ * True only when the user's row has role 'admin' and is not suspended. The rule
+ * lives in one place so the admin console (requireAdmin) and the certificate
+ * page / OG-image gates can't drift apart. The role is read server-side from the
+ * database on every call - nothing the client sends can influence it.
+ */
+export async function isAdminUser(userId: string): Promise<boolean> {
+  const rows = await db
+    .select({ role: usersTable.role, suspendedAt: usersTable.suspended_at })
+    .from(usersTable)
+    .where(eq(usersTable.id, userId));
+  return rows[0]?.role === 'admin' && rows[0]?.suspendedAt === null;
 }
 
 /**
