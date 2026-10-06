@@ -232,7 +232,7 @@ Windows ignores web fonts, so an `mso` style block forces Arial there.
   that size. Add a stacking rule if you introduce a wider two-column block.
 - **Buttons:** solid ink buttons use VML `roundrect` for Outlook plus an
   `mso-hide:all` anchor for everyone else.
-- **Logo:** `https://getcertificate.today/figma/logo.png` (180×40). Absolute URL —
+- **Logo:** `https://getcertificate.today/figma/logo-no-tagline.svg` (180×40). Absolute URL —
   email clients never load relative or SVG logos. Keep the PNG in `public/figma/`.
 - **Light mode only:** headers declare `color-scheme: only light`. The brand is a
   light cream identity with no dark theme, so full client inversion would break
