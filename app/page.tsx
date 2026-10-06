@@ -3,7 +3,6 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { ArrowUpRight } from 'lucide-react';
 import { BrainIcon, ShieldIcon, ChartColumnIcon, CheckIcon } from '@/components/icons';
-import MobileNav from '@/components/MobileNav';
 import { PLANS } from '@/components/SubscribePricingCards';
 
 // Sections below implement the Figma landing-page frame 6:9 (getcertificate.today), except
@@ -141,11 +140,7 @@ export default function LandingPage() {
             className="hidden items-center gap-8 text-[15px] font-medium text-ink/75 md:flex xl:gap-10"
           >
             {NAV_LINKS.map((l) => (
-              <Link
-                key={l.label}
-                href={l.href}
-                className="transition-colors hover:text-ink"
-              >
+              <Link key={l.label} href={l.href} className="transition-colors hover:text-ink">
                 {l.label}
               </Link>
             ))}
@@ -159,9 +154,8 @@ export default function LandingPage() {
               <ArrowUpRight
                 aria-hidden="true"
                 className="h-4 w-4 shrink-0 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-              />
+              />{' '}
             </Link>
-            <MobileNav />
           </div>
         </div>
       </header>
