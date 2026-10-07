@@ -90,6 +90,10 @@
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+    /* The hero's load sequence staggers via animation-delay, which a zeroed
+       duration alone does not cancel - without this, reduced-motion visitors
+       still watch the hero arrive in five steps. */
+    animation-delay: 0ms !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
@@ -100,11 +104,20 @@
   }
 }
 
-/* Certificate print stylesheet (DESIGN.md §12.5): strip navigation/chrome when
-   printing so browser print → PDF yields a clean, QR-sharp document. */
+/* Print stylesheet (DESIGN.md §12.5): strip navigation/chrome, and force the
+   JS-driven state below static, so browser print → PDF yields a clean,
+   QR-sharp document instead of one with blank scroll-revealed bands. */
 @media print {
   [data-print-hide] {
     display: none !important;
+  }
+
+  /* A printed page is static, so every scroll reveal is forced to its visible
+     state - otherwise a visitor printing from a JS-running browser gets blank
+     bands, for the same reason the `js` gate exists at all. */
+  .js .reveal {
+    opacity: 1;
+    transform: none;
   }
 
   /* Canvas certificate document: keep the 3:2 canvas edge-to-edge on the
@@ -120,121 +133,391 @@
   }
 }
 
-/* Landing hero badge ("From YouTube to Verifiable Credentials").
-   Rare/first-view marketing element: a one-time entrance plus a slow
-   breathing halo and a twinkling star. Only opacity/transform animate (GPU,
-   off the main thread); the global prefers-reduced-motion rule above
-   collapses this to a single frame, so no separate override is needed. */
-.hero-badge-wrap {
-  position: relative;
-  isolation: isolate;
+/* Query container for every certificate mock on the landing page - the hero's
+   centre card and the fanned cards behind it all size themselves in `cqw`, and a
+   cqw unit with no ancestor container silently falls back to the viewport rather
+   than erroring.
+
+   Tailwind's own `@container` utility cannot do this job here: it emits nothing
+   in this build (verified in the browser - the class is inert, and cqw resolved
+   against the viewport, rendering every mock at roughly twice its intended
+   type size). The utility lives in the separate `@tailwindcss/container-queries`
+   plugin, which this project does not depend on; declaring the property by hand
+   is the whole of what we needed from it. */
+.query-container {
+  container-type: inline-size;
 }
 
-/* Warm halo that breathes behind the pill. A layered span (not a box-shadow)
-   because animating box-shadow/filter repaints; opacity+transform stay on the
-   compositor. */
-.hero-badge-halo {
-  position: absolute;
-  inset: -8px;
-  z-index: -1;
-  border-radius: 9999px;
-  pointer-events: none;
-  background: radial-gradient(
-    closest-side,
-    rgba(207, 165, 120, 0.6),
-    rgba(207, 165, 120, 0.25) 60%,
-    rgba(207, 165, 120, 0) 100%
-  );
-  filter: blur(8px);
-  opacity: 0.5;
-  transform: scale(0.97);
-  will-change: opacity, transform;
-  animation: hero-badge-glow 3.6s cubic-bezier(0.77, 0, 0.175, 1) infinite;
-}
-
-.hero-badge {
-  animation: hero-badge-in 0.6s cubic-bezier(0.23, 1, 0.32, 1) both;
-}
-
-/* The star glyph emits a warm gold flare. The corona is a blurred
-   radial-gradient pseudo-element behind the glyph: opacity/transform only, so
-   it stays on the compositor, and it peaks in phase with the twinkle so the
-   star reads as one flare rather than two competing pulses. */
-.hero-badge-star {
-  position: relative;
-  z-index: 0;
-  display: inline-block;
-  /* Tighten the line box to the glyph so the corona below centres on the
-     star instead of the taller default line-height. */
-  line-height: 1;
-  will-change: opacity, transform;
-  /* Static bloom hugging the glyph edges; it seems to pulse for free because
-     the parent opacity animation applies to the whole rendered star. */
-  text-shadow: 0 0 8px rgba(224, 172, 92, 0.75);
-  animation: hero-badge-twinkle 3.6s cubic-bezier(0.77, 0, 0.175, 1) -1.8s infinite;
-}
-
-.hero-badge-star::before {
-  content: '';
-  position: absolute;
-  inset: -0.55em;
-  z-index: -1;
-  border-radius: 9999px;
-  background: radial-gradient(
-    closest-side,
-    rgba(242, 193, 112, 0.95),
-    rgba(224, 172, 92, 0.45) 55%,
-    rgba(224, 172, 92, 0) 100%
-  );
-  filter: blur(4px);
-  opacity: 0.4;
-  transform: scale(0.8);
-  will-change: opacity, transform;
-  animation: hero-badge-star-glow 3.6s cubic-bezier(0.77, 0, 0.175, 1) -1.8s infinite;
-}
-
-@keyframes hero-badge-in {
+/* Landing hero: exactly one orchestrated page-load moment instead of an
+   effect on every element. The copy settles in a short stagger, the certificate
+   stage arrives under it, then the centre card lifts into place. Only
+   opacity/transform animate, so the whole sequence stays on the compositor; the
+   global prefers-reduced-motion rule above collapses it to a single frame. */
+@keyframes hero-settle {
   from {
     opacity: 0;
-    transform: translateY(6px) scale(0.97);
+    transform: translate3d(0, 12px, 0);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translate3d(0, 0, 0);
   }
 }
 
-@keyframes hero-badge-glow {
-  0%,
-  100% {
-    opacity: 0.45;
-    transform: scale(0.97);
+/* The certificate starts lower than its resting place and lifts into place, so
+   it reads as arriving rather than being revealed. */
+@keyframes hero-certificate-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 44px, 0);
   }
-  50% {
-    opacity: 0.85;
-    transform: scale(1.04);
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
   }
 }
 
-@keyframes hero-badge-twinkle {
-  0%,
-  100% {
-    opacity: 0.75;
-    transform: scale(1) rotate(0deg);
+.hero-settle {
+  animation: hero-settle 0.7s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+.hero-settle-1 {
+  animation-delay: 0.04s;
+}
+.hero-settle-2 {
+  animation-delay: 0.1s;
+}
+.hero-settle-3 {
+  animation-delay: 0.17s;
+}
+.hero-settle-4 {
+  animation-delay: 0.24s;
+}
+.hero-settle-5 {
+  animation-delay: 0.31s;
+}
+
+.hero-certificate {
+  animation: hero-certificate-rise 1s cubic-bezier(0.23, 1, 0.32, 1) 0.28s both;
+}
+
+/* The certificate stage settles as one object, a beat after the copy. */
+@keyframes hero-stage-arrive {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
   }
-  50% {
+  to {
     opacity: 1;
-    transform: scale(1.18) rotate(12deg);
+    transform: translate3d(0, 0, 0);
   }
 }
-@keyframes hero-badge-star-glow {
+
+.hero-stage {
+  animation: hero-stage-arrive 1s cubic-bezier(0.23, 1, 0.32, 1) 0.2s both;
+}
+
+/* Landing hero: the certificate cards answer the pointer. A hero card is an
+   occasional target, not a hundred-times-a-day control, so this is a real lift -
+   but a small and fast one, which reads as the card noticing rather than
+   performing. transform and opacity only: both composite, so nothing here touches
+   layout or pushes the card's bitmap through a filter.
+
+   The lift sits on a wrapper and the dimming on a child, so the two are answered
+   by one hover without the lift inheriting the card's rotation.
+
+   Hover is gated on a fine pointer because touch fires it on tap, which would
+   leave a card stuck lifted after the tap ends. */
+/* Transform only. The reduced-motion answer swaps this lift for a change in
+   opacity, but the global reduced-motion rule zeroes transition durations for
+   everyone on that path, so an opacity transition here would never get to ease
+   anything. The fan wrapper only ever lifts. */
+.cert-lift {
+  transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.cert-fan-wrap {
+  transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* The fan's dimming, which the hover clears. */
+.cert-fan-inner {
+  transition: opacity 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cert-lift:hover,
+  .cert-fan-wrap:hover {
+    transform: translate3d(0, -0.5rem, 0);
+  }
+
+  /* Lifting is not the whole gesture: paint order is DOM order, so a lifted card
+     would still slide under the neighbour that overlaps it. Raising the lifted
+     card above its siblings - and keeping it below the centre column's z-10 -
+     is what makes it read as coming forward. z-index is not animatable, so the
+     re-order lands on the first frame of the lift rather than easing across its
+     200ms; there is no property that would ease it, and the near pair is where
+     it would show if it shows anywhere. */
+  .cert-fan-wrap:hover {
+    z-index: 5;
+  }
+
+  /* A fanned card recedes by transparency, so its hover clears that dimming
+     outright rather than fighting a brightness value for it. */
+  .cert-fan-wrap:hover > .cert-fan-inner {
+    opacity: 1;
+  }
+
+  /* The warm light behind the composition answers the pointer too, which ties
+     the whole band together without moving anything. It is scoped to a card
+     rather than to the stage, so entering the empty padding either side of the
+     composition does not warm it. `:has()` is read-only here: where it is
+     unsupported the browser drops the whole selector, so the glow simply never
+     answers and nothing else changes. */
+  .hero-stage:has(.cert-lift:hover, .cert-fan-wrap:hover) .hero-glow {
+    opacity: 1;
+  }
+}
+
+/* Reduced motion means fewer and gentler, not none: the movement is dropped and
+   the non-movement feedback is kept, so the centre card still answers a pointer
+   instead of going inert while the fanned cards brighten.
+
+   Gated on a fine pointer for the same reason the lift is: touch fires hover on
+   tap, and an ungated opacity change would leave the card dimmed after the tap
+   ends. A touch visitor with reduced motion on gets no hover answer at all,
+   which is the correct outcome - there is no lift to soften. */
+@media (prefers-reduced-motion: reduce) and (hover: hover) and (pointer: fine) {
+  .cert-lift:hover,
+  .cert-fan-wrap:hover {
+    transform: none;
+  }
+
+  .cert-lift:hover {
+    opacity: 0.94;
+  }
+}
+
+/* The warm light pooling behind the certificate stage. */
+.hero-glow {
+  opacity: 0.8;
+  transition: opacity 400ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Ambient drift for the hero's floating marks. Slow (9-14s), out of phase, and
+   transform-only - the marks should read as something the page breathes with,
+   not as motion competing with the certificates. The global
+   prefers-reduced-motion rule above zeroes duration and iteration count, so
+   reduced-motion visitors keep the marks as a still scatter. */
+@keyframes hero-drift-1 {
   0%,
   100% {
-    opacity: 0.4;
-    transform: scale(0.8);
+    transform: translate3d(0, 0, 0);
   }
   50% {
-    opacity: 1;
-    transform: scale(1.2);
+    transform: translate3d(0, -1.1cqw, 0);
   }
+}
+
+@keyframes hero-drift-2 {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(0.5cqw, -0.8cqw, 0) rotate(7deg);
+  }
+}
+
+@keyframes hero-drift-3 {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(-0.4cqw, 0.9cqw, 0) rotate(-5deg);
+  }
+}
+
+.hero-drift-1 {
+  animation: hero-drift-1 11s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+}
+.hero-drift-2 {
+  animation: hero-drift-2 14s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+}
+.hero-drift-3 {
+  animation: hero-drift-3 9s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+}
+
+/* Landing hero: the flow around the headline - a video mark and a certificate
+   seal joined by dashed arcs (two on the flanking treatment, a third short one
+   in the compact row; see HeroLearningFlow.tsx). Ambient rather than
+   interactive: nothing here answers the pointer and nothing moves more than a
+   few pixels, because the certificate stage below owns the hero's one bold
+   moment and this sits behind the type as its echo.
+
+   `stroke-dashoffset` is the one non-composited property in the set, on two
+   sub-2px paths - a repaint worth accepting for dashes that visibly travel from
+   the video to the seal. The global prefers-reduced-motion rule above collapses
+   every cycle here to a single frame. */
+@keyframes hero-flow-float {
+  0%,
+  100% {
+    transform: translate3d(0, -3px, 0);
+  }
+  50% {
+    transform: translate3d(0, 3px, 0);
+  }
+}
+
+@keyframes hero-flow-float-sm {
+  0%,
+  100% {
+    transform: translate3d(0, -1.5px, 0);
+  }
+  50% {
+    transform: translate3d(0, 1.5px, 0);
+  }
+}
+
+/* Dashes travel in the path's own direction, and every path is drawn from the
+   video mark to the seal, so the flow reads left to right. The offset is a whole
+   number of dash periods in each case (the two desktop trails: 7+11 = 18 x 10 and
+   2+13 = 15 x 12; the compact row's trail: 5+7 = 12 x 15), so no loop seams and
+   none of the three paths needs a keyframe of its own - the compact row's trail
+   borrows the 9s `-a` class, so its dashes and the desktop trail's run on the
+   same cycle at different periods. */
+@keyframes hero-flow-dash {
+  to {
+    stroke-dashoffset: -180;
+  }
+}
+
+@keyframes hero-flow-sparkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.7);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1);
+  }
+}
+
+@keyframes hero-flow-halo {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.94);
+  }
+  50% {
+    opacity: 0.62;
+    transform: scale(1.05);
+  }
+}
+
+/* The two flanking marks float on separate cycles so they never rise together;
+   the component's -1.2s offset is picked against each cycle rather than shared
+   with the other. */
+.hero-flow-float-a {
+  animation: hero-flow-float 7.5s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+}
+.hero-flow-float-b {
+  animation: hero-flow-float 9.5s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+}
+
+/* The compact row's glyphs are half the size, so the flanking marks' 3px would
+   read as a bounce rather than a float at 24px. They keep their own cycle too, so
+   the row's float offset (-3.4s on its seal) is a fraction of this 8.5s rather
+   than of the flanking pair's. Its sparkles are not floats and run on
+   `.hero-flow-sparkle` instead, which is why their -1.4s / -2.6s offsets are
+   fractions of that class's 3.6s rather than of this 8.5s. */
+.hero-flow-float-sm {
+  animation: hero-flow-float-sm 8.5s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+}
+.hero-flow-dash-a {
+  animation: hero-flow-dash 9s linear infinite;
+}
+.hero-flow-dash-b {
+  animation: hero-flow-dash 13s linear infinite;
+}
+
+/* 3.6s: slow enough that a sparkle reads as breathing rather than blinking, and
+   slow enough that the eight of them, all out of phase, never pulse together. */
+.hero-flow-sparkle {
+  animation: hero-flow-sparkle 3.6s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+}
+.hero-flow-halo {
+  animation: hero-flow-halo 6.5s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+}
+
+/* Homepage scroll reveals (components/landing/Reveal.tsx).
+
+   The hidden pre-state lives here rather than in the component's inline styles on
+   purpose: it is gated on the `js` marker that app/layout.tsx adds before paint,
+   so it exists only while a script is running to reverse it. Without JavaScript -
+   or for a crawler that does not execute scripts - `.js` is never added and every
+   section renders visible. It is also opacity/transform only, so the copy stays in
+   the layout and in the DOM for the whole reveal; nothing is display:none or
+   visibility:hidden at any point.
+
+   Motion writes the visible state inline, which overrides this rule, so there is
+   deliberately no CSS transition here - the animation is JS-driven and therefore
+   is NOT collapsed by the global prefers-reduced-motion rule above. That rule is
+   why Reveal.tsx branches on useReducedMotion() itself. */
+.js .reveal {
+  opacity: 0;
+  transform: translate3d(0, 12px, 0);
+}
+
+/* Reduced motion keeps the reveal but drops its movement: a short fade, no rise.
+   The component drops the delay on this path too, so nothing waits. */
+@media (prefers-reduced-motion: reduce) {
+  .js .reveal {
+    transform: none;
+  }
+}
+
+/* The lift a landing card answers a fine pointer with - the non-certificate twin
+   of `.cert-lift` above, which carries the same gesture for the hero's cards.
+   Smaller travel than the hero's 0.5rem because these are content panels rather
+   than the page's focal object, and gated on a fine pointer for the same reason:
+   touch fires a hover on tap and would leave the card stuck lifted. */
+@media (hover: hover) and (pointer: fine) {
+  .lift-card {
+    transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .lift-card:hover {
+    transform: translate3d(0, -4px, 0);
+  }
+}
+
+/* Reduced motion here means the lift is dropped outright: unlike the hero's card,
+   a decorative panel has no non-movement feedback to fall back to, and the pointer
+   still gets the hover state's colour change. */
+@media (prefers-reduced-motion: reduce) {
+  .lift-card,
+  .lift-card:hover {
+    transform: none;
+  }
+}
+
+/* The one-line field error under the hero's link form, which otherwise swaps in
+   from a screen-reader-only node with no bridge. 200ms is the small-popover
+   budget, and the global reduced-motion rule collapses it to a single frame
+   because this is a CSS animation rather than a JS one. */
+@keyframes field-error-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 4px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.field-error-in {
+  animation: field-error-in 200ms cubic-bezier(0.23, 1, 0.32, 1) both;
 }

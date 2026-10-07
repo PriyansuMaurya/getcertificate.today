@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import SignupForm from '@/components/SignupForm';
 import ProviderSigninBlock from '@/components/ProviderSigninBlock';
+import { canonicalYouTubeUrl } from '@/utils/youtube';
 
 export const metadata = {
   title: 'Create Account | getcertificate.today',
@@ -9,7 +10,17 @@ export const metadata = {
   alternates: { canonical: '/signup' },
 };
 
-export default function Signup() {
+export default async function Signup({
+  searchParams,
+}: {
+  searchParams: Promise<{ video?: string }>;
+}) {
+  // Set by the landing hero when a visitor pastes a link before signing up.
+  // Re-validated here (never trusted from the URL) and passed on as a hidden
+  // field so it survives through onboarding to the dashboard.
+  const { video } = await searchParams;
+  const carriedVideoUrl = canonicalYouTubeUrl(video);
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-cream px-4 py-12 text-ink">
       <div className="w-full max-w-[480px] rounded-2xl border border-sandline bg-paper p-8 shadow-figma-hero sm:p-12 lg:min-h-[787px] lg:p-[47px]">
@@ -31,7 +42,7 @@ export default function Signup() {
         </div>
 
         <div className="mt-8 grid gap-5">
-          <SignupForm />
+          <SignupForm initialVideoUrl={carriedVideoUrl ?? undefined} />
 
           <div className="relative my-2">
             <div className="absolute inset-0 flex items-center">

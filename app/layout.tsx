@@ -84,8 +84,39 @@ export default function RootLayout({
   // see components/analytics/ConsentGate.tsx and /cookie-policy). GTM now
   // loads only through that consent gate.
   return (
-    <html lang="en">
+    // `suppressHydrationWarning` belongs on <html> specifically because of the
+    // marker script below: it adds a `js` class to this element before React
+    // hydrates, so the DOM has an attribute the server render did not and React
+    // reports a hydration mismatch on it. That is the documented remedy for a
+    // pre-paint script that mutates <html> (the same reason next-themes asks for
+    // this attribute). The suppression is scoped to this element's own
+    // attributes, so everything below it is still diffed and reported normally.
+    // Two consequences worth knowing: a future `className` on <html> would be
+    // silently swallowed here, and this warning is development-only, so a broken
+    // assumption below would go unnoticed in production.
+    //
+    // The assumption that matters: React leaves the `js` class in place, because
+    // hydration compares the props it rendered rather than pruning attributes it
+    // never rendered. If a future React release reconciled the root element's
+    // attributes instead, the class would be dropped, `.js .reveal` would stop
+    // matching, and every scroll reveal would quietly become a no-op (animating an
+    // already-visible element). Nothing static can assert that, so it is named
+    // here to make a future break diagnosable.
+    <html lang="en" suppressHydrationWarning>
       <body className={`${manrope.variable} ${fraunces.variable} font-manrope antialiased`}>
+        {/* Marks the document as script-capable at parse time, which is what lets
+            the scroll-reveal pre-state be gated on it (`.js .reveal` in
+            globals.css). Without this the reveal would have to hide its content in
+            the server HTML, so a visitor without JavaScript - or a crawler that
+            does not execute scripts - would get blank sections. First child of
+            body, and not async/defer: a parser-inserted inline script executes at
+            its own DOM position, so this runs before anything below it is painted.
+            (That is ordering of the served HTML, not a React guarantee.) */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: "document.documentElement.classList.add('js')",
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

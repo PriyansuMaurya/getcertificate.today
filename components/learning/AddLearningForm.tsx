@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { addLearningItem, type LearningActionState } from '@/app/dashboard/actions';
 import { Plus } from 'lucide-react';
@@ -19,9 +19,16 @@ function SubmitButton() {
   );
 }
 
-export default function AddLearningForm() {
+/**
+ * @param initialUrl Pre-fills the field for a link pasted before signup and
+ * carried through onboarding by /dashboard?video=.
+ */
+export default function AddLearningForm({ initialUrl }: { initialUrl?: string }) {
   const initialState: LearningActionState = { message: '' };
   const [formState, formAction] = useActionState(addLearningItem, initialState);
+  // Controlled so a failed submit never wipes what the user pasted (React
+  // resets uncontrolled fields when the action returns an error state).
+  const [youtubeUrl, setYoutubeUrl] = useState(initialUrl ?? '');
 
   return (
     <form action={formAction} className="flex flex-col gap-3">
@@ -38,6 +45,8 @@ export default function AddLearningForm() {
           type="url"
           required
           placeholder="https://www.youtube.com/watch?v=…"
+          value={youtubeUrl}
+          onChange={(e) => setYoutubeUrl(e.target.value)}
           className="h-12 w-full min-w-0 rounded-lg border border-sandline bg-cream px-4 text-sm text-ink placeholder:text-clay/70 focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink sm:flex-1"
         />
         <SubmitButton />

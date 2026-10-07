@@ -55,6 +55,12 @@
       "skillPath": "packages/plugin/skills/enable-analytics/SKILL.md",
       "computedHash": "889309c823ca9281e7bd2abc498a86d58ad3d54be562d16a6c207d7799294c1f"
     },
+    "find-animation-opportunities": {
+      "source": "emilkowalski/skills",
+      "sourceType": "github",
+      "skillPath": "skills/find-animation-opportunities/SKILL.md",
+      "computedHash": "c6673fadf179233cc0a52c978ea9acc9b82a210665c749307a571a86ed4c092e"
+    },
     "frontend-design": {
       "source": "anthropics/skills",
       "sourceType": "github",

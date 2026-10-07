@@ -28,6 +28,12 @@ const config = {
         sand: '#B5A08E', // eyebrow text, check icons, accents
         linen: '#EAE3DC', // feature icon tile background
         sandline: '#E3DCD5', // hairline borders
+        // Landing CTA accent. Deliberately a deep burnt sienna rather than the
+        // stock marketing terracotta: it holds 5.5:1 against cream (AA for the
+        // 15px pill label) and reads as clay pigment, not a template accent.
+        terracotta: '#A6431C', // primary CTA, accent glyphs, focus rings
+        'terracotta-deep': '#8C3413', // CTA hover / pressed
+        'terracotta-tint': '#FBEADF', // badge fill behind terracotta text
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',

@@ -44,6 +44,21 @@ export function parseYouTubeVideoId(rawUrl: string): string | null {
 }
 
 /**
+ * Canonical watch URL for a raw YouTube input, or null when it is not one.
+ *
+ * Everything that carries a pasted link across our own flows (the landing
+ * action, /signup, /onboarding, /dashboard) funnels through here first: the
+ * value always round-trips as `/watch?v=<11-char id>` derived from a validated
+ * ID, so a crafted ?video= can never smuggle arbitrary text into a redirect or
+ * an input value.
+ */
+export function canonicalYouTubeUrl(raw: string | null | undefined): string | null {
+  if (typeof raw !== 'string' || !raw.trim()) return null;
+  const youtubeId = parseYouTubeVideoId(raw);
+  return youtubeId ? `https://www.youtube.com/watch?v=${youtubeId}` : null;
+}
+
+/**
  * Fetch title/channel via YouTube oEmbed (public, no API key required).
  * Returns nulls on any failure - callers treat metadata as optional.
  */

@@ -7,6 +7,7 @@ import { bootstrapOAuthUser } from '@/app/auth/user-bootstrap';
 import { hasCompletedOnboarding } from '@/app/auth/onboarding-status';
 import { ONBOARDING_PENDING_COOKIE, onboardingPendingCookie } from '@/lib/onboarding-cookie';
 import { createStripeCustomer, stripe } from '@/utils/stripe/api';
+import { canonicalYouTubeUrl } from '@/utils/youtube';
 import { db } from '@/utils/db/db';
 import { usersTable } from '@/utils/db/schema';
 import { and, eq, ne } from 'drizzle-orm';
@@ -166,7 +167,11 @@ export async function completeOnboarding(currentState: { message: string }, form
   // Profile is complete now: drop the pending flag so the middleware's
   // homepage -> dashboard auto-jump is restored.
   (await cookies()).delete(ONBOARDING_PENDING_COOKIE);
-  redirect('/dashboard');
+  // A link pasted before signup rides along as a hidden field; re-validated
+  // server-side so the redirect target can only ever be a canonical watch URL.
+  const rawVideo = formData.get('videoUrl');
+  const carriedVideo = canonicalYouTubeUrl(typeof rawVideo === 'string' ? rawVideo : null);
+  redirect(carriedVideo ? `/dashboard?video=${encodeURIComponent(carriedVideo)}` : '/dashboard');
 }
 
 /**
@@ -381,7 +386,11 @@ export async function signup(currentState: { message: string }, formData: FormDa
   // sign-up itself only creates the auth account.
   (await cookies()).set(ONBOARDING_PENDING_COOKIE, '1', onboardingPendingCookie);
   revalidatePath('/', 'layout');
-  redirect('/onboarding');
+  // Carry a link pasted on the landing page through the profile step, so it is
+  // still there when the dashboard finally renders.
+  const rawVideo = formData.get('videoUrl');
+  const carriedVideo = canonicalYouTubeUrl(typeof rawVideo === 'string' ? rawVideo : null);
+  redirect(carriedVideo ? `/onboarding?video=${encodeURIComponent(carriedVideo)}` : '/onboarding');
 }
 
 export async function loginUser(currentState: { message: string }, formData: FormData) {

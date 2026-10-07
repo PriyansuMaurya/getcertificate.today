@@ -21,7 +21,15 @@ function SubmitButton() {
   );
 }
 
-export default function SignupForm() {
+/**
+ * @param initialVideoUrl Canonical YouTube watch URL carried from the landing
+ * hero. Forwarded as a hidden field the `signup` action passes on to
+ * onboarding, so a link pasted before signup reaches the dashboard prefilled.
+ * Deliberately not surfaced as copy: the Google/GitHub sign-in path returns
+ * through /auth/callback and cannot carry it, so a visible "we kept your video"
+ * note would be a promise that path breaks. The field is simply absent there.
+ */
+export default function SignupForm({ initialVideoUrl }: { initialVideoUrl?: string }) {
   const initialState = {
     message: '',
   };
@@ -30,6 +38,8 @@ export default function SignupForm() {
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
+      <input type="hidden" name="videoUrl" value={initialVideoUrl ?? ''} />
+
       <div className="flex flex-col gap-1.5">
         <label htmlFor="name" className="text-sm font-semibold text-clay">
           Full Name

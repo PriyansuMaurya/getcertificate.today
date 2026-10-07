@@ -50,11 +50,14 @@ export default function OnboardingForm({
   defaultLastName,
   defaultDob,
   showConsent,
+  videoUrl,
 }: {
   defaultUsername?: string;
   defaultFirstName?: string;
   defaultLastName?: string;
   defaultDob?: string;
+  /** Canonical watch URL carried from the landing hero through signup. */
+  videoUrl?: string;
   /**
    * False when the user already consented at /signup (password signups:
    * timestamp lives in auth metadata). OAuth users first see the checkbox
@@ -161,6 +164,10 @@ export default function OnboardingForm({
 
   return (
     <form action={submitAction} className="flex flex-col gap-4">
+      {/* Forwarded, not rendered: the link pasted on the landing page reaches
+          the dashboard through this step. */}
+      <input type="hidden" name="videoUrl" value={videoUrl ?? ''} />
+
       <div className="flex flex-col gap-1.5">
         <label htmlFor="username" className="text-xs font-bold uppercase tracking-wider text-clay">
           Username

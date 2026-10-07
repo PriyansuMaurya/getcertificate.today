@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { CheckIcon } from '@/components/icons';
 import PricingBillingToggle from '@/components/PricingBillingToggle';
+import Reveal from '@/components/landing/Reveal';
 import { PRICING_PLANS, activeCheckout, formatEuro, type BillingPeriod } from '@/utils/plans';
 
 /**
@@ -17,19 +18,25 @@ export default function LandingPricingCards() {
 
   return (
     <div className="flex flex-col items-center gap-8">
-      <PricingBillingToggle value={period} onChange={setPeriod} />
+      {/* Revealed with the heading above and the cards below, so the pricing band
+          arrives as one gesture instead of the toggle popping in between two
+          animated groups. */}
+      <Reveal className="flex justify-center">
+        <PricingBillingToggle value={period} onChange={setPeriod} />
+      </Reveal>
 
       <div className="flex flex-col items-center gap-6 md:gap-8 lg:flex-row lg:items-start lg:justify-center">
-        {PRICING_PLANS.map((plan) => {
+        {PRICING_PLANS.map((plan, index) => {
           const price = activeCheckout(plan, period);
           const features = [plan.quota[period], ...plan.features];
           const monthlyOnly = period === 'yearly' && !plan.yearly && Boolean(plan.monthly);
 
           return (
-            <div
+            <Reveal
               key={plan.id}
+              delay={index * 0.08}
               className={[
-                'flex w-full flex-col gap-8 rounded-2xl p-6 sm:p-8 md:p-12',
+                'lift-card flex w-full flex-col gap-8 rounded-2xl p-6 sm:p-8 md:p-12',
                 plan.popular
                   ? 'max-w-[420px] bg-ink shadow-figma-pro'
                   : 'max-w-[400px] border border-sandline bg-cream',
@@ -121,15 +128,18 @@ export default function LandingPricingCards() {
               <Link
                 href={plan.id === 'free' ? '/signup' : '/subscribe'}
                 className={[
-                  'flex h-12 items-center justify-center rounded-lg px-6 py-3.5 text-[15px] font-bold leading-[1.366] transition-colors',
+                  'flex h-12 items-center justify-center rounded-lg px-6 py-3.5 text-[15px] font-bold leading-[1.366] transition-[background-color,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.98]',
+                  // The ring colour follows the surface the button sits on: sand on
+                  // the ink card (terracotta against ink is only ~2:1, which would
+                  // disappear), terracotta on the cream ones.
                   plan.popular
-                    ? 'bg-sand text-cream hover:bg-sand/90'
-                    : 'border-[1.5px] border-ink text-ink hover:bg-ink/5',
+                    ? 'bg-sand text-cream hover:bg-sand/90 focus-visible:ring-sand focus-visible:ring-offset-ink'
+                    : 'border-[1.5px] border-ink text-ink hover:bg-ink/5 focus-visible:ring-terracotta focus-visible:ring-offset-cream',
                 ].join(' ')}
               >
                 Get Started
               </Link>
-            </div>
+            </Reveal>
           );
         })}
       </div>

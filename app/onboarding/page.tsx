@@ -8,13 +8,23 @@ import { usersTable } from '@/utils/db/schema';
 import { eq } from 'drizzle-orm';
 import { deriveProfileDefaults, pickAvailableUsername } from '@/app/auth/user-bootstrap';
 import OnboardingForm from '@/components/OnboardingForm';
+import { canonicalYouTubeUrl } from '@/utils/youtube';
 
 export const metadata = {
   title: 'Complete Your Profile | getcertificate.today',
   description: 'Set up your username and personal details for your certificates',
 };
 
-export default async function Onboarding() {
+export default async function Onboarding({
+  searchParams,
+}: {
+  searchParams: Promise<{ video?: string }>;
+}) {
+  // A link pasted on the landing page before signup, re-validated here so the
+  // value handed to the form can only ever be a canonical watch URL.
+  const { video } = await searchParams;
+  const carriedVideoUrl = canonicalYouTubeUrl(video);
+
   const supabase = await createClient();
 
   const {
@@ -93,6 +103,7 @@ export default async function Onboarding() {
             defaultLastName={defaultLastName}
             defaultDob={defaultDob}
             showConsent={showConsent}
+            videoUrl={carriedVideoUrl ?? undefined}
           />
         </div>
 

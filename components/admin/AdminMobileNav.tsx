@@ -8,7 +8,7 @@ import { ADMIN_NAV_ITEMS, isActive } from './AdminNavLinks';
 
 // Mobile disclosure for the admin sidebar: the sidebar is lg+ only, so below
 // that breakpoint the nav lives in this header dropdown. Escape and
-// outside-click dismiss, same contract as the landing page MobileNav.
+// outside-click dismiss, and Escape returns focus to the trigger.
 export default function AdminMobileNav() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();

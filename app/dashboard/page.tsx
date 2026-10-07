@@ -5,9 +5,20 @@ import { createClient } from '@/utils/supabase/server';
 import { db } from '@/utils/db/db';
 import { credentialsTable, learningItemsTable, usersTable } from '@/utils/db/schema';
 import AddLearningForm from '@/components/learning/AddLearningForm';
+import { canonicalYouTubeUrl } from '@/utils/youtube';
 import { ArrowRight, BadgeCheck, BookOpen, Clock3, Play } from 'lucide-react';
 
-export default async function Dashboard() {
+export default async function Dashboard({
+  searchParams,
+}: {
+  searchParams: Promise<{ video?: string }>;
+}) {
+  // Arrives when a visitor pasted a link on the landing page before creating
+  // their account: pre-fill it so the paste is genuinely not lost. Re-validated
+  // here - the query string is user input like any other.
+  const { video } = await searchParams;
+  const carriedVideoUrl = canonicalYouTubeUrl(video);
+
   const supabase = await createClient();
 
   const { data, error } = await supabase.auth.getUser();
@@ -120,7 +131,7 @@ export default async function Dashboard() {
                 80% completion.
               </p>
               <div className="mt-5">
-                <AddLearningForm />
+                <AddLearningForm initialUrl={carriedVideoUrl ?? undefined} />
               </div>
             </div>
           </div>
