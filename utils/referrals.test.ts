@@ -5,6 +5,7 @@ import {
   REFERRAL_ALPHABET,
   canAttributeReferral,
   generateReferralCode,
+  hasVerifiedEmail,
   normalizeReferralCode,
   referralUrl,
 } from '../lib/referral-code';
@@ -78,8 +79,45 @@ describe('canAttributeReferral', () => {
   });
 
   it('still allows the referral when emails are unavailable', () => {
+    assert.equal(canAttributeReferral({ ...base, referrerEmail: null, referredEmail: null }), true);
+  });
+});
+
+describe('hasVerifiedEmail', () => {
+  it('treats a Supabase-confirmed address as verified', () => {
+    assert.equal(hasVerifiedEmail({ email_confirmed_at: '2026-01-01T00:00:00Z' }), true);
+  });
+
+  it('treats an OAuth account as verified even without email_confirmed_at', () => {
+    // Google/GitHub assert the address - these signups never hit the email
+    // confirmation flow, so the referral settlement must not depend on it.
     assert.equal(
-      canAttributeReferral({ ...base, referrerEmail: null, referredEmail: null }),
+      hasVerifiedEmail({ email_confirmed_at: null, identities: [{ provider: 'google' }] }),
+      true
+    );
+    assert.equal(hasVerifiedEmail({ identities: [{ provider: 'github' }] }), true);
+  });
+
+  it('treats an unconfirmed password account as unverified', () => {
+    assert.equal(
+      hasVerifiedEmail({ email_confirmed_at: null, identities: [{ provider: 'email' }] }),
+      false
+    );
+    assert.equal(hasVerifiedEmail({}), false);
+    assert.equal(hasVerifiedEmail({ identities: [] }), false);
+    assert.equal(hasVerifiedEmail({ identities: null }), false);
+  });
+
+  it('ignores identities with a missing or null provider', () => {
+    assert.equal(hasVerifiedEmail({ identities: [{ provider: null }, {}] }), false);
+  });
+
+  it('prefers confirmation when both signals are present', () => {
+    assert.equal(
+      hasVerifiedEmail({
+        email_confirmed_at: '2026-01-01T00:00:00Z',
+        identities: [{ provider: 'email' }],
+      }),
       true
     );
   });
@@ -87,11 +125,17 @@ describe('canAttributeReferral', () => {
 
 describe('referralUrl', () => {
   it('builds an absolute /ref/<code> URL from a base', () => {
-    assert.equal(referralUrl('ABC123', 'https://getcertificate.today'), 'https://getcertificate.today/ref/ABC123');
+    assert.equal(
+      referralUrl('ABC123', 'https://getcertificate.today'),
+      'https://getcertificate.today/ref/ABC123'
+    );
   });
 
   it('handles a base with a subpath', () => {
-    assert.equal(referralUrl('ABCD2345', 'http://localhost:3000'), 'http://localhost:3000/ref/ABCD2345');
+    assert.equal(
+      referralUrl('ABCD2345', 'http://localhost:3000'),
+      'http://localhost:3000/ref/ABCD2345'
+    );
   });
 });
 

@@ -2,11 +2,12 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 // The client you created from the Server-Side Auth instructions
 import { createClient } from '@/utils/supabase/server';
-import { normalizeReferralCode } from '@/lib/referral-code';
+import { hasVerifiedEmail, normalizeReferralCode } from '@/lib/referral-code';
 import { REFERRAL_COOKIE } from '@/lib/referral-cookie';
 import { hasCompletedOnboarding } from '@/app/auth/onboarding-status';
 import { safeNextPath } from '@/lib/safe-next';
 import { bootstrapOAuthUser } from '@/app/auth/user-bootstrap';
+import { settleReferralOnVerifiedEmail } from '@/utils/referrals';
 import { ONBOARDING_PENDING_COOKIE, onboardingPendingCookie } from '@/lib/onboarding-cookie';
 
 export async function GET(request: Request) {
@@ -46,6 +47,26 @@ export async function GET(request: Request) {
         } catch (err) {
           console.error(
             '[referral] failed to persist code on OAuth callback:',
+            err instanceof Error ? err.message : 'Unknown error'
+          );
+        }
+      }
+
+      // OAuth accounts arrive already email-verified (the provider asserted the
+      // address), so they never traverse the email-confirmation route that
+      // settles referrals - and the password sign-in path (loginUser) never runs
+      // for them either. Settle here, the OAuth analogue of loginUser, so a
+      // pending referral for this account is awarded rather than stalling: e.g.
+      // a password signup that confirmed by signing in with a provider instead
+      // of clicking the email link. Idempotent and best-effort - never blocks the
+      // sign-in, and any later settle is a no-op. A brand-new OAuth account has
+      // no referral row yet; completeOnboarding records and settles that one.
+      if (hasVerifiedEmail(user!)) {
+        try {
+          await settleReferralOnVerifiedEmail(user!.id);
+        } catch (err) {
+          console.error(
+            '[referral] settlement after OAuth callback failed:',
             err instanceof Error ? err.message : 'Unknown error'
           );
         }

@@ -11,7 +11,7 @@ import { canonicalYouTubeUrl } from '@/utils/youtube';
 import { db } from '@/utils/db/db';
 import { usersTable } from '@/utils/db/schema';
 import { and, eq, ne } from 'drizzle-orm';
-import { normalizeReferralCode } from '@/lib/referral-code';
+import { hasVerifiedEmail, normalizeReferralCode } from '@/lib/referral-code';
 import { REFERRAL_COOKIE } from '@/lib/referral-cookie';
 import {
   generateUniqueReferralCode,
@@ -200,10 +200,11 @@ export async function completeOnboarding(currentState: { message: string }, form
           referredEmail: user.email,
           attribution,
         });
-        // Email already confirmed (e.g. OAuth): settle now so the referrer's
-        // credit is granted without waiting for another sign-in. settle is
-        // idempotent, so a later sign-in calling it again is harmless.
-        if (user.email_confirmed_at) {
+        // Already verified (confirmed address or OAuth provider): settle now
+        // so the referrer's credit is granted without waiting for another
+        // sign-in. settle is idempotent, so a later sign-in calling it again is
+        // harmless.
+        if (hasVerifiedEmail(user)) {
           await settleReferralOnVerifiedEmail(user.id);
         }
       }
@@ -491,7 +492,7 @@ export async function loginUser(currentState: { message: string }, formData: For
   // If this account was referred and has confirmed their email, settle the
   // referral (verify + grant the referrer's credit exactly once). Best-effort:
   // never block sign-in, and a retry on a later sign-in is a no-op.
-  if (signInData.user.email_confirmed_at) {
+  if (hasVerifiedEmail(signInData.user)) {
     try {
       await settleReferralOnVerifiedEmail(signInData.user.id);
     } catch (err) {
@@ -562,7 +563,7 @@ export async function finishGoogleSignIn() {
 
   // Google accounts arrive with a confirmed email, so any pending referral for
   // this user is settled immediately. Best-effort: never block sign-in.
-  if (user!.email_confirmed_at) {
+  if (hasVerifiedEmail(user!)) {
     try {
       await settleReferralOnVerifiedEmail(user!.id);
     } catch (err) {

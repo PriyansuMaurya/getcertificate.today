@@ -64,3 +64,25 @@ export function canAttributeReferral(params: {
 export function referralUrl(code: string, baseUrl: string): string {
   return new URL(`/ref/${code}`, baseUrl).toString();
 }
+
+/**
+ * Whether an account can be treated as email-verified for referral settlement.
+ *
+ * True when Supabase marked the address confirmed, OR when the account signed
+ * in through an OAuth provider (Google/GitHub) - the provider asserts the
+ * address, so those accounts never traverse the email-confirmation flow that
+ * would otherwise settle their referral. This is the shared definition of
+ * "verified" used by every settlement trigger (OAuth callback,
+ * completeOnboarding, loginUser, finishGoogleSignIn), so OAuth-referred users
+ * are awarded exactly like password users who click the confirmation link. A
+ * password account whose address is unconfirmed stays false until it confirms.
+ */
+export function hasVerifiedEmail(user: {
+  email_confirmed_at?: string | null;
+  identities?: { provider?: string | null }[] | null;
+}): boolean {
+  if (user.email_confirmed_at) return true;
+  return (user.identities ?? []).some(
+    (identity) => typeof identity.provider === 'string' && identity.provider !== 'email'
+  );
+}

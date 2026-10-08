@@ -30,7 +30,11 @@ import {
 } from '@/utils/db/schema';
 import { monthlyCertificateLimit, paidTierOf } from '@/utils/plans';
 import { monthWindowStart } from '@/utils/credentials';
-import { canAttributeReferral, generateReferralCode, normalizeReferralCode } from '@/lib/referral-code';
+import {
+  canAttributeReferral,
+  generateReferralCode,
+  normalizeReferralCode,
+} from '@/lib/referral-code';
 
 export const REFERRAL_CREDIT_REASON = 'referral_verified' as const;
 export const REFERRAL_REVERSAL_REASON = 'reversal' as const;
@@ -274,9 +278,7 @@ export async function getReferralCreditBalance(userId: string): Promise<number> 
  * Authorization is the caller's responsibility: this is a server-only function
  * and must only be invoked from an admin-gated action.
  */
-export async function reverseReferralReward(
-  referralId: string
-): Promise<{
+export async function reverseReferralReward(referralId: string): Promise<{
   reversed: boolean;
   reason: 'reversed' | 'already_reversed' | 'not_awarded' | 'not_found';
 }> {
@@ -374,11 +376,7 @@ export async function getReferralPanelData(opts: {
   ]);
 
   const usedThisMonth = usedRows.length;
-  const monthlyLimit = monthlyCertificateLimit(
-    opts.plan,
-    opts.freeCredentialsPerMonth,
-    credits
-  );
+  const monthlyLimit = monthlyCertificateLimit(opts.plan, opts.freeCredentialsPerMonth, credits);
   const remaining = monthlyLimit === null ? null : Math.max(0, monthlyLimit - usedThisMonth);
 
   return {
