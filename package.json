@@ -11,6 +11,7 @@
     "test": "node --import tsx --test utils/watch-progress.test.ts utils/credentials.test.ts utils/plans.test.ts utils/assessment-config.test.ts utils/referrals.test.ts",
     "test:referrals": "node --import tsx scripts/referral-lifecycle.ts",
     "test:referrals:local": "node --import tsx scripts/referral-lifecycle.ts --local",
+    "test:referral:browser": "node scripts/test-referral-browser.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
