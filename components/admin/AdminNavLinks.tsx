@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BadgeCheck, ClipboardCheck, Gauge, Settings, Users } from 'lucide-react';
+import { BadgeCheck, ClipboardCheck, Gauge, Gift, Settings, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export const ADMIN_NAV_ITEMS: {
@@ -15,6 +15,7 @@ export const ADMIN_NAV_ITEMS: {
   { label: 'Users', href: '/admin/users', icon: Users, exact: false },
   { label: 'Assessments', href: '/admin/assessments', icon: ClipboardCheck, exact: false },
   { label: 'Credentials', href: '/admin/credentials', icon: BadgeCheck, exact: false },
+  { label: 'Referrals', href: '/admin/referrals', icon: Gift, exact: false },
   { label: 'Settings', href: '/admin/settings', icon: Settings, exact: false },
 ];
 

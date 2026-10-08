@@ -3,6 +3,7 @@ import { type NextRequest } from 'next/server';
 
 import { createClient } from '@/utils/supabase/server';
 import { safeNextPath } from '@/lib/safe-next';
+import { settleReferralOnVerifiedEmail } from '@/utils/referrals';
 import { redirect } from 'next/navigation';
 
 export async function GET(request: NextRequest) {
@@ -20,6 +21,23 @@ export async function GET(request: NextRequest) {
       token_hash,
     });
     if (!error) {
+      // Email is now confirmed: settle any referral for this account (verify +
+      // grant the referrer's credit exactly once). Best-effort - a referral
+      // failure must never block the confirmation redirect; a later sign-in
+      // retries the settlement, which is idempotent.
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user?.email_confirmed_at) {
+          await settleReferralOnVerifiedEmail(user.id);
+        }
+      } catch (err) {
+        console.error(
+          '[referral] settlement after email confirm failed:',
+          err instanceof Error ? err.message : 'Unknown error'
+        );
+      }
       // redirect user to specified redirect URL or root of app
       redirect(next);
     }

@@ -11,6 +11,14 @@ import { canonicalYouTubeUrl } from '@/utils/youtube';
 import { db } from '@/utils/db/db';
 import { usersTable } from '@/utils/db/schema';
 import { and, eq, ne } from 'drizzle-orm';
+import { normalizeReferralCode } from '@/lib/referral-code';
+import { REFERRAL_COOKIE } from '@/lib/referral-cookie';
+import {
+  generateUniqueReferralCode,
+  recordReferralForNewUser,
+  resolveReferralAttribution,
+  settleReferralOnVerifiedEmail,
+} from '@/utils/referrals';
 
 const PUBLIC_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || 'http://localhost:3000';
 
@@ -86,6 +94,9 @@ export async function completeOnboarding(currentState: { message: string }, form
   const parsedConsent = hasStoredConsent ? new Date(storedConsent as string) : new Date();
   const termsConsentedAt = Number.isNaN(parsedConsent.getTime()) ? new Date() : parsedConsent;
 
+  // A brand-new account is being created by this call - the referral row is
+  // recorded below, once the users row exists.
+  let isNewUser = false;
   let stripeID: string | undefined;
   try {
     const existing = await db
@@ -118,6 +129,9 @@ export async function completeOnboarding(currentState: { message: string }, form
       // the outer catch below deletes the just-created customer so no orphan
       // is stranded in Stripe.
       stripeID = await createStripeCustomer(user.id, email, name);
+      // Issue a readable referral code up front; if the bounded search finds
+      // nothing, omit it and the column's DB default fills one in.
+      const referralCode = (await generateUniqueReferralCode()) ?? undefined;
       await db.insert(usersTable).values({
         id: user.id,
         name,
@@ -129,7 +143,9 @@ export async function completeOnboarding(currentState: { message: string }, form
         last_name: lastName,
         dob,
         terms_consented_at: termsConsentedAt,
+        referral_code: referralCode,
       });
+      isNewUser = true;
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : '';
@@ -161,6 +177,45 @@ export async function completeOnboarding(currentState: { message: string }, form
         : msg || 'Unknown error'
     );
     return { message: 'Failed to save your profile. Please try again.' };
+  }
+
+  // Referral attribution, only for accounts this call just created (never for
+  // a returning user editing their profile). The code comes from auth metadata
+  // (captured at signup/OAuth) or the /ref cookie; resolveReferralAttribution
+  // rejects self-referral by id or email. Fully best-effort - a referral
+  // failure must never block onboarding.
+  if (isNewUser && user.email) {
+    try {
+      const metadataCode = metadata?.referral_code;
+      const cookieCode = (await cookies()).get(REFERRAL_COOKIE)?.value ?? null;
+      const rawCode = (typeof metadataCode === 'string' && metadataCode) || cookieCode;
+      const attribution = await resolveReferralAttribution({
+        rawCode,
+        referredUserId: user.id,
+        referredEmail: user.email,
+      });
+      if (attribution) {
+        await recordReferralForNewUser({
+          referredUserId: user.id,
+          referredEmail: user.email,
+          attribution,
+        });
+        // Email already confirmed (e.g. OAuth): settle now so the referrer's
+        // credit is granted without waiting for another sign-in. settle is
+        // idempotent, so a later sign-in calling it again is harmless.
+        if (user.email_confirmed_at) {
+          await settleReferralOnVerifiedEmail(user.id);
+        }
+      }
+    } catch (err) {
+      console.error(
+        '[referral] failed to record referral:',
+        err instanceof Error ? err.message : 'Unknown error'
+      );
+    }
+    // Attribution is spent: drop the cookie so it can never leak into another
+    // session on this browser.
+    (await cookies()).delete(REFERRAL_COOKIE);
   }
 
   revalidatePath('/', 'layout');
@@ -332,6 +387,10 @@ export async function signup(currentState: { message: string }, formData: FormDa
     return { message: 'Please agree to the Terms of Service and Privacy Policy to continue.' };
   }
   const termsConsentedAt = new Date().toISOString();
+  // Capture a /ref/<code> visit now: auth metadata travels with the account,
+  // so attribution survives email confirmation and an onboarding that is not
+  // finished before the referral cookie expires.
+  const referralCode = normalizeReferralCode((await cookies()).get(REFERRAL_COOKIE)?.value);
 
   const data = {
     email: rawEmail.trim(),
@@ -366,6 +425,7 @@ export async function signup(currentState: { message: string }, formData: FormDa
         email_confirm: process.env.NODE_ENV !== 'production',
         full_name: data.name,
         terms_consented_at: termsConsentedAt,
+        ...(referralCode ? { referral_code: referralCode } : {}),
       },
     },
   });
@@ -428,6 +488,20 @@ export async function loginUser(currentState: { message: string }, formData: For
     return { message: 'This account has been suspended. Please contact support.' };
   }
 
+  // If this account was referred and has confirmed their email, settle the
+  // referral (verify + grant the referrer's credit exactly once). Best-effort:
+  // never block sign-in, and a retry on a later sign-in is a no-op.
+  if (signInData.user.email_confirmed_at) {
+    try {
+      await settleReferralOnVerifiedEmail(signInData.user.id);
+    } catch (err) {
+      console.error(
+        '[referral] settlement failed:',
+        err instanceof Error ? err.message : 'Unknown error'
+      );
+    }
+  }
+
   revalidatePath('/', 'layout');
 
   // New users (or anyone who never finished onboarding) set up their profile first.
@@ -449,6 +523,10 @@ export async function logout() {
   // Stale pending flag would outlive the session and silently disable the
   // homepage -> dashboard jump for the next user of this browser.
   (await cookies()).delete(ONBOARDING_PENDING_COOKIE);
+  // A spent referral cookie must not outlive the session either: on a shared
+  // browser it would attribute the next person's signup to this visitor's
+  // referrer.
+  (await cookies()).delete(REFERRAL_COOKIE);
   redirect('/login');
 }
 
@@ -480,6 +558,19 @@ export async function finishGoogleSignIn() {
   if (suspendedRows[0]?.suspendedAt) {
     await supabase.auth.signOut();
     redirect('/login');
+  }
+
+  // Google accounts arrive with a confirmed email, so any pending referral for
+  // this user is settled immediately. Best-effort: never block sign-in.
+  if (user!.email_confirmed_at) {
+    try {
+      await settleReferralOnVerifiedEmail(user!.id);
+    } catch (err) {
+      console.error(
+        '[referral] settlement failed:',
+        err instanceof Error ? err.message : 'Unknown error'
+      );
+    }
   }
 
   revalidatePath('/', 'layout');

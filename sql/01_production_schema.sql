@@ -78,7 +78,6 @@ CREATE TABLE IF NOT EXISTS public.users_table (
   email text NOT NULL,
   plan text NOT NULL,
   stripe_id text NOT NULL,
-  CONSTRAINT users_table_username_unique UNIQUE (username),
   first_name text,
   last_name text,
   dob date,
@@ -154,8 +153,41 @@ END $$;
 -- bootstrapped database already has them. The unique-watched-time columns
 -- (migration 0008, watched_seconds/watched_ranges/last_watched_at) are added to
 -- the CREATE TABLE above and backfilled for older databases. Section 9 therefore
--- marks journal entries 0000-0008 as applied, keeping `drizzle-kit migrate`
+-- marks journal entries 0000-0010 as applied, keeping `drizzle-kit migrate`
 -- (npm run build) a no-op. See Section 9.
+
+-- Referral program (migration 0009). users_table.referral_code is issued by a
+-- volatile DEFAULT, so every existing row gets a distinct code during the ADD
+-- COLUMN rewrite; the loop regenerates the (astronomically unlikely) duplicate
+-- so the unique index in Section 7 can never fail. New rows inherit the same
+-- default, so no account can exist without a code.
+DO $$
+DECLARE dup RECORD;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_schema = 'public' AND table_name = 'users_table'
+                   AND column_name = 'referral_code') THEN
+    ALTER TABLE public.users_table
+      ADD COLUMN referral_code text NOT NULL
+      DEFAULT upper(substr(md5(random()::text || clock_timestamp()::text), 1, 8));
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_schema = 'public' AND table_name = 'users_table'
+                   AND column_name = 'referral_count') THEN
+    ALTER TABLE public.users_table
+      ADD COLUMN referral_count integer NOT NULL DEFAULT 0;
+  END IF;
+  FOR dup IN
+    SELECT id FROM (
+      SELECT id, row_number() OVER (PARTITION BY referral_code ORDER BY id) AS rn
+      FROM public.users_table
+    ) d WHERE d.rn > 1
+  LOOP
+    UPDATE public.users_table
+    SET referral_code = upper(substr(md5(random()::text || clock_timestamp()::text || dup.id), 1, 8))
+    WHERE id = dup.id;
+  END LOOP;
+END $$;
 
 -- NOTE: users_table.stripe_id intentionally has NO unique constraint.
 -- Migration 0002 drops users_table_stripe_id_unique and schema.ts does not
@@ -311,6 +343,59 @@ CREATE TABLE IF NOT EXISTS public.app_settings (
 -- historical defaults (including an env-provided OPENAI_MODEL) when the row is
 -- absent, so seeding here would make the bootstrap path diverge from the
 -- migration path. The first admin save creates the row.
+
+-- 3.8 referrals (referral program foundation, migration 0009). One row per
+-- attributed referral. Status columns are plain text (no pg enum), matching
+-- the rest of the schema; rewards are NOT live yet, so reward_status stays
+-- 'none'. One account and one email can each be referred at most once.
+CREATE TABLE IF NOT EXISTS public.referrals (
+  id text PRIMARY KEY,
+  referrer_user_id text NOT NULL REFERENCES public.users_table (id) ON DELETE CASCADE,
+  referred_user_id text NOT NULL REFERENCES public.users_table (id) ON DELETE CASCADE,
+  referred_email text NOT NULL,
+  referral_code text NOT NULL,
+  verification_status text NOT NULL DEFAULT 'pending',
+  verified_at timestamptz,
+  reward_status text NOT NULL DEFAULT 'none',
+  reward_awarded_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS referrals_referred_user_unique
+  ON public.referrals (referred_user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS referrals_referred_email_unique
+  ON public.referrals (referred_email);
+CREATE INDEX IF NOT EXISTS referrals_referrer_idx
+  ON public.referrals (referrer_user_id, created_at);
+
+-- Self-referral is impossible at the database level (the app also checks the
+-- email in lib/referral-code.ts).
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint
+                 WHERE conrelid = 'public.referrals'::regclass
+                   AND conname = 'referrals_no_self_referral') THEN
+    ALTER TABLE public.referrals
+      ADD CONSTRAINT referrals_no_self_referral CHECK (referrer_user_id <> referred_user_id);
+  END IF;
+END $$;
+
+-- 3.9 referral_credits (append-only reward ledger, migration 0010). The single
+-- source of truth for earned certificate credits: one +1 row per verified
+-- referral and at most one -1 reversal row. The unique (referral_id, reason)
+-- makes issuance and reversal idempotent. The balance is SUM(amount) and feeds
+-- the free-tier quota - there is no mutable balance column.
+CREATE TABLE IF NOT EXISTS public.referral_credits (
+  id text PRIMARY KEY,
+  user_id text NOT NULL REFERENCES public.users_table (id) ON DELETE CASCADE,
+  referral_id text REFERENCES public.referrals (id) ON DELETE SET NULL,
+  amount integer NOT NULL,
+  reason text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS referral_credits_user_idx
+  ON public.referral_credits (user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS referral_credits_referral_reason_unique
+  ON public.referral_credits (referral_id, reason);
 
 -- -----------------------------------------------------------------------------
 -- SECTION 4 - CHECK constraints.
@@ -517,7 +602,7 @@ DECLARE
   t text;
   owner_name text;
 BEGIN
-  FOREACH t IN ARRAY ARRAY['users_table', 'learning_items', 'assessments', 'transcripts', 'attempts', 'credentials']
+  FOREACH t IN ARRAY ARRAY['users_table', 'learning_items', 'assessments', 'transcripts', 'attempts', 'credentials', 'referrals', 'referral_credits']
   LOOP
     SELECT pg_get_userbyid(c.relowner) INTO owner_name
       FROM pg_class c
@@ -544,6 +629,8 @@ ALTER TABLE public.assessments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.transcripts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.attempts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.credentials ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.referrals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.referral_credits ENABLE ROW LEVEL SECURITY;
 
 -- Deliberately NOT enabled: drizzle.__drizzle_migrations (no user data).
 -- FORCE ROW LEVEL SECURITY is NOT set anywhere (owner bypass is the point).
@@ -615,6 +702,22 @@ CREATE POLICY credentials_select_own ON public.credentials
   FOR SELECT TO authenticated
   USING (user_id = (auth.uid())::text);
 
+-- Referrals: a referrer may read their own referred rows; writes stay
+-- server-authoritative (attribution is recorded by utils/referrals.ts), so no
+-- authenticated INSERT/UPDATE policy exists.
+DROP POLICY IF EXISTS referrals_select_own ON public.referrals;
+CREATE POLICY referrals_select_own ON public.referrals
+  FOR SELECT TO authenticated
+  USING (referrer_user_id = (auth.uid())::text);
+
+-- Credit ledger: a user may read their own credit history; writes stay
+-- server-authoritative (reward issuance/reversal in utils/referrals.ts), so no
+-- authenticated INSERT/UPDATE policy exists.
+DROP POLICY IF EXISTS referral_credits_select_own ON public.referral_credits;
+CREATE POLICY referral_credits_select_own ON public.referral_credits
+  FOR SELECT TO authenticated
+  USING (user_id = (auth.uid())::text);
+
 -- -----------------------------------------------------------------------------
 -- SECTION 7 - Performance indexes for the queries the app actually runs.
 -- (Unique indexes from Section 3 are not repeated here.)
@@ -637,6 +740,8 @@ CREATE INDEX IF NOT EXISTS credentials_attempt_idx
   ON public.credentials (attempt_id);
 CREATE INDEX IF NOT EXISTS users_table_stripe_id_idx
   ON public.users_table (stripe_id);
+CREATE UNIQUE INDEX IF NOT EXISTS users_table_referral_code_unique
+  ON public.users_table (referral_code);
 -- Admin console lists (search / filter / sort / paginate; Section 8 notes).
 CREATE INDEX IF NOT EXISTS users_table_terms_consented_idx
   ON public.users_table (terms_consented_at DESC);
@@ -716,6 +821,16 @@ INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
 SELECT '2d451ce9ef600baf32b11c1d558a80269f9acbb3a1931a751a7e13fea69b5676', 1791317223039
 WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at = 1791317223039);
 
+-- 0009 (referral foundation) is embodied by the DDL + backfill above.
+INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
+SELECT '107e47fc0fad0190e0f6ebefe9f24ff755e47ea3c6fb9c320a35c4b3b65ae7cb', 1791447827747
+WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at = 1791447827747);
+
+-- 0010 (referral credit ledger) is embodied by the DDL above.
+INSERT INTO drizzle.__drizzle_migrations (hash, created_at)
+SELECT '89120b1786350af283e6ac395af4410c48096d1349ab919b5e135aea623b4161', 1791448918025
+WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at = 1791448918025);
+
 -- -----------------------------------------------------------------------------
 -- SECTION 10 - Post-run verification queries (read-only, for manual check).
 -- -----------------------------------------------------------------------------
@@ -725,5 +840,5 @@ WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE created_at = 
 -- SELECT schemaname, tablename, policyname FROM pg_policies
 --   WHERE schemaname = 'public' ORDER BY tablename, policyname;
 -- SELECT hash, created_at FROM drizzle.__drizzle_migrations ORDER BY created_at;
---   rows for 0000-0008 are inserted by Section 9; the last row must match the
+--   rows for 0000-0010 are inserted by Section 9; the last row must match the
 --   latest `when` in utils/db/migrations/meta/_journal.json.

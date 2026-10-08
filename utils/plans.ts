@@ -75,15 +75,24 @@ export function planLabel(plan: string | null | undefined): string {
 
 /**
  * Monthly certificate allowance for a plan. `null` = unlimited. Free accounts
- * fall back to the live admin setting.
+ * fall back to the live admin setting, plus any referral credits they have
+ * earned (each verified referral permanently raises the free allowance by one,
+ * with no cap - see utils/referrals.ts). Paid tiers use their own fixed limits
+ * and ignore credits, but the ledger keeps them, so the bonus still applies if
+ * the account later returns to Free.
+ *
+ * `referralCredits` is the SUM of the append-only referral_credits ledger for
+ * the user (0 when omitted, preserving the previous behaviour).
  */
 export function monthlyCertificateLimit(
   plan: string | null | undefined,
-  freeCredentialsPerMonth: number
+  freeCredentialsPerMonth: number,
+  referralCredits = 0
 ): number | null {
   const tier = paidTierOf(plan);
   if (tier) return TIER_CERTIFICATE_LIMITS[tier];
-  return freeCredentialsPerMonth;
+  const bonus = Number.isFinite(referralCredits) && referralCredits > 0 ? Math.floor(referralCredits) : 0;
+  return freeCredentialsPerMonth + bonus;
 }
 
 /**

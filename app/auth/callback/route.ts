@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 // The client you created from the Server-Side Auth instructions
 import { createClient } from '@/utils/supabase/server';
+import { normalizeReferralCode } from '@/lib/referral-code';
+import { REFERRAL_COOKIE } from '@/lib/referral-cookie';
 import { hasCompletedOnboarding } from '@/app/auth/onboarding-status';
 import { safeNextPath } from '@/lib/safe-next';
 import { bootstrapOAuthUser } from '@/app/auth/user-bootstrap';
@@ -27,6 +30,25 @@ export async function GET(request: Request) {
       const bootstrapped = await bootstrapOAuthUser(user!);
       if (!bootstrapped.ok) {
         return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+      }
+
+      // Mirror a /ref/<code> visit into auth metadata for OAuth signups, so
+      // attribution survives an onboarding that outlives the cookie. Only set
+      // when the account has no code yet (a later link must not steal
+      // attribution). Best-effort - never block sign-in; completeOnboarding
+      // falls back to the cookie regardless.
+      const referralCode = normalizeReferralCode((await cookies()).get(REFERRAL_COOKIE)?.value);
+      const existingReferral = (user!.user_metadata as Record<string, unknown> | undefined)
+        ?.referral_code;
+      if (referralCode && typeof existingReferral !== 'string') {
+        try {
+          await supabase.auth.updateUser({ data: { referral_code: referralCode } });
+        } catch (err) {
+          console.error(
+            '[referral] failed to persist code on OAuth callback:',
+            err instanceof Error ? err.message : 'Unknown error'
+          );
+        }
       }
 
       const forwardedHost = request.headers.get('x-forwarded-host'); // original origin before load balancer

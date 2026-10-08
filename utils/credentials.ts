@@ -119,15 +119,23 @@ export function isAdminAccount(
  * the admin console can never be locked out of certificate generation. Callers
  * pass the role they read server-side from the database; nothing the client
  * sends can influence it.
+ *
+ * `referralCredits` (optional, default 0) is the user's earned referral-credit
+ * balance - the SUM of the append-only referral_credits ledger. It is folded
+ * into the free-tier allowance only (paid tiers keep their fixed limits), so a
+ * free user with 3 verified referrals gets freeCredentialsPerMonth + 3. There
+ * is no separate balance or mint path: this quota function remains the single
+ * enforcement point.
  */
 export function hasCredentialQuotaRemaining(
   credsThisMonth: number,
   plan: string | null,
   freeCredentialsPerMonth: number = FREE_CREDENTIALS_PER_MONTH,
-  isAdmin = false
+  isAdmin = false,
+  referralCredits = 0
 ): boolean {
   if (isAdmin) return true; // Admin: unlimited regardless of plan or limit
-  const limit = monthlyCertificateLimit(plan, freeCredentialsPerMonth);
+  const limit = monthlyCertificateLimit(plan, freeCredentialsPerMonth, referralCredits);
   if (limit === null) return true; // Unlimited tier (Pro yearly / grandfathered)
   return credsThisMonth < limit;
 }

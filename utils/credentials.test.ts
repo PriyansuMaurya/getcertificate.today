@@ -69,6 +69,33 @@ describe('hasCredentialQuotaRemaining', () => {
     assert.equal(hasCredentialQuotaRemaining(10, 'none', 1, true), true);
     assert.equal(hasCredentialQuotaRemaining(999, 'none', 3, true), true);
   });
+
+  it('extends the free allowance by earned referral credits', () => {
+    // One base certificate + one referral credit -> one more is allowed.
+    assert.equal(hasCredentialQuotaRemaining(1, 'none', 1, false, 1), true);
+    assert.equal(hasCredentialQuotaRemaining(2, 'none', 1, false, 1), false);
+    // Credits stack without a cap.
+    assert.equal(hasCredentialQuotaRemaining(10, 'none', 1, false, 10), true);
+    assert.equal(hasCredentialQuotaRemaining(11, 'none', 1, false, 10), false);
+    assert.equal(hasCredentialQuotaRemaining(100, 'none', 1, false, 100), true);
+    assert.equal(hasCredentialQuotaRemaining(101, 'none', 1, false, 100), false);
+  });
+
+  it('defaults referral credits to 0, preserving prior behaviour', () => {
+    assert.equal(hasCredentialQuotaRemaining(1, 'none', 1), false);
+    assert.equal(hasCredentialQuotaRemaining(1, 'none', 1, false), false);
+    assert.equal(hasCredentialQuotaRemaining(1, 'none', 1, false, 0), false);
+  });
+
+  it('ignores referral credits on paid tiers (fixed limits)', () => {
+    assert.equal(hasCredentialQuotaRemaining(10, 'starter', 1, false, 100), false);
+    assert.equal(hasCredentialQuotaRemaining(9, 'starter', 1, false, 100), true);
+    assert.equal(hasCredentialQuotaRemaining(999, 'pro_yearly', 1, false, 100), true);
+  });
+
+  it('still lets admins bypass everything with credits present', () => {
+    assert.equal(hasCredentialQuotaRemaining(999, 'none', 0, true, 3), true);
+  });
 });
 
 describe('isAdminAccount', () => {

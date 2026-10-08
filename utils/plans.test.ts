@@ -102,6 +102,25 @@ describe('monthlyCertificateLimit', () => {
     assert.equal(monthlyCertificateLimit('none', 0), 0);
   });
 
+  it('adds referral credits to the free allowance, with no cap', () => {
+    assert.equal(monthlyCertificateLimit('none', 1, 1), 2);
+    assert.equal(monthlyCertificateLimit('none', 1, 10), 11);
+    assert.equal(monthlyCertificateLimit(null, 3, 100), 103);
+  });
+
+  it('ignores negative, fractional or non-finite credit values', () => {
+    assert.equal(monthlyCertificateLimit('none', 1, -5), 1);
+    assert.equal(monthlyCertificateLimit('none', 1, 2.9), 3);
+    assert.equal(monthlyCertificateLimit('none', 1, Number.NaN), 1);
+    assert.equal(monthlyCertificateLimit('none', 1, Number.POSITIVE_INFINITY), 1);
+  });
+
+  it('never adds credits to a paid tier, but keeps the base tier limit', () => {
+    assert.equal(monthlyCertificateLimit('starter', 1, 50), 10);
+    assert.equal(monthlyCertificateLimit('pro', 1, 50), 30);
+    assert.equal(monthlyCertificateLimit('pro_yearly', 1, 50), null);
+  });
+
   it('ignores the free allowance for paid tiers', () => {
     assert.equal(monthlyCertificateLimit('starter', 99), 10);
     assert.equal(monthlyCertificateLimit('pro', 99), 30);

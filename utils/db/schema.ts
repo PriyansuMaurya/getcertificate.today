@@ -1,6 +1,7 @@
 import {
   boolean,
   date,
+  index,
   integer,
   jsonb,
   pgTable,
@@ -8,6 +9,7 @@ import {
   timestamp,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import type { WatchRange } from '../watch-progress';
 
 export const usersTable = pgTable('users_table', {
@@ -33,10 +35,113 @@ export const usersTable = pgTable('users_table', {
   // requireAdmin() - never by hiding UI. (Postgres has no native boolean for
   // this because the suspension timestamp is needed for the admin list.)
   suspended_at: timestamp('suspended_at', { withTimezone: true }),
+  // Referral program: unique, shareable code exposed at /ref/<code>. Always
+  // uppercase (A-Z, 0-9). The column default issues a code for every row even
+  // when inserted outside the app (seed/test scripts), and the migration
+  // backfills existing users, so no account can exist without one.
+  referral_code: text('referral_code')
+    .notNull()
+    .unique()
+    .default(sql`upper(substr(md5(random()::text || clock_timestamp()::text), 1, 8))`),
+  // Denormalized count of referrals attributed to this user, updated in the
+  // same transaction that inserts the referrals row (see utils/referrals.ts).
+  // Certificate credits themselves live in the append-only referral_credits
+  // ledger below - never as a mutable balance here.
+  referral_count: integer('referral_count').notNull().default(0),
 });
 
 export type InsertUser = typeof usersTable.$inferInsert;
 export type SelectUser = typeof usersTable.$inferSelect;
+
+// Referral program foundation. One row per attributed referral, written when a
+// referred account finishes onboarding (the single place a users row is born).
+//
+// Status columns are plain text (matching the rest of the schema) rather than
+// pg enums. reward_status starts 'none' and becomes 'awarded' (free-tier
+// referrer credited), 'not_applicable' (referrer was paid at verification, so
+// no credit is owed) or 'reversed' (a credit was clawed back) - see
+// utils/referrals.ts.
+//
+// Self-referral is blocked three ways: the (referrer_user_id <>
+// referred_user_id) CHECK added by migration 0009, the unique indexes below,
+// and the pure eligibility check in lib/referral-code.ts applied before insert.
+export const referralsTable = pgTable(
+  'referrals',
+  {
+    id: text('id').primaryKey(),
+    // The user whose code was used. Referrers must already exist.
+    referrer_user_id: text('referrer_user_id')
+      .notNull()
+      .references(() => usersTable.id, { onDelete: 'cascade' }),
+    // The referred account. users_table.id equals the Supabase auth user id by
+    // convention, so this is known as soon as onboarding creates the row.
+    referred_user_id: text('referred_user_id')
+      .notNull()
+      .references(() => usersTable.id, { onDelete: 'cascade' }),
+    // Lowercased signup email - blocks same-email self-referral and dedupes.
+    referred_email: text('referred_email').notNull(),
+    // The exact code that was redeemed (kept even if the referrer's later change).
+    referral_code: text('referral_code').notNull(),
+    // 'pending' until the referred account confirms their email, then
+    // 'verified'. 'rejected' is reserved for the future fraud review.
+    verification_status: text('verification_status').notNull().default('pending'),
+    verified_at: timestamp('verified_at', { withTimezone: true }),
+    // No rewards are live yet - always 'none' for now.
+    reward_status: text('reward_status').notNull().default('none'),
+    reward_awarded_at: timestamp('reward_awarded_at', { withTimezone: true }),
+    created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    // A user can be referred at most once; so can an email address.
+    uniqueIndex('referrals_referred_user_unique').on(t.referred_user_id),
+    uniqueIndex('referrals_referred_email_unique').on(t.referred_email),
+    // Referrer lookup for the dashboard list and the denormalized count.
+    index('referrals_referrer_idx').on(t.referrer_user_id, t.created_at),
+  ]
+);
+
+export type SelectReferral = typeof referralsTable.$inferSelect;
+export type InsertReferral = typeof referralsTable.$inferInsert;
+
+// Append-only credit ledger for referral rewards - the single source of truth
+// for a user's earned certificate credits. There is deliberately NO mutable
+// balance column (and no separate mint path): the balance is SUM(amount), and
+// it feeds the existing free-tier monthly quota in utils/credentials.ts.
+//
+// One +1 row per verified referral ('referral_verified'), plus at most one -1
+// row per referral when a reward is reversed ('reversal'). The composite unique
+// index makes both issuance and reversal idempotent, so a retried or duplicated
+// settlement can never double-credit. Credits persist across subscription
+// changes (the ledger is never edited); they only affect the free tier, because
+// paid tiers use their own fixed monthly limits.
+export const referralCreditsTable = pgTable(
+  'referral_credits',
+  {
+    id: text('id').primaryKey(),
+    // The referrer who earned the credit.
+    user_id: text('user_id')
+      .notNull()
+      .references(() => usersTable.id, { onDelete: 'cascade' }),
+    // Audit link to the referral that produced this entry. Nullable so a manual
+    // adjustment can exist without a referral; set null if the referral is ever
+    // removed (the user keeps the credit history).
+    referral_id: text('referral_id').references(() => referralsTable.id, {
+      onDelete: 'set null',
+    }),
+    // Signed: +1 on award, -1 on reversal.
+    amount: integer('amount').notNull(),
+    // 'referral_verified' | 'reversal' (text, like every other status column).
+    reason: text('reason').notNull(),
+    created_at: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('referral_credits_user_idx').on(t.user_id),
+    uniqueIndex('referral_credits_referral_reason_unique').on(t.referral_id, t.reason),
+  ]
+);
+
+export type SelectReferralCredit = typeof referralCreditsTable.$inferSelect;
+export type InsertReferralCredit = typeof referralCreditsTable.$inferInsert;
 
 // One row per (user, source video). Progress columns are denormalized onto the
 // item because a learning item belongs to exactly one user (no separate

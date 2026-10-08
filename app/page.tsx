@@ -7,6 +7,7 @@ import HeroCertificateStage from '@/components/landing/HeroCertificateStage';
 import HeroLearningFlow from '@/components/landing/HeroLearningFlow';
 import HeroStartForm from '@/components/landing/HeroStartForm';
 import Reveal from '@/components/landing/Reveal';
+import ReferralCallout from '@/components/landing/ReferralCallout';
 import LandingPricingCards from '@/components/LandingPricingCards';
 
 // The navbar and hero are a from-scratch centered SaaS composition on the Figma
@@ -397,6 +398,7 @@ export default function LandingPage() {
               </h2>
             </Reveal>
             <LandingPricingCards />
+            <ReferralCallout />
           </div>
         </section>
 

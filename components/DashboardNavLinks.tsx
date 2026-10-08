@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BadgeCheck, BookOpen, LayoutDashboard, Settings } from 'lucide-react';
+import { BadgeCheck, BookOpen, Gift, LayoutDashboard, Settings } from 'lucide-react';
 
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, exact: true },
   { label: 'My Learning', href: '/dashboard/learning', icon: BookOpen, exact: false },
   { label: 'Certificates', href: '/dashboard/certificates', icon: BadgeCheck, exact: false },
+  { label: 'Referrals', href: '/dashboard/referrals', icon: Gift, exact: false },
   { label: 'Settings', href: '/dashboard/settings', icon: Settings, exact: false },
 ];
 

@@ -58,7 +58,16 @@ export async function updateSession(request: NextRequest) {
   // Kept as exact prefixes per RULES §9.5 - add new ones narrowly.
   // robots.txt and sitemap.xml are served by app/robots.ts and app/sitemap.ts;
   // redirecting them to /login would hide crawler directives from Google.
-  const PUBLIC_PREFIXES = ['/verify', '/certificates', '/privacy', '/terms', '/cookie-policy'];
+  const PUBLIC_PREFIXES = [
+    '/verify',
+    '/certificates',
+    '/privacy',
+    '/terms',
+    '/cookie-policy',
+    // Referral links are shared with people who do not have an account yet -
+    // they must resolve while signed out (app/ref/[code]/route.ts).
+    '/ref',
+  ];
   const CRAWLER_FILES = ['/robots.txt', '/sitemap.xml'];
   // Exact path or path segment match: '/certificates' stays public but
   // '/certificates-anything' (or a future '/verify-internal') does not silently

@@ -11,8 +11,10 @@ import {
   attemptsTable,
   credentialsTable,
   learningItemsTable,
+  referralCreditsTable,
   usersTable,
 } from '@/utils/db/schema';
+import { getReferralCreditBalance, referralCreditSum } from '@/utils/referrals';
 import {
   ATTEMPT_COOLDOWN_DAYS,
   UNLOCK_PERCENT,
@@ -435,6 +437,15 @@ export async function submitAssessment(
       // reuse the shared admin rule instead of a second query.
       const isAdmin = isAdminAccount(profile?.role, profile?.suspended_at);
 
+      // Referral credits extend the free-tier allowance. Read inside this
+      // transaction (same snapshot as the quota check) so a concurrent award
+      // can neither be counted twice nor lost.
+      const creditRows = await tx
+        .select({ total: referralCreditSum })
+        .from(referralCreditsTable)
+        .where(eq(referralCreditsTable.user_id, user.id));
+      const referralCredits = creditRows[0]?.total ?? 0;
+
       const monthStart = monthWindowStart();
       const credsThisMonth = await tx
         .select({ id: credentialsTable.id })
@@ -447,7 +458,8 @@ export async function submitAssessment(
           credsThisMonth.length,
           profile?.plan ?? 'none',
           freeCredentialsPerMonth,
-          isAdmin
+          isAdmin,
+          referralCredits
         )
       )
         return;
@@ -556,6 +568,13 @@ export async function mintFromAttempt(
       // reuse the shared admin rule instead of a second query.
       const isAdmin = isAdminAccount(profile?.role, profile?.suspended_at);
 
+      // Referral credits extend the free-tier allowance (see submitAssessment).
+      const creditRows = await tx
+        .select({ total: referralCreditSum })
+        .from(referralCreditsTable)
+        .where(eq(referralCreditsTable.user_id, user.id));
+      const referralCredits = creditRows[0]?.total ?? 0;
+
       const credsThisMonth = await tx
         .select({ id: credentialsTable.id })
         .from(credentialsTable)
@@ -570,7 +589,8 @@ export async function mintFromAttempt(
           credsThisMonth.length,
           profile?.plan ?? 'none',
           freeCredentialsPerMonth,
-          isAdmin
+          isAdmin,
+          referralCredits
         )
       )
         return;
@@ -637,7 +657,18 @@ export async function mintFromAttempt(
       err instanceof Error ? err.message : 'unknown error'
     );
   }
-  const limit = monthlyCertificateLimit(limitedPlan, freeCredentialsPerMonth);
+  // Include referral credits in the reported allowance so the message matches
+  // the actual free-tier limit. Best-effort: fall back to 0 if the lookup fails.
+  let creditBalance = 0;
+  try {
+    creditBalance = await getReferralCreditBalance(user.id);
+  } catch (err) {
+    console.error(
+      '[credential] credit balance lookup failed:',
+      err instanceof Error ? err.message : 'unknown error'
+    );
+  }
+  const limit = monthlyCertificateLimit(limitedPlan, freeCredentialsPerMonth, creditBalance);
   const limitText = limit === null ? 'unlimited' : `${limit}`;
   return {
     message: `You have reached your monthly certificate limit (${limitText}) on the ${planLabel(

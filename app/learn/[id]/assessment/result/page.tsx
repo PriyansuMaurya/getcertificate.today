@@ -5,6 +5,7 @@ import { db } from '@/utils/db/db';
 import { attemptsTable, credentialsTable, learningItemsTable, usersTable } from '@/utils/db/schema';
 import { hasCredentialQuotaRemaining, isAdminAccount, monthWindowStart } from '@/utils/credentials';
 import { monthlyCertificateLimit, planLabel } from '@/utils/plans';
+import { getReferralCreditBalance } from '@/utils/referrals';
 import { getSettings } from '@/utils/settings';
 import { requireActiveUser } from '@/utils/auth';
 import MintCredentialButton from '@/components/learn/MintCredentialButton';
@@ -51,6 +52,18 @@ export default async function AssessmentResultPage({
   // Live admin settings: pass mark for the score card and the free quota limit.
   const { passScore, freeCredentialsPerMonth } = await getSettings();
 
+  // Earned referral credits extend the free-tier allowance (0 for paid tiers,
+  // which use their own fixed limits). Best-effort lookup.
+  let referralCredits = 0;
+  try {
+    referralCredits = await getReferralCreditBalance(user.id);
+  } catch (err) {
+    console.error(
+      '[referral] credit balance lookup failed:',
+      err instanceof Error ? err.message : 'unknown error'
+    );
+  }
+
   // Quota state for passing attempts with no credential yet.
   let quotaBlocked = false;
   if (attempt.passed && !credential) {
@@ -70,13 +83,18 @@ export default async function AssessmentResultPage({
       credsThisMonth.length,
       profile?.plan ?? 'none',
       freeCredentialsPerMonth,
-      isAdminAccount(profile?.role, profile?.suspended_at)
+      isAdminAccount(profile?.role, profile?.suspended_at),
+      referralCredits
     );
   }
 
   // Plan-aware copy for the quota-blocked state (Free / Starter / Pro).
   const planName = planLabel(profile?.plan);
-  const monthlyLimit = monthlyCertificateLimit(profile?.plan, freeCredentialsPerMonth);
+  const monthlyLimit = monthlyCertificateLimit(
+    profile?.plan,
+    freeCredentialsPerMonth,
+    referralCredits
+  );
 
   const passed = attempt.passed;
 
