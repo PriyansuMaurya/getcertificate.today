@@ -155,7 +155,12 @@ export default function LandingPage() {
           actions grow. Sticky and translucent so the pill CTA is always one
           click away while scrolling. */}
       <header className="sticky top-0 z-50 border-b border-sandline/80 bg-cream/85 backdrop-blur">
-        <div className="mx-auto grid h-16 max-w-[1240px] grid-cols-[1fr_auto_1fr] items-center gap-2 px-5 sm:px-6 lg:h-[76px] xl:px-8">
+        {/* Two columns below lg, three at lg and up. The nav is `display:none`
+            below lg, so with the three-column grid the actions would auto-place
+            into the middle `auto` column instead of the right edge. These two
+            breakpoints must stay in sync with the nav's
+            `hidden ... lg:flex` - diverge and the third item wraps to a new row. */}
+        <div className="mx-auto grid h-16 max-w-[1240px] grid-cols-[1fr_auto] items-center gap-2 px-5 sm:px-6 lg:h-[76px] lg:grid-cols-[1fr_auto_1fr] xl:px-8">
           <Link
             href="/"
             aria-label="getcertificate.today home"

@@ -82,6 +82,18 @@ export default function YouTubePlayer({
     onSampleRef.current = onSample;
   }, [onSample]);
 
+  // The resume position is an *initial* value, never a reactive one. Its parent
+  // refreshes the RSC tree as progress crosses each 5% step (LearnPlayerPanel),
+  // which re-sends the server's latest position_seconds. When that was a
+  // creation dependency, every refresh destroyed the player and built a new one
+  // mid-session - and because the options carry no autoplay, the rebuilt player
+  // loads CUED and never resumes, so playback froze. Hold it in a ref so the
+  // effect below can stay keyed on the video itself.
+  const startSecondsRef = useRef(startSeconds);
+  useEffect(() => {
+    startSecondsRef.current = startSeconds;
+  }, [startSeconds]);
+
   useEffect(() => {
     let cancelled = false;
     let sampleTimer: ReturnType<typeof setInterval> | null = null;
@@ -97,7 +109,7 @@ export default function YouTubePlayer({
         playerRef.current = new window.YT.Player(containerRef.current, {
           videoId: youtubeId,
           playerVars: {
-            start: Math.max(0, Math.floor(startSeconds)),
+            start: Math.max(0, Math.floor(startSecondsRef.current)),
             rel: 0,
             modestbranding: 1,
             playsinline: 1,
@@ -158,8 +170,9 @@ export default function YouTubePlayer({
       }
       playerRef.current = null;
     };
-    // Re-create the player only when the video changes.
-  }, [youtubeId, startSeconds]);
+    // Re-create the player only when the video changes. Deliberately not keyed
+    // on startSeconds: rebuilding a live player stops playback (see above).
+  }, [youtubeId]);
 
   return (
     <div className="aspect-video w-full overflow-hidden rounded-xl border border-sandline bg-ink">
