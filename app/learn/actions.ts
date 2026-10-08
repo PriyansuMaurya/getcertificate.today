@@ -155,7 +155,9 @@ export async function startAssessment(
     // the learning item row - both were stored when the video was added, so no
     // extra oEmbed/captions round-trip is needed here.
     const { transcript } = await getTranscript(item.youtube_id);
-    generated = await generateAssessment(title, item.author, transcript);
+    // duration_seconds came from the player when the course was added; it drives
+    // how many questions the quiz gets (one per minute, capped), so pass it in.
+    generated = await generateAssessment(title, item.author, transcript, item.duration_seconds);
   } catch (err) {
     if (err instanceof TranscriptNotConfiguredError) {
       return {

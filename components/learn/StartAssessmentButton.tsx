@@ -32,13 +32,14 @@ export default function StartAssessmentButton({
   itemId,
   hasAssessment,
   passScore,
-  assessmentQuestionCount,
+  questionCount,
   maxAttemptsPerWindow,
 }: {
   itemId: string;
   hasAssessment: boolean;
   passScore: number;
-  assessmentQuestionCount: number;
+  /** Questions this video's assessment has (stored) or will get (previewed). */
+  questionCount: number;
   maxAttemptsPerWindow: number;
 }) {
   const initialState: AssessmentActionState = { message: '' };
@@ -56,7 +57,7 @@ export default function StartAssessmentButton({
       <p className="mt-2 text-xs text-clay">
         {hasAssessment
           ? `${passScore}% to pass · ${maxAttemptsPerWindow} attempts per week · scoring happens on the server.`
-          : `Generation takes a few seconds. ${assessmentQuestionCount} questions · ${passScore}% to pass · ${maxAttemptsPerWindow} attempts per week.`}
+          : `Generation takes a few seconds. ${questionCount} questions · ${passScore}% to pass · ${maxAttemptsPerWindow} attempts per week.`}
       </p>
     </form>
   );

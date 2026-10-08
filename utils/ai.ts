@@ -6,6 +6,7 @@
 import OpenAI from 'openai';
 import type { AssessmentQuestion } from '@/utils/db/schema';
 import { getSettings } from '@/utils/settings';
+import { assessmentQuestionCountForDuration } from '@/utils/assessment-config';
 
 // Keep the whole generation bounded so the UI can never hang indefinitely:
 // worst case ≈ 2 attempts × 30s + 2s backoff ≈ 62s (timeouts and 429/5xx both
@@ -165,17 +166,28 @@ async function sleep(ms: number): Promise<void> {
  * callers map these to a `{ message }` and must not persist partial data
  * (FR-D2 AC4). Retries transient 429/5xx with backoff; never hangs past
  * REQUEST_TIMEOUT_MS per attempt.
+ *
+ * `durationSeconds` is the video's runtime (learning_items.duration_seconds).
+ * The question count is proportional to it - one per started minute, capped at
+ * MAX_ASSESSMENT_QUESTIONS - so a long video is not under-tested. A runtime of
+ * 0 (the player has not reported a length yet, or a legacy row) falls back to
+ * the admin-configured count.
  */
 export async function generateAssessment(
   title: string,
   author: string | null,
-  transcript: string
+  transcript: string,
+  durationSeconds: number
 ): Promise<GenerationResult> {
   const client = getClient();
   // Live admin settings: model id + question count come from app_settings so a
   // change at /admin/settings applies to every new generation (this is the one
   // generation pipeline - /admin/assessments regenerates through it too).
   const { aiModel, assessmentQuestionCount } = await getSettings();
+  const questionCount = assessmentQuestionCountForDuration(
+    durationSeconds,
+    assessmentQuestionCount
+  );
 
   let lastError: unknown = null;
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
@@ -194,7 +206,7 @@ export async function generateAssessment(
           },
           {
             role: 'user',
-            content: buildPrompt(title, author, transcript, assessmentQuestionCount),
+            content: buildPrompt(title, author, transcript, questionCount),
           },
         ],
       });
@@ -222,7 +234,7 @@ export async function generateAssessment(
     }
     try {
       return {
-        questions: parseQuestions(raw, assessmentQuestionCount),
+        questions: parseQuestions(raw, questionCount),
         source: 'transcriptapi',
       };
     } catch (err) {

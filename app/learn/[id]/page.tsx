@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/utils/db/db';
 import { assessmentsTable, attemptsTable, learningItemsTable } from '@/utils/db/schema';
 import { UNLOCK_PERCENT } from '@/utils/credentials';
 import { getSettings } from '@/utils/settings';
+import { assessmentQuestionCountForDuration } from '@/utils/assessment-config';
 import { requireActiveUser } from '@/utils/auth';
 import LearnPlayerPanel from '@/components/learn/LearnPlayerPanel';
 import StartAssessmentButton from '@/components/learn/StartAssessmentButton';
@@ -30,7 +31,12 @@ export default async function LearnPage({ params }: { params: Promise<{ id: stri
 
   const [assessmentRows, attemptRows] = await Promise.all([
     db
-      .select({ id: assessmentsTable.id, source: assessmentsTable.source })
+      .select({
+        id: assessmentsTable.id,
+        source: assessmentsTable.source,
+        // Count only - the questions themselves stay server-side.
+        questionCount: sql<number>`jsonb_array_length(${assessmentsTable.questions})`,
+      })
       .from(assessmentsTable)
       .where(eq(assessmentsTable.learning_item_id, item.id)),
     db
@@ -52,6 +58,12 @@ export default async function LearnPage({ params }: { params: Promise<{ id: stri
   const passed = attempts.some((a) => a.passed);
   // Live admin settings drive the assessment copy on this page.
   const { passScore, assessmentQuestionCount, maxAttemptsPerWindow } = await getSettings();
+  // An existing assessment reports its stored count (it may predate this video's
+  // runtime, or a settings change); only a quiz that has not been generated yet
+  // is previewed at the count its runtime will produce.
+  const questionCount = assessment
+    ? Number(assessment.questionCount)
+    : assessmentQuestionCountForDuration(item.duration_seconds, assessmentQuestionCount);
 
   return (
     <main className="min-h-[calc(100dvh-80px)] bg-cream text-ink">
@@ -99,7 +111,7 @@ export default async function LearnPage({ params }: { params: Promise<{ id: stri
                   <h2 className="font-fraunces text-xl font-bold text-ink">AI Assessment</h2>
                   <p className="mt-1 text-sm text-clay">
                     {unlocked
-                      ? `You have unlocked the assessment. ${assessmentQuestionCount} questions, ${passScore}% to pass.`
+                      ? `You have unlocked the assessment. ${questionCount} questions, ${passScore}% to pass.`
                       : `Watch ${UNLOCK_PERCENT}% of this course to unlock the assessment. You are at ${item.progress_percent}%.`}
                   </p>
                 </div>
@@ -111,7 +123,7 @@ export default async function LearnPage({ params }: { params: Promise<{ id: stri
                     itemId={item.id}
                     hasAssessment={Boolean(assessment)}
                     passScore={passScore}
-                    assessmentQuestionCount={assessmentQuestionCount}
+                    questionCount={questionCount}
                     maxAttemptsPerWindow={maxAttemptsPerWindow}
                   />
                 ) : (

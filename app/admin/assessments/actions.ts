@@ -120,6 +120,7 @@ export async function regenerateAssessment(
       youtubeId: learningItemsTable.youtube_id,
       itemTitle: learningItemsTable.title,
       author: learningItemsTable.author,
+      durationSeconds: learningItemsTable.duration_seconds,
     })
     .from(assessmentsTable)
     .innerJoin(learningItemsTable, eq(assessmentsTable.learning_item_id, learningItemsTable.id))
@@ -148,7 +149,13 @@ export async function regenerateAssessment(
   try {
     // Same cache-first transcript fetch + grounded generation as startAssessment.
     const { transcript } = await getTranscript(assessment.youtubeId);
-    generated = await generateAssessment(title, assessment.author, transcript);
+    // Same per-video question count as learner-initiated generation.
+    generated = await generateAssessment(
+      title,
+      assessment.author,
+      transcript,
+      assessment.durationSeconds
+    );
   } catch (err) {
     return { message: pipelineErrorMessage(err) };
   }

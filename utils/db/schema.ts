@@ -182,7 +182,10 @@ export const appSettingsTable = pgTable('app_settings', {
   id: text('id').primaryKey().default('global'),
   // Minimum score (0-100) an attempt must reach to pass and mint a credential.
   pass_score: integer('pass_score').notNull().default(70),
-  // How many questions the generator creates per assessment.
+  // Fallback question count for videos whose runtime is unknown
+  // (duration_seconds = 0). Otherwise the generator asks one question per
+  // started minute, capped at MAX_ASSESSMENT_QUESTIONS
+  // (utils/assessment-config.ts).
   assessment_question_count: integer('assessment_question_count').notNull().default(2),
   // Attempts allowed per learner per rolling cooldown window.
   max_attempts_per_window: integer('max_attempts_per_window').notNull().default(3),

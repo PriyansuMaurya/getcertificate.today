@@ -30,6 +30,10 @@ export type AppSettings = {
 /** Field bounds, shared by the validator and the form's helper copy. */
 export const SETTINGS_BOUNDS = {
   passScore: { min: 1, max: 100 },
+  // Fallback only: assessments scale with video length (one question per
+  // started minute, capped at MAX_ASSESSMENT_QUESTIONS in
+  // utils/assessment-config.ts), so this bound applies to the count used when a
+  // video's runtime is unknown, not to every assessment.
   assessmentQuestionCount: { min: 1, max: 20 },
   maxAttemptsPerWindow: { min: 1, max: 100 },
   freeCredentialsPerMonth: { min: 0, max: 100 },

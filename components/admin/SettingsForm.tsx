@@ -13,6 +13,7 @@ import {
   type AppSettings,
   type SettingsErrors,
 } from '@/utils/settings-config';
+import { MAX_ASSESSMENT_QUESTIONS } from '@/utils/assessment-config';
 
 const idleState: AdminSettingsActionState = { message: '' };
 
@@ -54,8 +55,7 @@ function displayValue(key: FieldKey, raw: string): string {
 const FIELD_IMPACT: Record<FieldKey, string> = {
   passScore:
     'Learners must score at least this to pass. Existing attempts and credentials are not re-scored, but the pass mark shown on certificates and verification pages changes.',
-  assessmentQuestionCount:
-    'Only affects newly generated assessments (and admin regenerations). Existing assessments keep their questions.',
+  assessmentQuestionCount: `The fallback count for videos with no known runtime. Questions otherwise scale with video length (one per minute, up to ${MAX_ASSESSMENT_QUESTIONS}). Affects newly generated assessments and admin regenerations only; existing assessments keep their questions.`,
   maxAttemptsPerWindow: 'Applies to every learner’s rolling attempt window immediately.',
   aiModel: 'Affects generation quality, latency, and cost for every new assessment.',
   transcriptProvider:
@@ -241,7 +241,7 @@ export default function SettingsForm({ initialSettings }: { initialSettings: App
           <Field
             id="assessmentQuestionCount"
             label={FIELD_LABELS.assessmentQuestionCount}
-            hint={`Questions generated per assessment. ${SETTINGS_BOUNDS.assessmentQuestionCount.min}–${SETTINGS_BOUNDS.assessmentQuestionCount.max}.`}
+            hint={`Fallback for videos with no known runtime. Videos otherwise get one question per minute, up to ${MAX_ASSESSMENT_QUESTIONS}. ${SETTINGS_BOUNDS.assessmentQuestionCount.min}–${SETTINGS_BOUNDS.assessmentQuestionCount.max}.`}
             error={errors.assessmentQuestionCount}
           >
             <input
