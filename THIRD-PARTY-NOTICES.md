@@ -25,6 +25,8 @@ that affects this proprietary, hosted product. Notable packages:
 | framer-motion       | MIT              | Animation                                                                |
 | jspdf               | MIT              | PDF export                                                               |
 | qrcode              | MIT              | QR generation                                                            |
+| @dicebear/core      | MIT              | Avatar SVG generation                                                    |
+| @dicebear/collection | MIT             | Avatar style definitions (see Avatar artwork below)                      |
 | @radix-ui/*         | MIT              | UI primitives                                                            |
 | @vercel/analytics   | MIT              | Cookieless analytics                                                     |
 | tailwindcss         | MIT              | Styling                                                                  |
@@ -56,6 +58,17 @@ product UI):
 - YouTube video thumbnails are fetched via YouTube oEmbed/thumbnail URLs at
   runtime and remain the property of their creators; they are displayed
   under YouTube's Terms of Service.
+
+## Avatar artwork
+
+Profile avatars are generated locally with [DiceBear](https://www.dicebear.com/)
+(the MIT-licensed `@dicebear/core` and `@dicebear/collection` packages). No
+third-party request is made at runtime; the SVG is produced on our own server.
+
+The artwork comes from the **avataaars** style by Pablo Stanley
+(<https://avataaars.com/>). The style metadata shipped in
+`@dicebear/collection` states the licence as "Free for personal and commercial
+use". We render the `avataaars-neutral` variant of that style.
 
 ## AI-generated content
 
