@@ -11,27 +11,27 @@ BSD-3, Apache-2.0, 0BSD, Unlicense, or MPL-2.0 with no distribution
 obligations for this hosted service). None are copyleft (GPL/AGPL) in a way
 that affects this proprietary, hosted product. Notable packages:
 
-| Package             | License          | Notes                                                                    |
-| ------------------- | ---------------- | ------------------------------------------------------------------------ |
-| next                | MIT              | Framework                                                                |
-| react / react-dom   | MIT              | UI runtime                                                               |
-| @supabase/*         | Apache-2.0       | Database and authentication client                                       |
-| stripe              | MIT              | Payments SDK                                                             |
-| openai              | Apache-2.0       | AI API client                                                            |
-| drizzle-orm / kit   | Apache-2.0 / MIT | Database ORM                                                             |
-| lucide-react        | ISC              | Icons                                                                    |
-| @tabler/icons-react | MIT              | Icons (calendar chevrons)                                                |
-| react-icons         | MIT              | Icons (Google/GitHub sign-in)                                            |
-| framer-motion       | MIT              | Animation                                                                |
-| jspdf               | MIT              | PDF export                                                               |
-| qrcode              | MIT              | QR generation                                                            |
-| @dicebear/core      | MIT              | Avatar SVG generation                                                    |
-| @dicebear/collection | MIT             | Avatar style definitions (see Avatar artwork below)                      |
-| @radix-ui/*         | MIT              | UI primitives                                                            |
-| @vercel/analytics   | MIT              | Cookieless analytics                                                     |
-| tailwindcss         | MIT              | Styling                                                                  |
-| postgres            | Unlicense        | Postgres driver                                                          |
-| axe-core            | MPL-2.0          | Dev-only accessibility testing; MPL grants do not attach to this service |
+| Package              | License          | Notes                                                                    |
+| -------------------- | ---------------- | ------------------------------------------------------------------------ |
+| next                 | MIT              | Framework                                                                |
+| react / react-dom    | MIT              | UI runtime                                                               |
+| @supabase/*          | Apache-2.0       | Database and authentication client                                       |
+| stripe               | MIT              | Payments SDK                                                             |
+| openai               | Apache-2.0       | AI API client                                                            |
+| drizzle-orm / kit    | Apache-2.0 / MIT | Database ORM                                                             |
+| lucide-react         | ISC              | Icons                                                                    |
+| @tabler/icons-react  | MIT              | Icons (calendar chevrons)                                                |
+| react-icons          | MIT              | Icons (Google/GitHub sign-in)                                            |
+| framer-motion        | MIT              | Animation                                                                |
+| jspdf                | MIT              | PDF export                                                               |
+| qrcode               | MIT              | QR generation                                                            |
+| @dicebear/core       | MIT              | Avatar SVG generation                                                    |
+| @dicebear/collection | MIT              | Avatar style definitions (see Avatar artwork below)                      |
+| @radix-ui/*          | MIT              | UI primitives                                                            |
+| @vercel/analytics    | MIT              | Cookieless analytics                                                     |
+| tailwindcss          | MIT              | Styling                                                                  |
+| postgres             | Unlicense        | Postgres driver                                                          |
+| axe-core             | MPL-2.0          | Dev-only accessibility testing; MPL grants do not attach to this service |
 
 A full machine-generated license inventory of every installed package
 (including transitive dependencies) can be regenerated at any time with a
