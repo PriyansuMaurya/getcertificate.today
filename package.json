@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test utils/watch-progress.test.ts utils/credentials.test.ts utils/plans.test.ts utils/assessment-config.test.ts utils/referrals.test.ts",
+    "test": "node --import tsx --test utils/watch-progress.test.ts utils/credentials.test.ts utils/plans.test.ts utils/assessment-config.test.ts utils/referrals.test.ts lib/rate-limit.test.ts",
     "test:referrals": "node --import tsx scripts/referral-lifecycle.ts",
     "test:referrals:local": "node --import tsx scripts/referral-lifecycle.ts --local",
     "test:referral:browser": "node scripts/test-referral-browser.mjs",
@@ -54,6 +54,7 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^20.17.8",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^18",
@@ -61,12 +62,12 @@
     "dotenv": "^16.4.5",
     "embedded-postgres": "^18.4.0-beta.17",
     "eslint": "^9.39.5",
-    "eslint-config-next": "^16.3.5",
+    "eslint-config-next": "^16.4.0",
     "playwright": "^1.63.0",
     "postcss": "^8",
     "prettier": "^3.2.0",
     "prettier-plugin-tailwindcss": "^0.5.0",
-    "tailwindcss": "^3.4.1",
+    "tailwindcss": "^4.3.3",
     "tsx": "^4.19.4",
     "typescript": "^5"
   }

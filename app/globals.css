@@ -1,6 +1,10 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind v4: CSS-first entrypoint. `@config` keeps the existing JS config
+   (tokens, fonts, keyframes, the tailwindcss-animate plugin) as the source of
+   truth, so the design tokens do not have to be re-declared in CSS. */
+@import 'tailwindcss';
+@config '../tailwind.config.ts';
+/* Class-based dark mode (was `darkMode: ['class']` in the v3 config). */
+@custom-variant dark (&:is(.dark *));
 
 @layer base {
   :root {
