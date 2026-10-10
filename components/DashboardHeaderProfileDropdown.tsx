@@ -44,7 +44,7 @@ export default async function DashboardHeaderProfileDropdown() {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-sandline bg-paper font-fraunces text-sm font-bold text-ink shadow-sm transition-colors hover:border-ink hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-sandline bg-paper font-fraunces text-sm font-bold text-ink shadow-xs transition-colors hover:border-ink hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
             aria-label="Open user menu"
           >
             {initial}
