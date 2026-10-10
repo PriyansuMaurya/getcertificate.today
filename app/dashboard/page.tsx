@@ -5,15 +5,8 @@ import { createClient } from '@/utils/supabase/server';
 import { db } from '@/utils/db/db';
 import { credentialsTable, learningItemsTable, usersTable } from '@/utils/db/schema';
 import AddLearningForm from '@/components/learning/AddLearningForm';
-import ReferralEarnCard from '@/components/referrals/ReferralEarnCard';
 import { canonicalYouTubeUrl } from '@/utils/youtube';
-import { paidTierOf, planLabel } from '@/utils/plans';
-import { getReferralPanelData, type ReferralPanelData } from '@/utils/referrals';
-import { getSettings } from '@/utils/settings';
-import { referralUrl } from '@/lib/referral-code';
 import { ArrowRight, BadgeCheck, BookOpen, Clock3, Play } from 'lucide-react';
-
-const PUBLIC_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || 'http://localhost:3000';
 
 export default async function Dashboard({
   searchParams,
@@ -65,8 +58,6 @@ export default async function Dashboard({
         first_name: usersTable.first_name,
         last_name: usersTable.last_name,
         username: usersTable.username,
-        plan: usersTable.plan,
-        referral_code: usersTable.referral_code,
       })
       .from(usersTable)
       .where(eq(usersTable.id, userId)),
@@ -105,30 +96,6 @@ export default async function Dashboard({
   ];
 
   const nextUp = items.find((i) => i.progress_percent < 100);
-
-  // Referral panel for free-tier users. getReferralPanelData computes the
-  // remaining allowance from the SAME quota model the mint path enforces (base
-  // free allowance + earned credits - certificates minted this month), so this
-  // surface can never drift from the certificate-limit system. Best-effort: a
-  // referral failure must never break the dashboard.
-  const isFreeTier = paidTierOf(profile?.plan) === null;
-  let referralPanel: ReferralPanelData | null = null;
-  if (isFreeTier && profile?.referral_code) {
-    try {
-      const { freeCredentialsPerMonth } = await getSettings();
-      referralPanel = await getReferralPanelData({
-        userId,
-        plan: profile.plan,
-        referralCode: profile.referral_code,
-        freeCredentialsPerMonth,
-      });
-    } catch (err) {
-      console.error(
-        '[referral] dashboard lookup failed:',
-        err instanceof Error ? err.message : 'unknown error'
-      );
-    }
-  }
 
   return (
     <main id="main-content" className="min-h-[calc(100dvh-80px)] bg-cream text-ink">
@@ -187,20 +154,6 @@ export default async function Dashboard({
             </div>
           ))}
         </section>
-
-        {referralPanel && (
-          <ReferralEarnCard
-            code={referralPanel.code}
-            url={referralUrl(referralPanel.code, PUBLIC_URL)}
-            verifiedCount={referralPanel.counts.verified}
-            credits={referralPanel.credits}
-            remaining={referralPanel.remaining}
-            monthlyLimit={referralPanel.monthlyLimit}
-            usedThisMonth={referralPanel.usedThisMonth}
-            planName={planLabel(profile?.plan)}
-            showViewAll
-          />
-        )}
 
         {/* Two columns from tablet portrait up; the asymmetric 60/40 split only
             returns at xl, where the 280px sidebar leaves enough width for it.

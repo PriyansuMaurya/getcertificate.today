@@ -59,15 +59,15 @@ export default function CopyReferralLink({ code, url }: { code: string; url: str
         <span className="font-mono text-sm font-bold tracking-widest text-ink">{code}</span>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <input
-          type="text"
-          readOnly
-          value={url}
-          aria-label="Your referral link"
-          onFocus={(e) => e.currentTarget.select()}
-          className="h-11 min-w-0 flex-1 rounded-lg border border-sandline bg-paper px-3.5 font-mono text-sm text-ink focus:border-ink focus:outline-none focus:ring-1 focus:ring-ink"
-        />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        {/* Read-only text rather than an <input>: a native input never wraps, so
+            on narrow phones the link was clipped inside the field. select-all
+            keeps one click or tap enough to grab the whole link by hand. */}
+        <p className="flex min-h-11 min-w-0 select-all items-center rounded-lg border border-sandline bg-paper px-3.5 py-2 font-mono text-sm leading-relaxed text-ink sm:flex-1">
+          {/* Naming the field for screen readers: a <p> cannot take aria-label. */}
+          <span className="sr-only">Your referral link</span>
+          <span className="min-w-0 break-all">{url}</span>
+        </p>
         <div className="flex shrink-0 gap-3">
           <button
             type="button"

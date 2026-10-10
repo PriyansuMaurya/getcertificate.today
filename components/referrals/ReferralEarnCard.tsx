@@ -71,7 +71,9 @@ export default function ReferralEarnCard({
       {/* Accent rail keeps the panel obvious without a full-colour surface. */}
       <div className="border-l-4 border-terracotta p-5 sm:p-8">
         <div className="flex items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-terracotta/10 text-terracotta">
+          {/* Decorative icon tile dropped on phones - it crowds the heading
+              once the panel falls back to p-5 padding. */}
+          <span className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-terracotta/10 text-terracotta sm:flex">
             <Gift aria-hidden="true" className="h-5 w-5" />
           </span>
           <div className="min-w-0">
