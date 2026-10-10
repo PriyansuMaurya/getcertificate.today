@@ -14,6 +14,7 @@ import {
   Settings,
   BadgeCheck,
   BookOpen,
+  Gift,
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
@@ -44,7 +45,7 @@ export default async function DashboardHeaderProfileDropdown() {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-sandline bg-paper font-fraunces text-sm font-bold text-ink shadow-xs transition-colors hover:border-ink hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
+            className="shadow-xs flex h-10 w-10 items-center justify-center rounded-full border border-sandline bg-paper font-fraunces text-sm font-bold text-ink transition-colors hover:border-ink hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
             aria-label="Open user menu"
           >
             {initial}
@@ -88,6 +89,18 @@ export default async function DashboardHeaderProfileDropdown() {
             >
               <BadgeCheck className="mr-2.5 h-4 w-4 text-clay" />
               <span>Certificates</span>
+            </Link>
+          </DropdownMenuItem>
+
+          {/* Mirrors the sidebar (DashboardNavLinks): Referrals sits between
+              Certificates and Settings in both menus. */}
+          <DropdownMenuItem asChild className="cursor-pointer">
+            <Link
+              href="/dashboard/referrals"
+              className="rounded-lg px-2.5 py-2 text-sm font-medium text-ink"
+            >
+              <Gift className="mr-2.5 h-4 w-4 text-clay" />
+              <span>Referrals</span>
             </Link>
           </DropdownMenuItem>
 
