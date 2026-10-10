@@ -27,14 +27,18 @@ export function normalizeReferralCode(raw: unknown): string | null {
 }
 
 /**
- * Generate one code from REFERRAL_ALPHABET. Deliberately not a secret: referral
- * codes are shared publicly, so unpredictability is not a security property
- * here. Uniqueness is enforced by the caller's probe + the DB unique constraint.
+ * Generate one code from REFERRAL_ALPHABET using the platform CSPRNG.
+ * Uniqueness is enforced by the caller's probe + the DB unique constraint.
  */
 export function generateReferralCode(): string {
+  // Use the CSPRNG (a global in both Node 18+ and browsers) rather than
+  // Math.random, so codes cannot be predicted or enumerated. This keeps the
+  // module free of server-only imports (see the file header).
+  const bytes = new Uint32Array(REFERRAL_CODE_LENGTH);
+  globalThis.crypto.getRandomValues(bytes);
   let code = '';
   for (let i = 0; i < REFERRAL_CODE_LENGTH; i++) {
-    code += REFERRAL_ALPHABET[Math.floor(Math.random() * REFERRAL_ALPHABET.length)];
+    code += REFERRAL_ALPHABET[bytes[i]! % REFERRAL_ALPHABET.length];
   }
   return code;
 }

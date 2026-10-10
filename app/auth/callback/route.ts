@@ -10,6 +10,8 @@ import { bootstrapOAuthUser } from '@/app/auth/user-bootstrap';
 import { settleReferralOnVerifiedEmail } from '@/utils/referrals';
 import { ONBOARDING_PENDING_COOKIE, onboardingPendingCookie } from '@/lib/onboarding-cookie';
 
+const PUBLIC_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || 'http://localhost:3000';
+
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
@@ -73,7 +75,6 @@ export async function GET(request: Request) {
       }
 
       const forwardedHost = request.headers.get('x-forwarded-host'); // original origin before load balancer
-      const isLocalEnv = process.env.NODE_ENV === 'development';
       const completed = await hasCompletedOnboarding(user!.id);
       let destination = next;
       if (next === '/') {
@@ -83,11 +84,28 @@ export async function GET(request: Request) {
       // Flag unfinished sessions BEFORE they land on /onboarding so the
       // middleware exempts them from the homepage -> dashboard auto-jump
       // (otherwise every exit from the form loops back into it).
-      const url = isLocalEnv
-        ? `${origin}${destination}`
-        : forwardedHost
-          ? `https://${forwardedHost}${destination}`
-          : `${origin}${destination}`;
+      //
+      // Redirect target: X-Forwarded-Host is trusted only when it matches the
+      // configured public host; otherwise the configured site origin (or the
+      // request origin as a last resort) is used. Without this, a spoofed
+      // forwarded host could bounce a freshly authenticated user off-site.
+      const configuredSite = (() => {
+        try {
+          return new URL(PUBLIC_URL);
+        } catch {
+          return null;
+        }
+      })();
+      const trustedForwardedHost =
+        forwardedHost && configuredSite && forwardedHost === configuredSite.host
+          ? forwardedHost
+          : null;
+      const base = trustedForwardedHost
+        ? `https://${trustedForwardedHost}`
+        : configuredSite
+          ? configuredSite.origin
+          : origin;
+      const url = `${base}${destination}`;
       const response = NextResponse.redirect(url);
       if (completed) {
         response.cookies.delete(ONBOARDING_PENDING_COOKIE);

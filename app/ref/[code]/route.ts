@@ -4,6 +4,7 @@ import { db } from '@/utils/db/db';
 import { usersTable } from '@/utils/db/schema';
 import { normalizeReferralCode } from '@/lib/referral-code';
 import { REFERRAL_COOKIE, referralCookie } from '@/lib/referral-cookie';
+import { checkRateLimit, clientKeyFromHeaders } from '@/lib/rate-limit';
 
 // Public referral entry point: /ref/ABC123.
 //
@@ -18,6 +19,14 @@ import { REFERRAL_COOKIE, referralCookie } from '@/lib/referral-cookie';
 export async function GET(request: Request, { params }: { params: Promise<{ code: string }> }) {
   const { code: rawCode } = await params;
   const code = normalizeReferralCode(rawCode);
+
+  // Abuse brake on a public, unauthenticated DB-lookup endpoint: over the
+  // limit we still redirect to /signup, just without setting an attribution
+  // cookie - consistent with the never-reveal behaviour below.
+  const ip = clientKeyFromHeaders((name) => request.headers.get(name));
+  if (!checkRateLimit(`ref:${ip}`, 120, 60_000).allowed) {
+    return NextResponse.redirect(new URL('/signup', request.url));
+  }
 
   let valid = false;
   if (code) {

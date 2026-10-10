@@ -28,6 +28,7 @@ import {
 import { getSettings } from '@/utils/settings';
 import { monthlyCertificateLimit, planLabel } from '@/utils/plans';
 import { SUSPENDED_MESSAGE, isAccountSuspended } from '@/utils/auth';
+import { checkRateLimit } from '@/lib/rate-limit';
 import {
   AIUnavailableError,
   AIRateLimitError,
@@ -148,6 +149,19 @@ export async function startAssessment(
     .where(eq(assessmentsTable.learning_item_id, itemId));
   if (existing.length > 0) {
     redirect(`/learn/${itemId}/assessment`);
+  }
+
+  // Cost brake: only actual generation (below) calls the paid upstream
+  // services (LLM + transcript), so the budget is charged here - after the
+  // reuse-an-existing-assessment redirect - and revisiting an already-built
+  // assessment costs nothing.
+  const startLimit = checkRateLimit(`assess-start:${user.id}`, 20, 60 * 60 * 1000);
+  if (!startLimit.allowed) {
+    return {
+      message: `You have started many courses recently. Please try again in about ${Math.ceil(
+        startLimit.retryAfterSeconds / 60
+      )} minutes.`,
+    };
   }
 
   const title = displayTitle(item.title, item.youtube_id);

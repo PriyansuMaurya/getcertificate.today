@@ -1,5 +1,5 @@
 'use server';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
@@ -13,6 +13,7 @@ import { usersTable } from '@/utils/db/schema';
 import { and, eq, ne } from 'drizzle-orm';
 import { hasVerifiedEmail, normalizeReferralCode } from '@/lib/referral-code';
 import { REFERRAL_COOKIE } from '@/lib/referral-cookie';
+import { checkRateLimit, clientKeyFromHeaders } from '@/lib/rate-limit';
 import {
   generateUniqueReferralCode,
   recordReferralForNewUser,
@@ -21,6 +22,12 @@ import {
 } from '@/utils/referrals';
 
 const PUBLIC_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || 'http://localhost:3000';
+
+/** Best-effort client identifier for the in-memory rate limiter (lib/rate-limit). */
+async function clientIp(): Promise<string> {
+  const h = await headers();
+  return clientKeyFromHeaders((name) => h.get(name));
+}
 
 export async function completeOnboarding(currentState: { message: string }, formData: FormData) {
   const supabase = await createClient();
@@ -263,6 +270,12 @@ export async function checkUsernameAvailability(raw: string): Promise<UsernameAv
     return { status: 'invalid' };
   }
 
+  // Abuse brake: this endpoint is public by design (see doc comment); the
+  // bucket is generous enough that normal debounced typing never trips it.
+  if (!checkRateLimit(`username-availability:${await clientIp()}`, 120, 60_000).allowed) {
+    return { status: 'error' };
+  }
+
   try {
     const supabase = await createClient();
     const {
@@ -305,6 +318,11 @@ function calculateAge(dob: string): number | null {
 
 export async function resetPassword(currentState: { message: string }, formData: FormData) {
   const supabase = await createClient();
+
+  if (!checkRateLimit(`reset-password:${await clientIp()}`, 20, 15 * 60 * 1000).allowed) {
+    return { message: 'Too many attempts. Please try again in a few minutes.' };
+  }
+
   const password = formData.get('password');
   const confirmPassword = formData.get('confirm_password');
   const code = formData.get('code');
@@ -357,6 +375,11 @@ export async function forgotPassword(currentState: { message: string }, formData
     return { message: 'Please enter a valid email address.' };
   }
   const email = rawEmail.trim();
+
+  if (!checkRateLimit(`forgot-password:${await clientIp()}`, 10, 15 * 60 * 1000).allowed) {
+    return { message: 'Too many reset requests. Please try again in a few minutes.' };
+  }
+
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${PUBLIC_URL}/forgot-password/reset`,
   });
@@ -369,6 +392,10 @@ export async function forgotPassword(currentState: { message: string }, formData
 
 export async function signup(currentState: { message: string }, formData: FormData) {
   const supabase = await createClient();
+
+  if (!checkRateLimit(`signup:${await clientIp()}`, 10, 60 * 60 * 1000).allowed) {
+    return { message: 'Too many sign-up attempts. Please try again later.' };
+  }
 
   const rawEmail = formData.get('email');
   const rawPassword = formData.get('password');
@@ -469,6 +496,19 @@ export async function loginUser(currentState: { message: string }, formData: For
   };
   if (!data.email || data.email.length > 254) {
     return { message: 'Please enter a valid email address.' };
+  }
+
+  // Rate limit both the source and the account: one IP cannot spray many
+  // accounts, and many IPs cannot hammer one account. Limits are deliberately
+  // loose so a legitimate retry never trips them. (The per-email bucket means
+  // a flood of failures can briefly lock one address out; the per-IP bucket,
+  // being separate, still lets that user retry from elsewhere.)
+  const signInIp = await clientIp();
+  if (!checkRateLimit(`login-ip:${signInIp}`, 30, 15 * 60 * 1000).allowed) {
+    return { message: 'Too many sign-in attempts. Please try again in a few minutes.' };
+  }
+  if (!checkRateLimit(`login-email:${data.email.toLowerCase()}`, 10, 15 * 60 * 1000).allowed) {
+    return { message: 'Too many sign-in attempts. Please try again in a few minutes.' };
   }
 
   const { data: signInData, error } = await supabase.auth.signInWithPassword(data);

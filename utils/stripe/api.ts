@@ -69,9 +69,16 @@ export async function createStripeCustomer(id: string, email: string, name?: str
 }
 
 export async function generateStripeBillingPortalLink(email: string) {
-  const user = await db.select().from(usersTable).where(eq(usersTable.email, email));
+  const rows = await db.select().from(usersTable).where(eq(usersTable.email, email));
+  const account = rows[0];
+  if (!account) {
+    // No account row means there is nothing to bill; fail with a clear message
+    // instead of throwing on an undefined row (callers treat this as "no
+    // billing portal available yet").
+    throw new Error('Cannot create a billing portal link: no account for this email.');
+  }
   const portalSession = await stripe.billingPortal.sessions.create({
-    customer: user[0].stripe_id,
+    customer: account.stripe_id,
     return_url: `${PUBLIC_URL}/dashboard`,
   });
   return portalSession.url;
