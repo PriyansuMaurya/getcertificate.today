@@ -152,6 +152,15 @@ export type PricingPlan = {
  * The three tiers shown on the landing page and /subscribe. Prices are in
  * euros. Pro yearly is €49.99/year vs €9.99/month (€119.88 for 12 months),
  * i.e. a 58% saving, and includes unlimited certificates.
+ *
+ * Amounts must stay short enough for the pricing cards' amount row, which holds
+ * `formatEuro(...)` and the period label on one `whitespace-nowrap` line so the
+ * period toggle cannot change a card's height (LandingPricingCards /
+ * SubscribePricingCards both do this). A longer amount or period wording spills
+ * rather than wrapping, tightest at the lg band (~1024px), where three cards, a
+ * 48px amount and the card padding compete for the row - and that band only has
+ * room because the cards step their padding back there (landing lg:p-8 xl:p-12,
+ * subscribe lg:p-6 xl:p-8). Re-check ~1024 if any of those change.
  */
 export const PRICING_PLANS: readonly PricingPlan[] = [
   {

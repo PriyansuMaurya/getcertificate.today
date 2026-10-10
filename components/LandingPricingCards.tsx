@@ -25,7 +25,11 @@ export default function LandingPricingCards() {
         <PricingBillingToggle value={period} onChange={setPeriod} />
       </Reveal>
 
-      <div className="flex flex-col items-center gap-6 md:gap-8 lg:flex-row lg:items-start lg:justify-center">
+      {/* `w-full` matters: without it this row is a fit-content flex item (its
+          parent centres its children), so each card's `w-full max-w-[...]`
+          resolved against a fit-content box and the cards silently resized
+          whenever the yearly badge changed their content width. */}
+      <div className="flex w-full flex-col items-center gap-6 md:gap-8 lg:flex-row lg:items-start lg:justify-center">
         {PRICING_PLANS.map((plan, index) => {
           const price = activeCheckout(plan, period);
           const features = [plan.quota[period], ...plan.features];
@@ -36,7 +40,15 @@ export default function LandingPricingCards() {
               key={plan.id}
               delay={index * 0.08}
               className={[
-                'lift-card flex w-full flex-col gap-8 rounded-2xl p-6 sm:p-8 md:p-12',
+                // `min-w-0` drops the flex min-content floor, so when the row is
+                // tight (lg-xl) the shrink is shared by width rather than by the
+                // longest card, which is what made the widths depend on the
+                // yearly badge and jump on toggle.
+                // Padding steps back to p-8 in the lg band: that is the one range
+                // where three cards, the 48px amount and 48px of padding cannot
+                // all fit (the row is ~64px short at 1024), and the amount is not
+                // allowed to wrap - see the price block below.
+                'lift-card flex w-full min-w-0 flex-col gap-8 rounded-2xl p-6 sm:p-8 md:p-12 lg:p-8 xl:p-12',
                 plan.popular
                   ? 'max-w-[420px] bg-ink shadow-figma-pro'
                   : 'max-w-[400px] border border-sandline bg-cream',
@@ -68,8 +80,16 @@ export default function LandingPricingCards() {
                 </p>
               </div>
 
+              {/* The amount line never wraps, and the strip under it is reserved
+                  in all three cards. The yearly saving badge and the "Billed
+                  monthly" note share that strip, so neither can push one card's
+                  feature list and CTA out of line with the other two.
+                  The card classes deliberately carry no min-content floor, so this
+                  row cannot be allowed to grow - see the invariant above
+                  PRICING_PLANS in utils/plans.ts before changing an amount or the
+                  period wording. */}
               <div className="flex flex-col gap-2">
-                <div className="flex flex-wrap items-baseline gap-x-1 gap-y-2">
+                <div className="flex items-baseline gap-x-1 whitespace-nowrap">
                   <span
                     className={[
                       'font-fraunces text-[48px] font-black leading-[1.233]',
@@ -86,6 +106,11 @@ export default function LandingPricingCards() {
                   >
                     {price?.period === 'year' ? '/ year' : '/ month'}
                   </span>
+                </div>
+                {/* Reserved height: 11px badge text × leading 1.366 + py-1 (8px)
+                    ≈ 23px, so the strip holds the badge and the plain note at
+                    the same height. Keep this if either changes. */}
+                <div className="flex min-h-[23px] items-center">
                   {price?.savingsPercent ? (
                     <span
                       className={[
@@ -95,18 +120,17 @@ export default function LandingPricingCards() {
                     >
                       Save {price.savingsPercent}%
                     </span>
+                  ) : monthlyOnly ? (
+                    <span
+                      className={[
+                        'text-[11px] leading-[1.366]',
+                        plan.popular ? 'text-sand' : 'text-clay',
+                      ].join(' ')}
+                    >
+                      Billed monthly
+                    </span>
                   ) : null}
                 </div>
-                {monthlyOnly && (
-                  <p
-                    className={[
-                      'text-[11px] leading-[1.366]',
-                      plan.popular ? 'text-sand' : 'text-clay',
-                    ].join(' ')}
-                  >
-                    Billed monthly
-                  </p>
-                )}
               </div>
 
               <ul className="flex flex-col gap-4">

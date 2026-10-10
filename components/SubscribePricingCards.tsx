@@ -31,7 +31,11 @@ export default function SubscribePricingCards({
     <div className="flex flex-col items-center gap-8">
       <PricingBillingToggle value={period} onChange={setPeriod} />
 
-      <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-3 md:items-start">
+      {/* Three across from lg, matching the landing grid: at md the columns are
+          ~224px wide, which cannot hold the 48px amount line once it is not
+          allowed to wrap (it is kept on one line so the period toggle cannot
+          change a card's height - see the price block below). */}
+      <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-3 lg:items-start">
         {PRICING_PLANS.map((plan) => {
           const price = activeCheckout(plan, period);
           const features = [plan.quota[period], ...plan.features];
@@ -44,7 +48,13 @@ export default function SubscribePricingCards({
             <div
               key={plan.id}
               className={[
-                'flex flex-col rounded-2xl border bg-paper p-6 transition-shadow sm:p-8',
+                // `min-w-0` keeps the three grid tracks equal instead of letting a
+                // card's longest bit of content (the yearly badge) widen its own
+                // column when the period changes.
+                // The lg band is the tight one for the same reason as the landing
+                // cards: three cards, a 48px amount and 48px of padding compete for
+                // the row, so the padding steps back there and returns at xl.
+                'flex min-w-0 flex-col rounded-2xl border bg-paper p-6 transition-shadow sm:p-8 lg:p-6 xl:p-8',
                 plan.popular
                   ? 'border-ink shadow-figma-pro'
                   : 'border-sandline shadow-figma-hero hover:shadow-figma-pro',
@@ -59,20 +69,29 @@ export default function SubscribePricingCards({
                     </span>
                   )}
                 </div>
-                <div className="flex flex-wrap items-baseline gap-x-1 gap-y-2">
+                {/* Same structure as the landing cards: the amount line never
+                    wraps and the badge/note strip below is reserved, so the
+                    yearly saving badge and the "Billed monthly" note do not
+                    shift the rows under them. */}
+                <div className="flex items-baseline gap-x-1 whitespace-nowrap">
                   <span className="font-fraunces text-[48px] font-black leading-none text-ink">
                     {formatEuro(price?.amount ?? 0)}
                   </span>
                   <span className="text-sm leading-[1.366] text-clay">
                     {price?.period === 'year' ? 'per year' : 'per month'}
                   </span>
+                </div>
+                {/* Reserved height matching the landing cards (11px text ×
+                    leading 1.366 + py-1 ≈ 23px) so both pricing surfaces agree. */}
+                <div className="flex min-h-[23px] items-center">
                   {price?.savingsPercent ? (
                     <span className="rounded-full bg-linen px-2.5 py-1 text-[11px] font-bold leading-[1.366] text-clay">
                       Save {price.savingsPercent}%
                     </span>
+                  ) : monthlyOnly ? (
+                    <span className="text-[11px] leading-[1.366] text-clay">Billed monthly</span>
                   ) : null}
                 </div>
-                {monthlyOnly && <p className="text-[11px] text-clay">Billed monthly</p>}
 
                 {plan.id === 'free' ? (
                   subscribed ? (
