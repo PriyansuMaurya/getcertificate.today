@@ -54,7 +54,9 @@ export default function CopyReferralLink({ code, url }: { code: string; url: str
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-2 self-start rounded-full border border-sandline bg-cream px-4 py-2">
+      {/* Paper rather than cream: the pill sits on the cream share panel, so the
+          fill has to differ from it for the code to read as a chip. */}
+      <div className="flex items-center gap-2 self-start rounded-full border border-sandline bg-paper px-4 py-2">
         <span className="text-xs font-bold uppercase tracking-wider text-clay">Your code</span>
         <span className="font-mono text-sm font-bold tracking-widest text-ink">{code}</span>
       </div>
@@ -68,26 +70,30 @@ export default function CopyReferralLink({ code, url }: { code: string; url: str
           <span className="sr-only">Your referral link</span>
           <span className="min-w-0 break-all">{url}</span>
         </p>
+        {/* Icon-only squares (44px, matching the field height). With no visible
+            label the accessible name has to come from aria-label, and the copied
+            / shared state is announced by the live region below rather than by the
+            label, so the names stay stable. */}
         <div className="flex shrink-0 gap-3">
           <button
             type="button"
             onClick={handleCopy}
-            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-ink px-5 text-sm font-bold text-cream transition-colors hover:bg-ink/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper sm:flex-none"
+            aria-label="Copy referral link"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-ink text-cream transition-colors hover:bg-ink/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
           >
             {copied ? (
-              <Check aria-hidden="true" className="h-4 w-4" />
+              <Check aria-hidden="true" className="h-5 w-5" />
             ) : (
-              <Copy aria-hidden="true" className="h-4 w-4" />
+              <Copy aria-hidden="true" className="h-5 w-5" />
             )}
-            {copied ? 'Copied' : 'Copy link'}
           </button>
           <button
             type="button"
             onClick={handleShare}
-            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-lg border-[1.5px] border-ink px-5 text-sm font-bold text-ink transition-colors hover:bg-ink/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper sm:flex-none"
+            aria-label="Share referral link"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-lg border-[1.5px] border-ink text-ink transition-colors hover:bg-ink/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-paper"
           >
-            <Share2 aria-hidden="true" className="h-4 w-4" />
-            Share
+            <Share2 aria-hidden="true" className="h-5 w-5" />
           </button>
         </div>
       </div>
