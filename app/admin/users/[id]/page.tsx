@@ -5,6 +5,7 @@ import { ArrowLeft, BadgeCheck, ClipboardCheck, Video } from 'lucide-react';
 import { requireAdmin } from '../../require-admin';
 import { getAdminUserDetail } from '../users-data';
 import UserActions from '@/components/admin/UserActions';
+import Avatar from '@/components/Avatar';
 
 export const metadata: Metadata = {
   title: 'User details',
@@ -49,9 +50,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
 
       <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-start gap-4">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-linen font-fraunces text-xl font-bold text-ink">
-            {user.displayName.charAt(0).toUpperCase()}
-          </span>
+          <Avatar seed={user.id} className="h-14 w-14 rounded-xl" />
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="font-fraunces text-2xl font-black text-ink sm:text-3xl">

@@ -5,6 +5,7 @@ import { requireAdmin } from '../require-admin';
 import { getAdminUsers, parseUserSort, type AdminUserSort } from './users-data';
 import UserActions from '@/components/admin/UserActions';
 import AdminNotice from '@/components/admin/AdminNotice';
+import Avatar from '@/components/Avatar';
 
 export const metadata: Metadata = {
   title: 'Users',
@@ -175,17 +176,22 @@ export default async function AdminUsersPage({
                       className="border-b border-sandline last:border-b-0 hover:bg-linen/60"
                     >
                       <td className="px-3 py-3">
-                        <Link
-                          href={`/admin/users/${u.id}`}
-                          className="font-semibold text-ink underline-offset-4 hover:underline"
-                        >
-                          {u.displayName}
-                        </Link>
-                        {u.isAdmin && (
-                          <span className="ml-2 rounded-full border border-sandline bg-linen px-2 py-0.5 text-[11px] font-bold text-clay">
-                            Admin
-                          </span>
-                        )}
+                        <div className="flex items-center gap-2.5">
+                          <Avatar seed={u.id} className="h-8 w-8 rounded-full" />
+                          <div className="min-w-0">
+                            <Link
+                              href={`/admin/users/${u.id}`}
+                              className="font-semibold text-ink underline-offset-4 hover:underline"
+                            >
+                              {u.displayName}
+                            </Link>
+                            {u.isAdmin && (
+                              <span className="ml-2 rounded-full border border-sandline bg-linen px-2 py-0.5 text-[11px] font-bold text-clay">
+                                Admin
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </td>
                       <td className="max-w-[220px] truncate px-3 py-3 text-clay">{u.email}</td>
                       <td className="whitespace-nowrap px-3 py-3 text-clay">
@@ -231,15 +237,18 @@ export default async function AdminUsersPage({
               {rows.map((u) => (
                 <li key={u.id} className="flex flex-col gap-3 p-4">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <Link
-                        href={`/admin/users/${u.id}`}
-                        className="block truncate text-sm font-semibold text-ink underline-offset-4 hover:underline"
-                      >
-                        {u.displayName}
-                      </Link>
-                      <p className="truncate text-xs text-clay">{u.email}</p>
-                      <p className="mt-0.5 text-xs text-clay">Joined {fmtDate(u.joinedAt)}</p>
+                    <div className="flex min-w-0 items-start gap-3">
+                      <Avatar seed={u.id} className="h-10 w-10 rounded-lg" />
+                      <div className="min-w-0">
+                        <Link
+                          href={`/admin/users/${u.id}`}
+                          className="block truncate text-sm font-semibold text-ink underline-offset-4 hover:underline"
+                        >
+                          {u.displayName}
+                        </Link>
+                        <p className="truncate text-xs text-clay">{u.email}</p>
+                        <p className="mt-0.5 text-xs text-clay">Joined {fmtDate(u.joinedAt)}</p>
+                      </div>
                     </div>
                     <span
                       className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${

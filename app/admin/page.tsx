@@ -14,6 +14,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { requireAdmin } from './require-admin';
 import { ACTIVE_WINDOW_DAYS, getAdminOverview } from './overview-data';
+import Avatar from '@/components/Avatar';
 
 export const metadata: Metadata = {
   title: 'Overview',
@@ -133,9 +134,7 @@ export default async function AdminOverviewPage() {
               {recentUsers.map((u) => (
                 <li key={u.id} className="rounded-xl bg-cream p-4">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-linen font-fraunces text-sm font-bold text-ink">
-                      {u.displayName.charAt(0).toUpperCase()}
-                    </span>
+                    <Avatar seed={u.id} className="h-9 w-9 rounded-lg" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-ink">{u.displayName}</p>
                       <p className="truncate text-xs text-clay">

@@ -17,6 +17,7 @@ import {
   Gift,
 } from 'lucide-react';
 import Link from 'next/link';
+import Avatar from '@/components/Avatar';
 import { createClient } from '@/utils/supabase/server';
 import { logout } from '@/app/auth/actions';
 import { generateStripeBillingPortalLink } from '@/utils/stripe/api';
@@ -37,18 +38,18 @@ export default async function DashboardHeaderProfileDropdown() {
     }
   }
 
-  const initial = user?.email ? user.email.charAt(0).toUpperCase() : 'U';
-
   return (
     <div className="flex items-center">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="shadow-xs flex h-10 w-10 items-center justify-center rounded-full border border-sandline bg-paper font-fraunces text-sm font-bold text-ink transition-colors hover:border-ink hover:bg-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
+            className="shadow-xs flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-sandline bg-paper transition-colors hover:border-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
             aria-label="Open user menu"
           >
-            {initial}
+            {/* Seeded from the account id so the same person gets the same
+                avatar on every surface. */}
+            <Avatar seed={user?.id ?? 'unknown'} className="h-full w-full" priority />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
