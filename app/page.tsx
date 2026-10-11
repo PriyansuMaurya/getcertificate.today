@@ -437,8 +437,8 @@ export default function LandingPage() {
       {/* ============ Footer (Figma: bg #F5F0EB, pad 80/80, gap 48; divider row border-t) ============ */}
       <footer className="bg-paper">
         <div className="mx-auto flex max-w-[1440px] flex-col gap-10 px-4 py-16 sm:px-6 md:gap-12 md:py-20 xl:px-20">
-          <div className="flex flex-col gap-10 md:gap-12 lg:flex-row lg:justify-between">
-            <div className="flex w-full max-w-[300px] flex-col gap-4">
+          <div className="flex flex-col gap-10 md:gap-12 lg:flex-row lg:items-start lg:justify-between lg:gap-16">
+            <div className="flex w-full max-w-[320px] flex-col gap-4">
               <Image
                 src="/figma/logo-no-tagline.svg"
                 alt="getcertificate.today logo"
@@ -452,7 +452,10 @@ export default function LandingPage() {
                 Go Further.
               </p>
             </div>
-            <div className="flex flex-wrap gap-x-12 gap-y-8 sm:gap-x-16 md:gap-x-20">
+            {/* Grid, not a wrapping flex row: the three groups keep an even
+                rhythm at every width instead of breaking 3 -> 2 -> 1 and
+                drifting to the left edge. */}
+            <div className="grid min-w-0 grid-cols-2 gap-x-8 gap-y-8 sm:grid-cols-3 sm:gap-x-12 lg:gap-x-16">
               {FOOTER_COLUMNS.map((col) => (
                 <div key={col.title} className="flex flex-col gap-4">
                   <p className="text-sm font-bold leading-[1.366] text-ink">{col.title}</p>
@@ -460,7 +463,7 @@ export default function LandingPage() {
                     <Link
                       key={link.label}
                       href={link.href}
-                      className="-my-1 py-1 text-[13px] leading-[1.366] text-clay transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta focus-visible:ring-offset-2 focus-visible:ring-offset-paper active:text-ink"
+                      className="-my-2 py-2 text-[13px] leading-[1.366] text-clay transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta focus-visible:ring-offset-2 focus-visible:ring-offset-paper active:text-ink"
                     >
                       {link.label}
                     </Link>
@@ -469,11 +472,11 @@ export default function LandingPage() {
               ))}
             </div>
           </div>
-          <div className="flex flex-col gap-3 border-t border-sandline pt-6 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
+          <div className="flex flex-col gap-3 border-t border-sandline pt-6 text-center md:flex-row md:items-center md:justify-between md:gap-x-6 md:text-left">
             <p className="text-[13px] leading-[1.366] text-clay">
               © 2026 getcertificate.today. All rights reserved.
             </p>
-            <p className="text-[13px] leading-[1.366] text-clay">
+            <p className="text-[13px] leading-[1.366] text-clay md:text-right">
               Every certificate comes with its own public verification link.
             </p>
           </div>
