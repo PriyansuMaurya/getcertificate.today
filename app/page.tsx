@@ -212,8 +212,8 @@ export default function LandingPage() {
             proof row, then the certificate stage - the centre card with four
             smaller copies fanned behind it. Motion is a single staggered load
             sequence (see globals.css), and the headline carries one drawn
-            flourish: a video mark and a certificate seal joined by travelling
-            arcs (HeroLearningFlow). */}
+            flourish: a video mark and a certificate joined by a line that draws
+            itself between them (HeroLearningFlow). */}
         <section className="relative overflow-hidden bg-cream">
           {/* min-height reserves 25rem of the viewport for the navbar (4.75rem)
               plus the head of the certificate stage below the fold, so the copy
@@ -238,10 +238,9 @@ export default function LandingPage() {
                 column width rather than the headline's text width - otherwise the
                 marks would land on the type. `hero-settle` stays on the h1 so the
                 stagger order is unchanged, and the h1 is lifted above the arcs.
-                The layer renders after the h1 on purpose: its flanking half is
-                absolute and cannot disturb the flow, but its compact half is an
-                ordinary row and has to sit under the headline on phones rather
-                than above it. */}
+                The layer renders after the h1 on purpose: it is absolute and
+                cannot disturb the flow from there, and the headline has to be in
+                the document for the layer to be measured against it. */}
             <div className="relative mt-7 w-full">
               {/* Manrope ExtraBold, not the Fraunces used everywhere else: the
                   hero reads as a modern sans statement, which also leaves the
