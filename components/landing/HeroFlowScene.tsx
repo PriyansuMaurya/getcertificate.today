@@ -5,29 +5,52 @@ import { animate, motion, useMotionValue, useReducedMotion, useTransform } from 
 import { useEffect, useState } from 'react';
 
 /**
- * The desktop half of the hero's flow (see HeroLearningFlow.tsx): the two ends of
- * the idea, shown as the things they stand for - a YouTube mark on the left, a
- * certificate on the right - joined by a journey that draws itself between them.
+ * The hero's flow: the two ends of the idea, drawn as the things they stand for -
+ * a YouTube mark and a certificate - with the headline held between them and one
+ * line travelling from the first to the second.
  *
- * Neither end is drawn here any more. The video end is the YouTube logo as CSS,
- * taken from a supplied stylesheet and scaled to this mark's box (`.yt-logo` in
- * globals.css); the certificate end is a supplied render, shipped as a
- * transparent WebP and placed with `object-contain` so a 3:2 artwork can sit in
- * the square box its stencil used. Both replace stencils - a frame with a
- * triangle in it, and a stitched medal - which at 48px survived as shapes but not
- * as meanings, the conclusion the compact row had already reached at 32px. The
- * composition is otherwise untouched: the one line takes the pair of lanes' place,
- * and the positions, the one remaining halo and the same six sparkles all stay, so
- * the headline is still the centre of the idea.
+ * One composition at every width, rather than a flanking scene above `xl` and a
+ * separate row below it. What differs by width is only what has to: the line's
+ * own path, the weight of its stroke, and the size and position of the marks.
+ * The marks, the milestones, the particles, the sparkles and the timeline are one
+ * drawing, and this file owns all of it; `HeroLearningFlow.tsx` owns the layer it
+ * is drawn into.
+ *
+ * The two regimes, and why there are two paths rather than one scaled one:
+ *
+ * - From `xl`, the layer reaches into the page margin either side of the headline
+ *   (see the insets in HeroLearningFlow.tsx), the marks flank the type, and the
+ *   layer is roughly seven times wider than it is tall.
+ * - Below `xl`, there is no page margin to reach into: the layer cancels the
+ *   hero's own horizontal padding, so the marks sit at the page's own edge - and
+ *   at the column's edge once the page is wider than the container's 1180px cap.
+ *   They take the corners the centred lines leave free - the video mark on the
+ *   left at 40% of the layer, the certificate on the right at 80% - and the layer
+ *   is under two times wider than it is tall.
+ *
+ * The SVG scales with `preserveAspectRatio="none"`, so a path drawn in the same
+ * viewBox reads at whatever height the layer has. That is what lets the desktop
+ * path and the narrow path both stay inside one 1200x200 box: under a non-uniform
+ * scale the endpoints' *fractions* are exactly preserved, so a path whose ends sit
+ * at the marks' own fractions ends at the marks at every width. The curve between
+ * them is not preserved - a swoop traced for a 6:1 box would arrive at a phone as
+ * a steep dive - which is the whole reason the narrow regime gets its own cubic,
+ * traced between its own two endpoints.
+ *
+ * Neither end is drawn here. The video end is the YouTube logo as CSS, taken from
+ * a supplied stylesheet and scaled to this mark's box (`.yt-logo` in globals.css);
+ * the certificate end is a supplied render, shipped as a transparent WebP and
+ * placed with `object-contain` so a 3:2 artwork can sit in the square box its
+ * stencil used.
  *
  * Motion carries the entrance and CSS carries the ambients, which is a division
- * rather than a mixture. The ambient cycles already exist in globals.css, already
- * honour `prefers-reduced-motion`, and are already reused by the compact row -
- * so every floated, dashed, sparkling or breathing element below keeps its class
- * and this file does not restate any of them. What is new is a timeline: a mark,
- * a draw, five milestones and a certificate that have to happen in an order. A
- * stylesheet cannot express that without a set of coordinated delays and no way
- * to keep them honest, which is exactly what Motion is for.
+ * rather than a mixture. The ambient cycles - the two floats, the halo, the
+ * sparkles, and the line's own weight - already exist in globals.css, already
+ * honour `prefers-reduced-motion`, and already step with the layer, so this file
+ * does not restate any of them. What is new is a timeline: a mark, a draw, five
+ * milestones and a certificate that have to happen in an order. A stylesheet
+ * cannot express that without a set of coordinated delays and no way to keep them
+ * honest, which is exactly what Motion is for.
  *
  * The sequence: the mark arrives, the line draws left to right, a milestone lights
  * as the draw reaches it, and - only once the line has joined it - the certificate
@@ -45,18 +68,19 @@ import { useEffect, useState } from 'react';
  * a `clip-path` on the block wrapping the SVG rather than anything on the path
  * itself, which is why the line is never rotated, scaled or translated - it is only
  * ever revealed.
- *
- * The scene mounts only at the breakpoint its layer is shown at. Its parent is
- * `hidden` below `xl`, and a `display:none` subtree still runs Motion's rAF loop -
- * without the gate, a phone would animate five milestones, four particles, two
- * marks and a clip it cannot see, for as long as the page is open.
  */
 
 /**
- * Tailwind's `xl`, and the same breakpoint the layer in HeroLearningFlow.tsx
- * switches on. These two are a pair: change one and the other has to follow, or
- * this mounts into a `display:none` parent (wasting the loop the gate exists to
- * save) or the layer renders with no scene in it.
+ * Tailwind's `xl`, and the same breakpoint the layer's own insets step at in
+ * HeroLearningFlow.tsx. These two are a pair: change one and the other has to
+ * follow, or the layer reaches into the page margin while the drawing still uses
+ * the narrow path (or the reverse) - a line that stops short of both marks.
+ *
+ * It is also what keeps one geometry set mounted instead of two. Each set carries
+ * five milestone arrivals, and the wide one carries four infinite particle rises on
+ * top of that, and a `display:none` subtree still runs Motion's rAF loop, so
+ * rendering both and hiding one by breakpoint would animate the set nobody can see
+ * for as long as the page is open.
  */
 const WIDE = '(min-width: 1280px)';
 
@@ -94,40 +118,66 @@ const REVEAL = 0.95;
 const EASE: [number, number, number, number] = [0.23, 1, 0.32, 1];
 
 /**
- * The connection: a single line from the video mark's middle (x=24 of 1200) to the
- * certificate's. It dips well below its start, because a shallow arc across a
- * 1200-unit layer flattens into a straight line once it is scaled, and it ends at
- * 1176, which is where the certificate's middle lands in these units - the mark
- * overhangs the layer's right edge, so its centre ends up just inside it. The line
- * has to *join* the mark it is about, and an end that stopped short would leave the
- * reveal it triggers looking unconnected to it.
+ * The connection, twice: one line for the wide layer and one for the narrow one.
+ * Both are a single line from the video mark's middle to the certificate's,
+ * because a connection between two things is one line - and a single line can
+ * carry the weight a pair of lanes would have had to share.
  *
- * One line rather than the two lanes this layer used to draw. The pair of them
- * read as two separate journeys between the same two marks, and the fainter one
- * looked like a stray artefact beside the first rather than part of it: a
- * connection between two things is one line, and a single line can carry the
- * weight the pair had to share.
+ * `TRAIL_WIDE` is the original: the mark's middle sits at x=24 of 1200, the
+ * certificate's at 1176, and the line dips well below its start because a shallow
+ * arc across a 1200-unit layer flattens into a straight line once it is scaled.
+ * At `xl` the layer is 1252 units wide and 173 tall, so those two endpoints are
+ * fractions of 2%/24% and 98%/82% - and the marks are placed to the same two
+ * fractions, which is what makes the line join them rather than stop near them.
+ *
+ * `TRAIL_NARROW` is the same idea traced for the layer below `xl`, where the marks
+ * are at different fractions of a much taller box: the video mark's middle at 3%
+ * across and 40% down, the certificate's at 96% and 80%. Its dip is shallower in
+ * viewBox units than the wide path's on purpose - the narrow layer is much closer
+ * to square, so a 116-unit dip would arrive as a dive across the type instead of
+ * as a swoop behind it.
+ *
+ * The `y` fractions are exact at every narrow width, because both marks are
+ * centred on them with a half-height offset. The `x` ones are not exact: a mark's
+ * centre sits half its own pixel width in from the layer's edge, and that is a
+ * different fraction at 390 than at 1279 - 16px of 390, 24px of 1180. So the ends
+ * are placed to land *inside* the marks, which is what joining two things at every
+ * width takes, and the wide pair, whose layer is only ever rendered near one size,
+ * still lands on their exact centres.
  */
-const TRAIL = 'M 24 48 C 320 168 660 108 1176 164';
+const TRAIL_WIDE = 'M 24 48 C 320 168 660 108 1176 164';
+const TRAIL_NARROW = 'M 36 80 C 330 168 700 92 1152 160';
 
 /**
- * Five points on the line, as percentages of the layer with the fraction of the
- * reveal that reaches each. The points are traced from the cubic itself - `TRAIL`
- * at t = 0.10, 0.28, 0.48, 0.68 and 0.88, computed rather than eyeballed, because
- * a milestone that lights a little before or after the edge arrives reads as unlit
- * rather than as unlit-yet. Re-trace them if `TRAIL` ever moves; nothing here can
- * tell you that it did.
+ * Five points on each line, as percentages of the layer with the fraction of the
+ * reveal that reaches each. The points are traced from the cubic itself - at
+ * t = 0.10, 0.28, 0.48, 0.68 and 0.88, computed rather than eyeballed, because a
+ * milestone that lights a little before or after the edge arrives reads as unlit
+ * rather than as unlit-yet. `at` is each point's own `left`, and that is not a
+ * coincidence: the draw's edge crosses the layer linearly in `x`, so a point's
+ * share of the width *is* the share of the reveal that has reached it.
+ *
+ * Re-trace these if a trail ever moves; nothing here can tell you that it did.
  */
-const MILESTONES = [
-  { key: 'm1', left: '9.5%', top: '39.4%', at: 0.095 },
-  { key: 'm2', left: '23.8%', top: '56.5%', at: 0.238 },
-  { key: 'm3', left: '41.3%', top: '64.6%', at: 0.413 },
-  { key: 'm4', left: '60.9%', top: '68.1%', at: 0.609 },
-  { key: 'm5', left: '83.1%', top: '74.2%', at: 0.831 },
+const MILESTONES_WIDE = [
+  { key: 'w1', left: '9.5%', top: '39.4%', at: 0.095 },
+  { key: 'w2', left: '23.8%', top: '56.5%', at: 0.238 },
+  { key: 'w3', left: '41.3%', top: '64.6%', at: 0.413 },
+  { key: 'w4', left: '60.9%', top: '68.1%', at: 0.609 },
+  { key: 'w5', left: '83.1%', top: '74.2%', at: 0.831 },
 ];
 
-/** The same trail at t = 0.17, 0.33, 0.52 and 0.74, for the particles' slow rise
- * off it. */
+const MILESTONES_NARROW = [
+  { key: 'n1', left: '10.5%', top: '50.9%', at: 0.105 },
+  { key: 'n2', left: '25.1%', top: '61.1%', at: 0.251 },
+  { key: 'n3', left: '42.7%', top: '63.7%', at: 0.427 },
+  { key: 'n4', left: '61.9%', top: '64.4%', at: 0.619 },
+  { key: 'n5', left: '82.7%', top: '70.6%', at: 0.827 },
+];
+
+/** The wide trail at t = 0.17, 0.33, 0.52 and 0.74, for the particles' slow rise off
+ * it. Only the wide layer has a set: see the particle render below for why the
+ * narrow one has none. */
 const PARTICLES = [
   { key: 'p1', left: '15%', top: '47.5%' },
   { key: 'p2', left: '28%', top: '59.3%' },
@@ -137,18 +187,39 @@ const PARTICLES = [
 
 /** The reference's six sparkles, unmoved: the `✦` the hero badge uses, placed in
  * the bands the headline leaves free rather than on a glyph. They keep the
- * `hero-flow-sparkle` cycle, so their offsets are fractions of 3.6s. */
+ * `hero-flow-sparkle` cycle, so their offsets are fractions of 3.6s, and they step
+ * down a size on a phone, where the same 13px mark would be nearly a quarter of
+ * the line's length. */
 const SPARKLES = [
-  { key: 'l-1', place: 'left-[1%] top-[7%]', size: 'text-[13px]', delay: '-0.4s' },
-  { key: 'l-2', place: 'left-[2.5%] bottom-[18%]', size: 'text-[10px]', delay: '-2.1s' },
-  { key: 'm-1', place: 'left-[38%] top-[2%]', size: 'text-[9px]', delay: '-1.2s' },
-  { key: 'm-2', place: 'left-[58%] bottom-[1%]', size: 'text-[11px]', delay: '-2.8s' },
-  { key: 'r-1', place: 'right-[1%] top-[12%]', size: 'text-[12px]', delay: '-1.6s' },
-  { key: 'r-2', place: 'right-[3%] bottom-[26%]', size: 'text-[8px]', delay: '-3.3s' },
+  { key: 'l-1', place: 'left-[1%] top-[7%]', size: 'text-[11px] xl:text-[13px]', delay: '-0.4s' },
+  {
+    key: 'l-2',
+    place: 'left-[2.5%] bottom-[18%]',
+    size: 'text-[9px] xl:text-[10px]',
+    delay: '-2.1s',
+  },
+  { key: 'm-1', place: 'left-[38%] top-[2%]', size: 'text-[8px] xl:text-[9px]', delay: '-1.2s' },
+  {
+    key: 'm-2',
+    place: 'left-[58%] bottom-[1%]',
+    size: 'text-[10px] xl:text-[11px]',
+    delay: '-2.8s',
+  },
+  { key: 'r-1', place: 'right-[1%] top-[12%]', size: 'text-[10px] xl:text-[12px]', delay: '-1.6s' },
+  {
+    key: 'r-2',
+    place: 'right-[3%] bottom-[26%]',
+    size: 'text-[7px] xl:text-[8px]',
+    delay: '-3.3s',
+  },
 ];
 
 export default function HeroFlowScene() {
   const reduce = useReducedMotion();
+  // Which geometry set is mounted, not whether the scene renders at all: both
+  // regimes draw at every width, and this only picks which path and which traced
+  // points go with the layer's current shape. The first render is always `false`,
+  // so the server HTML and the first client render agree.
   const [wide, setWide] = useState(false);
   // The reveal's clock, as a number rather than as an animation between two
   // `clip-path` strings. A string value only animates if Motion's complex-string
@@ -163,9 +234,6 @@ export default function HeroFlowScene() {
   // a frame ever stopped a tenth of a percent short.
   const clipPath = useTransform(revealed, (p) => (p >= 100 ? 'none' : `inset(0 ${100 - p}% 0 0)`));
 
-  // Mounted rather than merely hidden, so a phone does not run any of this. The
-  // query is read inside the effect and the first render is always `false`, so
-  // the server HTML and the first client render agree.
   useEffect(() => {
     const mql = window.matchMedia(WIDE);
     const sync = () => setWide(mql.matches);
@@ -174,17 +242,24 @@ export default function HeroFlowScene() {
     return () => mql.removeEventListener('change', sync);
   }, []);
 
-  // The draw itself. Guarded on `wide` as well as `reduce`, so the clock starts
-  // when the scene mounts instead of running to completion behind a
-  // `display:none` parent and being over before anyone could see it.
+  // The draw itself. `wide` is a dependency rather than a value read inside, and
+  // that is the point: crossing the breakpoint swaps the path's `d` and every
+  // milestone's `key`, so the new drawing has to be drawn rather than found
+  // already complete. On the first desktop paint it also means this runs twice -
+  // the media query resolves one render after mount - and the second run restarts
+  // a draw that had barely a millisecond on it, which is what the reset below is
+  // for.
+  //
+  // What does not restart is the certificate: its reveal is a mount-only
+  // `initial`, so after a flip the line redraws under a sheet that is already in
+  // place. The arrive-then-reveal order therefore holds on the first pass only,
+  // which is the right trade - the reveal is the entrance, not something to replay
+  // because a window was dragged across 1280.
   useEffect(() => {
-    if (!wide || reduce) {
-      revealed.set(reduce ? 100 : 0);
+    if (reduce) {
+      revealed.set(100);
       return;
     }
-    // Set back to the start as well as animated from it, for the one case this
-    // effect re-runs on: the viewport came back across the breakpoint, the scene
-    // remounted, and the draw should begin again rather than appear finished.
     revealed.set(0);
     const controls = animate(revealed, 100, {
       duration: DRAW,
@@ -192,16 +267,25 @@ export default function HeroFlowScene() {
       ease: 'linear',
     });
     return () => controls.stop();
-  }, [wide, reduce, revealed]);
+  }, [reduce, revealed, wide]);
 
-  if (!wide) return null;
+  const trail = wide ? TRAIL_WIDE : TRAIL_NARROW;
+  const milestones = wide ? MILESTONES_WIDE : MILESTONES_NARROW;
 
   return (
     <>
-      {/* Soft light behind the video mark. The certificate end has none: the
-          artwork carries its own, and a glow can only be aimed once the artwork
-          says where its seal sits. */}
-      <span className="hero-flow-halo absolute -left-4 top-[3%] h-20 w-20 rounded-full bg-[radial-gradient(closest-side,rgba(198,140,86,0.4),rgba(198,140,86,0))] opacity-50 blur-[12px]" />
+      {/* Soft light behind the video mark, sized and placed to the mark it sits
+          under: the negative margin is half the halo's own height and the
+          negative offset is what puts its centre over the mark's, so at every
+          narrow width the two are concentric - 44px over a 32px mark on a phone,
+          64px over 48px at `md`, 80px over 48px from `xl`, which is the size it
+          has always been there. The base pair is deliberately not the desktop
+          ratio: a 56px halo on a 32px mark would have run a further 4px past the
+          layer's edge, and the glow is the one thing here that is clipped rather
+          than hidden. The certificate end has none: the artwork carries its own,
+          and a glow can only be aimed once the artwork says where its seal
+          sits. */}
+      <span className="hero-flow-halo absolute -left-1.5 top-[40%] -mt-[1.375rem] h-11 w-11 rounded-full bg-[radial-gradient(closest-side,rgba(198,140,86,0.4),rgba(198,140,86,0))] opacity-50 blur-[12px] md:-left-2 md:-mt-8 md:h-16 md:w-16 xl:-left-4 xl:top-[3%] xl:mt-0 xl:h-20 xl:w-20" />
       {/* The line itself, and the draw that puts it there.
 
           The line is solid, and a solid path has no "drawn" state to interpolate
@@ -236,21 +320,30 @@ export default function HeroFlowScene() {
               <stop offset="1" stopColor="#B0722C" />
             </linearGradient>
           </defs>
-          {/* One stroke, deliberately heavier than either lane it replaces: it is now
-              the only thing saying "these two are connected", and at the weight a
-              lane carried a single line reads as a hairline rule rather than as a
-              link. The gradient is the long lane's, crisped rather than replaced: a
-              flat 1.0 alpha over a deepened ramp, #9E6C3E/#AB7443/#B0722C, which
-              measures about 1.9-2.0:1 against the cream where the translucent ramp it
-              started as sat nearer 1.2-1.6:1. The stroke therefore holds one weight of
-              colour along its whole length instead of fading through its middle, and
-              what still shifts across it is saturation rather than brightness -
-              #B0722C at the certificate end is the most saturated - so it warms
-              toward the certificate without the alpha doing any of that work. */}
+          {/* One stroke, and its weight comes from `.hero-flow-line` rather than
+              from this attribute: at 2.5px the line reads as a drawn connection
+              against the wide layer, and the same 2.5px against a 390px-wide one
+              reads as a bar laid across the composition. The attribute repeats the
+              path's own base - 2.5 for the wide layer, 1.6 for the narrow one - as
+              the fallback for an engine that never applies the stylesheet; the CSS
+              steps it to 1.8px at `md`, 2px at `lg` and 2.5px at `xl`. Either way
+              it stays under the certificate's own mark and over the milestones',
+              so the two ends still outweigh the connection between them.
+
+              The gradient is the long lane's, crisped rather than replaced: a flat
+              1.0 alpha over a deepened ramp, #9E6C3E/#AB7443/#B0722C, which
+              measures about 1.9-2.0:1 against the cream where the translucent ramp
+              it started as sat nearer 1.2-1.6:1. The stroke therefore holds one
+              weight of colour along its whole length instead of fading through its
+              middle, and what still shifts across it is saturation rather than
+              brightness - #B0722C at the certificate end is the most saturated - so
+              it warms toward the certificate without the alpha doing any of that
+              work. */}
           <path
-            d={TRAIL}
+            d={trail}
+            className="hero-flow-line"
             stroke="url(#heroFlowStroke)"
-            strokeWidth="4"
+            strokeWidth={wide ? '2.5' : '1.6'}
             strokeLinecap="round"
             vectorEffect="non-scaling-stroke"
           />
@@ -265,11 +358,16 @@ export default function HeroFlowScene() {
           Each keeps a slow breath after it lights, nested inside the one-shot
           span rather than folded into it: a single animation cannot both arrive
           once and repeat forever, and re-running the arrival every cycle would
-          read as the journey restarting. */}
-      {MILESTONES.map((m) => (
+          read as the journey restarting. The breath itself is `xl` and up, and the
+          reason is the size rather than the machinery: on a phone the trail runs
+          behind the headline, so these read as a lit seam in the type's leading
+          rather than as marks with room to breathe around them, and five endless
+          Motion loops for a 5px dot nobody can see is the same trade the particle
+          set is dropped under. */}
+      {milestones.map((m) => (
         <motion.span
           key={m.key}
-          className="absolute block h-5 w-5"
+          className="absolute block h-4 w-4 xl:h-5 xl:w-5"
           style={{ left: m.left, top: m.top, x: '-50%', y: '-50%' }}
           initial={reduce ? false : { opacity: 0, scale: 0.35 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -279,23 +377,30 @@ export default function HeroFlowScene() {
             ease: EASE,
           }}
         >
-          {!reduce && (
+          {!reduce && wide && (
             <motion.span
               className="absolute inset-0 rounded-full bg-[radial-gradient(closest-side,rgba(194,128,63,0.5),rgba(194,128,63,0))] blur-[5px]"
               animate={{ opacity: [0.7, 1, 0.7], scale: [0.92, 1.08, 0.92] }}
               transition={{ duration: 6.5, repeat: Infinity, ease: 'easeInOut', delay: 1.1 }}
             />
           )}
-          <span className="absolute left-1/2 top-1/2 h-[7px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#C2803F] bg-cream" />
+          <span className="absolute left-1/2 top-1/2 h-[5px] w-[5px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#C2803F] bg-cream md:h-[6px] md:w-[6px] xl:h-[7px] xl:w-[7px]" />
         </motion.span>
       ))}
 
       {/* Particles: the dust the journey kicks up, not a second journey. Four
           small rises off the trail, spaced along it and staggered so they are
           never all in the air together, and dropped entirely under reduced
-          motion - like the compact row's packet, a particle carries no meaning on
-          its own. */}
+          motion - a particle carries no meaning on its own.
+
+          Dropped below `xl` as well, and for the size rather than only for the
+          cost: at 4px, behind a headline whose glyphs cover most of the trail,
+          they are not visible enough to be worth four endless Motion loops on the
+          device least able to spend them. The narrow layer keeps the line, the two
+          marks, their arrival and the milestones - everything that states the
+          connection. */}
       {!reduce &&
+        wide &&
         PARTICLES.map((p, i) => (
           <motion.span
             key={p.key}
@@ -314,15 +419,25 @@ export default function HeroFlowScene() {
           />
         ))}
 
-      {/* The video half. Three nested spans, each with one job: the outer one is
-          the layer's existing float, the middle one is the arrival, and the inner
-          one is the ambient turn. They have to be separate elements because each
-          animates `transform` and an element has only one - stacked, the float,
-          the arrival and the turn compose instead of overwriting each other.
+      {/* The video half. A positioner, then three nested spans with one job each:
+          the positioner puts the mark where the line begins, the outer span owns
+          the layer's existing float, the middle one owns the arrival, and the
+          inner one owns the ambient turn. They have to be separate elements
+          because each animates `transform` and an element has only one - stacked,
+          the float, the arrival and the turn compose instead of overwriting each
+          other.
 
-          The logo is centred in its box rather than stretched to fill it: the
-          mark is 60:36 in a square box, and the box's size is what the layer's
-          geometry is written against, so the slack belongs to the box.
+          The positioner is what lets one set of marks serve both regimes: below
+          `xl` it centres the mark on the 40% the narrow trail's first endpoint
+          also uses, from `xl` it holds it at the wide layer's own 10% with no
+          offset. Its size is what `--yt-w` in globals.css follows - the logo sets
+          its own width there, so the box only centres it.
+
+          32px on a phone rather than 36, and that is the one number here chosen by
+          measurement rather than by eye: at 390 the headline's first line reaches
+          to 34.8px from the layer's edge, so a 36px mark flush to that edge would
+          sit 1.2px over the type. 32 leaves 2.8px, and at that size the four
+          pixels are invisible.
 
           The turn moves nothing on `y`: `.hero-flow-float-a` is the only owner of
           the mark's vertical travel, and the two of them would beat against each
@@ -334,30 +449,32 @@ export default function HeroFlowScene() {
           The turn is what is deliberately small - seven degrees of yaw and five
           of pitch over nine seconds - because a mark at this size reads as
           wobbling rather than floating if it goes further. */}
-      <span className="hero-flow-float-a absolute left-0 top-[10%] h-12 w-12 2xl:h-14 2xl:w-14">
-        <motion.span
-          className="block h-full w-full"
-          initial={reduce ? false : { opacity: 0, scale: 0.84 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: reduce ? 0 : 0.7, delay: reduce ? 0 : MARK_DELAY, ease: EASE }}
-        >
+      <span className="absolute left-0 top-[40%] -translate-y-1/2 xl:top-[10%] xl:translate-y-0">
+        <span className="hero-flow-float-a block h-8 w-8 md:h-12 md:w-12 2xl:h-14 2xl:w-14">
           <motion.span
-            className="flex h-full w-full items-center justify-center drop-shadow-[0_5px_10px_rgba(107,96,89,0.22)]"
-            style={{ transformPerspective: 900 }}
-            animate={
-              reduce
-                ? { rotateZ: -7 }
-                : {
-                    rotateZ: [-7, -5.2, -7],
-                    rotateY: [0, 7, 0],
-                    rotateX: [0, -5, 0],
-                  }
-            }
-            transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+            className="block h-full w-full"
+            initial={reduce ? false : { opacity: 0, scale: 0.84 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: reduce ? 0 : 0.7, delay: reduce ? 0 : MARK_DELAY, ease: EASE }}
           >
-            <span className="yt-logo" />
+            <motion.span
+              className="flex h-full w-full items-center justify-center drop-shadow-[0_5px_10px_rgba(107,96,89,0.22)]"
+              style={{ transformPerspective: 900 }}
+              animate={
+                reduce
+                  ? { rotateZ: -7 }
+                  : {
+                      rotateZ: [-7, -5.2, -7],
+                      rotateY: [0, 7, 0],
+                      rotateX: [0, -5, 0],
+                    }
+              }
+              transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <span className="yt-logo" />
+            </motion.span>
           </motion.span>
-        </motion.span>
+        </span>
       </span>
 
       {/* The verified half, and the one element in this scene that is artwork
@@ -365,10 +482,20 @@ export default function HeroFlowScene() {
 
           Its footprint is the pair it replaces rather than either one of them: an
           80px halo and a 48px stencil were one region of the layer, so the
-          artwork takes a single 80px box anchored where the glow was. The box
-          steps with the rest of the layer at `2xl`. `object-contain` because the
-          render is 3:2 inside a square box - the slack is the box's, exactly as
-          it is for the logo on the other side.
+          artwork takes a single box anchored where the glow was, and the box steps
+          with the layer - 52px on a phone, 64px at `md`, 80px from `xl`. The
+          positioner centres it on the 80% the narrow trail's last endpoint uses;
+          from `xl` it returns to the authored corner (-1rem, -0.5rem) with no
+          offset. `object-contain` because the render is 3:2 inside a square box -
+          the slack is the box's, exactly as it is for the logo on the other side.
+
+          The narrow box is also the one place where a mark shares a band with the
+          type: at 320 the headline's fourth line reaches 4.4px past the sheet's
+          left edge. Whether that is a collision is decided by the ink rather than
+          by the inline box - the box overlaps the artwork by 9px, the ink stops
+          0.9px above it - and that gap belongs to the copy rather than to the
+          layout: a descender on that line would close it, the same way the 32px
+          mark on the other side is sized to the 34.8px line at 390.
 
           The arrival is a 3D reveal, and the whole of it is one transform on one
           element: the sheet starts turned away from the page - yawed, pitched
@@ -397,44 +524,46 @@ export default function HeroFlowScene() {
           filter is the one honest caveat - a silhouette shadow on a
           perspective-animated element can be re-rasterised as the raster scale
           changes, so the blur is not literally free; at this size that is a
-          handful of repaints on an 80px box, which is why the depth is worth it.
+          handful of repaints on a small box, which is why the depth is worth it.
 
-          No `y` travel anywhere in here: the wrapper's float owns that axis, and
-          a second owner would beat against it. */}
-      <span
-        className="hero-flow-float-b absolute -bottom-2 -right-4 h-20 w-20 2xl:h-24 2xl:w-24"
-        style={{ animationDelay: '-1.2s' }}
-      >
-        <motion.span
-          className="block h-full w-full"
-          style={{ transformPerspective: 900 }}
-          initial={
-            reduce
-              ? false
-              : { opacity: 0, z: -160, scale: 0.94, rotateX: 14, rotateY: -24, rotateZ: 10 }
-          }
-          animate={{ opacity: 1, z: 0, scale: 1, rotateX: 0, rotateY: 0, rotateZ: 0 }}
-          transition={{
-            duration: reduce ? 0 : REVEAL,
-            delay: reduce ? 0 : CERT_DELAY,
-            ease: EASE,
-            // One curve for every value, opacity included, and that is a decision
-            // rather than a default: the sheet is then exactly as opaque as it is
-            // far along its turn, so it materialises with the approach instead of
-            // before or after it. A flatter or later opacity curve - the obvious
-            // "improvement" - leaves a half-transparent card already sitting in
-            // place, which reads as a fade-in on the spot.
-          }}
+          No `y` travel anywhere in here: the positioner's offset and the
+          wrapper's float own that axis, and a second owner would beat against it. */}
+      <span className="absolute right-0 top-[80%] -translate-y-1/2 xl:bottom-[-0.5rem] xl:right-[-1rem] xl:top-auto xl:translate-y-0">
+        <span
+          className="hero-flow-float-b block h-[3.25rem] w-[3.25rem] md:h-16 md:w-16 xl:h-20 xl:w-20 2xl:h-24 2xl:w-24"
+          style={{ animationDelay: '-1.2s' }}
         >
-          <Image
-            src="/figma/certificate-gold.webp"
-            alt=""
-            width={768}
-            height={512}
-            sizes="(min-width: 1536px) 96px, 80px"
-            className="hero-flow-cert-shadow h-full w-full object-contain"
-          />
-        </motion.span>
+          <motion.span
+            className="block h-full w-full"
+            style={{ transformPerspective: 900 }}
+            initial={
+              reduce
+                ? false
+                : { opacity: 0, z: -160, scale: 0.94, rotateX: 14, rotateY: -24, rotateZ: 10 }
+            }
+            animate={{ opacity: 1, z: 0, scale: 1, rotateX: 0, rotateY: 0, rotateZ: 0 }}
+            transition={{
+              duration: reduce ? 0 : REVEAL,
+              delay: reduce ? 0 : CERT_DELAY,
+              ease: EASE,
+              // One curve for every value, opacity included, and that is a decision
+              // rather than a default: the sheet is then exactly as opaque as it is
+              // far along its turn, so it materialises with the approach instead of
+              // before or after it. A flatter or later opacity curve - the obvious
+              // "improvement" - leaves a half-transparent card already sitting in
+              // place, which reads as a fade-in on the spot.
+            }}
+          >
+            <Image
+              src="/figma/certificate-gold.webp"
+              alt=""
+              width={768}
+              height={512}
+              sizes="(min-width: 1536px) 96px, (min-width: 1280px) 80px, (min-width: 768px) 64px, 52px"
+              className="hero-flow-cert-shadow h-full w-full object-contain"
+            />
+          </motion.span>
+        </span>
       </span>
 
       {SPARKLES.map(({ key, place, size, delay }) => (

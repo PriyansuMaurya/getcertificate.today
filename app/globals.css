@@ -353,31 +353,22 @@
 }
 
 /* Landing hero: the flow around the headline - a video mark and a certificate
-   joined by a journey, drawn twice because the room differs (HeroLearningFlow.tsx
-   owns the layout and which treatment renders where; HeroFlowScene.tsx owns the
-   desktop drawing). Ambient rather than interactive either way: nothing here
-   answers the pointer, because the certificate stage below owns the hero's one
-   bold moment and this sits behind the type as its echo.
+   joined by a journey, drawn once and placed at every width (HeroLearningFlow.tsx
+   owns the layer and its insets; HeroFlowScene.tsx owns the drawing and its
+   timeline). Ambient rather than interactive: nothing here answers the pointer,
+   because the certificate stage below owns the hero's one bold moment and this
+   sits behind the type as its echo.
 
-   This block owns the ambient half and only the ambient half. The desktop
-   treatment's entrance - the mark arriving, the journey drawing left to right,   a milestone lighting as the edge reaches it and the certificate turning to
-   face the page - is a timeline rather than a set of cycles, so it lives in that
-   component, driven by Motion. What stays here is what both treatments share and
-   what never has to be scheduled: floats, the compact row's travelling dashes,
-   halos and sparkles.
-
-   The compact row carries three cycles the desktop treatment has no room for,
-   because at its size the two marks are the whole idea and the certificate stage
-   is a scroll away: a packet travelling the trail, a progress bar on the tile
-   that fills and restarts, and a stamp on the seal. All three are transform or
-   opacity except the packet's `stroke-dashoffset`, which joins the dashes as this
-   block's only non-composited work - a repaint on sub-3px paths, accepted because
-   it is what makes the flow travel from the video to the seal rather than merely
-   sit between them.
+   This block owns the ambient half and only the ambient half. The entrance - the
+   mark arriving, the journey drawing left to right, a milestone lighting as the
+   edge reaches it and the certificate turning to face the page - is a timeline
+   rather than a set of cycles, so it lives in that component, driven by Motion.
+   What stays here is what never has to be scheduled: the two floats, the halo,
+   the sparkles, and the line's weight, which steps with the layer rather than
+   being one number at every size.
 
    The global prefers-reduced-motion rule above collapses every cycle here to a
-   single frame; the packet is dropped outright, since the dashes still describe
-   the path without it. */
+   single frame. */
 @keyframes hero-flow-float {
   0%,
   100% {
@@ -385,35 +376,6 @@
   }
   50% {
     transform: translate3d(0, 3px, 0);
-  }
-}
-
-@keyframes hero-flow-float-sm {
-  0%,
-  100% {
-    transform: translate3d(0, -1.5px, 0);
-  }
-  50% {
-    transform: translate3d(0, 1.5px, 0);
-  }
-}
-
-/* Only the compact row's trail is dashed, and its path is drawn from the video
-   mark to the seal, so its dashes travel left to right - the direction the whole
-   flow reads in. Its offset is a whole number of dash periods (5+7 = 12 x 15), so
-   the loop has no seam and the path needs no keyframe of its own.
-
-   The desktop pair's line is solid for the same reason it is one line: a
-   connection between two marks is one link, and dashes would restate the path
-   instead of the connection. It is revealed by the scene's own clip rather than by
-   an offset here, so nothing in this block drives it.
-
-   The compact row's packet is the one exception, and has its own keyframe below
-   purely because its gap is sized to the path instead of to a clean shared
-   period. */
-@keyframes hero-flow-dash {
-  to {
-    stroke-dashoffset: -180;
   }
 }
 
@@ -441,7 +403,7 @@
   }
 }
 
-/* The two desktop marks float on separate cycles so they never rise together;
+/* The two marks float on separate cycles so they never rise together;
    the component's -1.2s offset is picked against each cycle rather than shared
    with the other. Neither mark adds vertical travel of its own - the video
    mark's turn and the certificate's 3D reveal both move on other axes - so this
@@ -453,26 +415,48 @@
   animation: hero-flow-float 9.5s cubic-bezier(0.77, 0, 0.175, 1) infinite;
 }
 
-/* The compact row's glyphs are half the size, so the flanking marks' 3px would
-   read as a bounce rather than a float at 24px. They keep their own cycle too, so
-   the row's float offset (-3.4s on its seal) is a fraction of this 8.5s rather
-   than of the flanking pair's. Its sparkles are not floats and run on
-   `.hero-flow-sparkle` instead, which is why their -1.4s / -2.6s offsets are
-   fractions of that class's 3.6s rather than of this 8.5s. */
-.hero-flow-float-sm {
-  animation: hero-flow-float-sm 8.5s cubic-bezier(0.77, 0, 0.175, 1) infinite;
-}
-.hero-flow-dash-a {
-  animation: hero-flow-dash 9s linear infinite;
-}
-
 /* 3.6s: slow enough that a sparkle reads as breathing rather than blinking, and
-   slow enough that the eight of them, all out of phase, never pulse together. */
+   slow enough that the six of them, all out of phase, never pulse together. */
 .hero-flow-sparkle {
   animation: hero-flow-sparkle 3.6s cubic-bezier(0.77, 0, 0.175, 1) infinite;
 }
 .hero-flow-halo {
   animation: hero-flow-halo 6.5s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+}
+
+/* The flow's line, and the one property in this block that has to step rather
+   than be stated once: its weight is a length in pixels, and the layer it is
+   drawn into is 360px wide on a phone and 1252px from `xl`. Held at the 2.5px the
+   wide layer wants, the same stroke reads as a bar laid across the composition at
+   the narrow end; held at the narrow 1.6px, it disappears at the wide one. So it
+   steps where the layer's own insets step - the same 768/1024/1280 rungs the
+   marks and their boxes do - and stays under the certificate's mark and over the
+   milestones' dots at every one of them.
+
+   These override the `stroke-width` attribute on the path, which is there as the
+   fallback for an engine that never applies the stylesheet.
+   `vector-effect="non-scaling-stroke"` in the component is what makes a px value
+   here mean a host pixel rather than a unit of the viewBox. */
+.hero-flow-line {
+  stroke-width: 1.6px;
+}
+
+@media (min-width: 768px) {
+  .hero-flow-line {
+    stroke-width: 1.8px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero-flow-line {
+    stroke-width: 2px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .hero-flow-line {
+    stroke-width: 2.5px;
+  }
 }
 
 /* The desktop flow's video mark: the YouTube logo, drawn in CSS from the supplied
@@ -484,8 +468,8 @@
    variable, `--yt-w` - the logo's width - so the mark can be sized to the box it
    actually sits in. `--yt-u` is therefore a single "unit" of the original, a
    sixtieth of the logo's width, and every number below is the source's own number
-   multiplied by it. `--yt-w` steps where the mark's box steps: 3rem below `2xl`,
-   3.5rem above it.
+   multiplied by it. `--yt-w` steps where the mark's box steps: 2rem on a phone,
+   3rem from `md`, 3.5rem from `2xl`.
 
    One deliberate departure: the source's `:before` carried `z-index: -1`, which
    only paints the bulge behind the rounded rectangle it tucks under while the
@@ -495,7 +479,7 @@
    either way, and the part that hangs below the box - the part that gives the logo
    its shape - reads exactly as the source intended. */
 .yt-logo {
-  --yt-w: 3rem;
+  --yt-w: 2rem;
   --yt-u: calc(var(--yt-w) / 60);
   position: relative;
   display: block;
@@ -524,6 +508,12 @@
   border-color: transparent transparent transparent #fff;
   bottom: calc(10 * var(--yt-u));
   left: calc(24.5 * var(--yt-u));
+}
+
+@media (min-width: 768px) {
+  .yt-logo {
+    --yt-w: 3rem;
+  }
 }
 
 @media (min-width: 1536px) {
@@ -560,122 +550,6 @@
 .hero-flow-cert-shadow {
   filter: drop-shadow(0 3px 4px rgba(74, 56, 36, 0.3))
     drop-shadow(0 12px 20px rgba(74, 56, 36, 0.16));
-}
-
-/* The compact row's packet: one bright dash riding the same path as its dashed
-   trail, so the row still states which way the learning travels at a width where
-   the trail is only 112px long. It cannot borrow the shared -180 offset the way
-   the row's own trail does: a period small enough for -180 to divide evenly would put
-   several packets on the path at once, and a period sized to the path would have
-   to have its unit guessed, because a non-uniformly scaled path with
-   `vector-effect` leaves it ambiguous whether dashes are measured before or
-   after that scale.
-
-   Hence the one lap below, and the path's own `pathLength="100"` in the
-   component: the offset is a share of the path, not a distance, so one packet
-   rides it at every size the row renders. A whole lap rather than a fraction, so
-   the packet leaves the video exactly as the next one arrives.
-
-   Hidden rather than frozen under reduced motion. A frozen packet is a stray
-   dot sitting at the start of the trail, and unlike the tiles and the seal it
-   carries no meaning on its own: the dashes already say a path is there. */
-@keyframes hero-flow-comet {
-  to {
-    stroke-dashoffset: -100;
-  }
-}
-
-.hero-flow-comet {
-  animation: hero-flow-comet 5.2s linear infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hero-flow-comet {
-    opacity: 0;
-  }
-}
-
-/* The progress bar on the compact row's video tile: it fills, holds as though
-   the lesson were watched through, fades, and starts over, which is what says
-   "video" at 12px wide. `scaleX` from the left edge composites, unlike animating
-   the rect's own `width`; `fill-box` is what makes `left` the rect's left edge
-   rather than the viewBox's, and the fill is at full width in the markup so
-   nothing here has to know the track's length. The resting transform is the
-   reduced-motion state - a bar sitting a little over half full. */
-@keyframes hero-flow-progress {
-  0% {
-    transform: scaleX(0.1);
-    opacity: 0;
-  }
-  6% {
-    opacity: 1;
-  }
-  62% {
-    transform: scaleX(0.88);
-    opacity: 1;
-  }
-  84% {
-    transform: scaleX(0.88);
-    opacity: 0;
-  }
-  86% {
-    transform: scaleX(0.1);
-    opacity: 0;
-  }
-}
-
-.hero-flow-progress {
-  transform-box: fill-box;
-  transform-origin: left center;
-  transform: scaleX(0.55);
-  animation: hero-flow-progress 7.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* The seal's stamp: one press and rebound, placed so that it lands as the packet
-   does. The packet's lap is a whole lap - see `.hero-flow-comet` above - so it
-   arrives at the seal over the last few percent of its cycle at every width the
-   row renders, and that is what lets the two simply share a duration and stay in
-   step with no delay on either. The gesture occupies the last tenth, so the seal
-   is deepest as the packet closes its last few pixels and is back at rest as the
-   cycle turns and a fresh packet leaves the video.
-
-   5.2s is the packet's own duration, not a coincidence: change one and this
-   stops answering it. The pairing is worth the coupling, because it is the one
-   place in the hero where one thing visibly causes another - the trail delivers,
-   the seal acknowledges. It also assumes both animations start on the same
-   frame, which they do only because both sit in the first HTML with no delay
-   between them; a delay on either would unhook them and nothing would say so.
-
-   The squeeze and the rebound are both keyframes rather than the easing's own
-   overshoot, because the seal is only 13px across: a back-out ease overshoots by
-   roughly a tenth of whatever it is easing, and a tenth of this scale range is
-   well under a pixel - an overshoot nobody can see is not a rebound. The timing
-   function inside the first block is the other half of that: the shorthand's
-   back-out easing would carry the press past 0.87 and back again before the
-   rebound, which reads as a stutter rather than as a strike.
-
-   The resting state is no transform at all, which is what reduced motion keeps,
-   since a stamp with no packet to answer is not a quieter version of the
-   gesture, it is a different one. */
-@keyframes hero-flow-stamp {
-  0%,
-  90% {
-    transform: scale(1) rotate(0deg);
-    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
-  }
-  95% {
-    transform: scale(0.87) rotate(-6deg);
-  }
-  98% {
-    transform: scale(1.1) rotate(2deg);
-  }
-  100% {
-    transform: scale(1) rotate(0deg);
-  }
-}
-
-.hero-flow-stamp {
-  animation: hero-flow-stamp 5.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
 }
 
 /* Homepage scroll reveals (components/landing/Reveal.tsx).
