@@ -1,23 +1,25 @@
-import { createAvatar } from '@dicebear/core';
-import { avataaarsNeutral } from '@dicebear/collection';
+import { Avatar, Style } from '@dicebear/core';
+import clay from '@dicebear/styles/clay.json' with { type: 'json' };
 
 /**
  * Deterministic avatar markup for a seed.
  *
- * Pinned to the DiceBear 9.x line on purpose: 10.x declares `engines: node >=22`,
- * while this project pins Node 20 (.nvmrc), and 9.x needs only Node 18. That
- * also means the 9.x API (`createAvatar(style, options)`) rather than the
- * `new Avatar(...)` form in the DiceBear 10 docs.
+ * DiceBear 10 ships avatar styles as JSON definitions in `@dicebear/styles`
+ * (wrapped here in a `Style`) rather than the per-style packages that the 9.x
+ * `@dicebear/collection` re-exported. This is why the project's Node baseline
+ * is 22: `@dicebear/core@10` declares `engines.node >= 22`.
  *
- * The "neutral" variant is used so the artwork's palette sits alongside the warm
- * paper/clay tones instead of fighting them. The background is deliberately left
- * transparent: the tile colour is supplied by the `bg-linen` class on the
- * rendering element, which keeps that brand token in one place (Tailwind)
- * instead of duplicating a hex here.
+ * The "clay" style paints its own cream background by default; we clear it
+ * (`backgroundColor: []`) so the SVG stays transparent and the tile colour
+ * keeps coming from the `bg-linen` class on the rendering element, exactly as
+ * it did for the previous style.
  */
+const clayStyle = new Style(clay);
+
 export function avatarSvg(seed: string): string {
-  return createAvatar(avataaarsNeutral, {
+  return new Avatar(clayStyle, {
     seed,
     size: 128,
+    backgroundColor: [],
   }).toString();
 }
