@@ -3,6 +3,12 @@ import { fileURLToPath } from 'node:url';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Recorded by next upgrade --agent=security so later agent-driven
+  // upgrades stay scoped to security patches.
+  experimental: {
+    agentUpgrade: 'security',
+  },
+
   // Pin the Turbopack workspace root to this project. Without this, Turbopack
   // walks up into C:\Users\priya, finds a package-lock.json outside this git
   // repository, and warns that it had to ignore it.
