@@ -33,7 +33,7 @@ A single [Next.js 16](https://nextjs.org/) application (App Router) that turns Y
 
 | Layer       | Technology                                                                    |
 | ----------- | ----------------------------------------------------------------------------- |
-| Framework   | Next.js 16 (App Router, Turbopack), React 18, TypeScript `strict`             |
+| Framework   | Next.js 16 (App Router, Turbopack), React 19, TypeScript `strict`             |
 | Auth        | Supabase GoTrue via `@supabase/ssr` (cookie sessions + middleware refresh)    |
 | Database    | Supabase Postgres via postgres.js + Drizzle ORM (`prepare: false` for pooler) |
 | Payments    | Stripe (pricing table, Customer Sessions, billing portal, webhooks)           |
